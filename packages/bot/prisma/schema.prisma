@@ -24,6 +24,7 @@ model User {
   conversations           Conversation[] @relation("ConversationUser")
   conversationsAsCustomer Conversation[] @relation("ConversationCustomer")
   conversationsAsAgent    Conversation[] @relation("ConversationAssignedAgent")
+  messages                Message[]
   uploads                 Upload[]
 
   @@unique([provider, providerUserId])
