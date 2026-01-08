@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="nl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Valki Chat Widget Embed Variants</title>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+        margin: 24px;
+      }
+
+      section {
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        margin-bottom: 24px;
+        padding: 16px;
+      }
+
+      h2 {
+        margin: 0 0 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <section>
+      <h2>Variant 1 – Simpele 1-regel embed (onload, inline config)</h2>
+      <script src="https://widget.valki.wiki/dist/vichat-widget.min.js" onload="window.ViChat.mount({ theme: 'valki', baseUrl: 'https://auth.valki.wiki', mode: 'agent-hub', agents: [ { id: 'reservations', name: 'Reserveringen', avatarUrl: 'https://api.dicebear.com/7.x/bottts-neutral/svg?seed=reservations', description: 'Tafels & boekingen' }, { id: 'support', name: 'Support', avatarUrl: 'https://api.dicebear.com/7.x/bottts-neutral/svg?seed=support', description: 'Hulp & vragen' }, { id: 'sales', name: 'Sales', avatarUrl: 'https://api.dicebear.com/7.x/bottts-neutral/svg?seed=sales', description: 'Offertes & deals' } ] })"></script>
+    </section>
+
+    <section>
+      <h2>Variant 2 – CSP-vriendelijke embed (defer + aparte init script)</h2>
+      <script defer nonce="__VALKI_NONCE__" src="https://widget.valki.wiki/dist/vichat-widget.min.js"></script>
+      <script defer nonce="__VALKI_NONCE__">
+        window.ViChat.mount({
+          theme: 'valki',
+          baseUrl: 'https://auth.valki.wiki',
+          mode: 'agent-hub',
+          agents: [
+            { id: 'reservations', name: 'Reserveringen', avatarUrl: 'https://api.dicebear.com/7.x/bottts-neutral/svg?seed=reservations', description: 'Tafels & boekingen' },
+            { id: 'support',      name: 'Support',       avatarUrl: 'https://api.dicebear.com/7.x/bottts-neutral/svg?seed=support',      description: 'Hulp & vragen' },
+            { id: 'sales',        name: 'Sales',         avatarUrl: 'https://api.dicebear.com/7.x/bottts-neutral/svg?seed=sales',        description: 'Offertes & deals' }
+          ]
+        });
+      </script>
+    </section>
+
+    <section>
+      <h2>Variant 3 – Embed in target container</h2>
+      <div id="valki-chat"></div>
+      <script src="https://widget.valki.wiki/dist/vichat-widget.min.js" onload="window.ViChat.mount({ theme: 'valki', baseUrl: 'https://auth.valki.wiki', mode: 'agent-hub', target: '#valki-chat', agents: [ { id: 'reservations', name: 'Reserveringen', avatarUrl: 'https://api.dicebear.com/7.x/bottts-neutral/svg?seed=reservations', description: 'Tafels & boekingen' }, { id: 'support', name: 'Support', avatarUrl: 'https://api.dicebear.com/7.x/bottts-neutral/svg?seed=support', description: 'Hulp & vragen' }, { id: 'sales', name: 'Sales', avatarUrl: 'https://api.dicebear.com/7.x/bottts-neutral/svg?seed=sales', description: 'Offertes & deals' } ] })"></script>
+    </section>
+  </body>
+</html>
