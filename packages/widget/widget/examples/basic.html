@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ViChat Widget Example - Basic</title>
+    <link rel="stylesheet" href="../../dist/vichat-widget.css" />
+  </head>
+  <body>
+    <h1>Basic embed example</h1>
+    <p>This page mounts the widget directly using the production bundle.</p>
+
+    <script src="../../dist/vichat-widget.min.js"></script>
+    <script>
+      window.addEventListener('DOMContentLoaded', () => {
+        if (window.ViChat?.mount) {
+          window.ViChat.mount({ theme: 'vichat', baseUrl: 'https://auth.valki.wiki' });
+        }
+      });
+    </script>
+  </body>
+</html>

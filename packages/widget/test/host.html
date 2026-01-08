@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Valki Talki Host Smoke</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="/dist/vichat-widget.css" />
+  </head>
+  <body>
+    <h1>Valki Talki Host Smoke</h1>
+    <script src="/dist/vichat-widget.min.js"></script>
+    <script>
+      const waitFor = (predicate, { timeout = 8000, interval = 100 } = {}) => {
+        const start = Date.now();
+        return new Promise((resolve, reject) => {
+          const tick = () => {
+            if (predicate()) return resolve(predicate());
+            if (Date.now() - start > timeout) return reject(new Error('Timeout waiting for condition'));
+            setTimeout(tick, interval);
+          };
+          tick();
+        });
+      };
+
+      const runSmoke = async () => {
+        if (window.ViChat?.mount) {
+          window.ViChat.mount({ theme: 'valki' });
+        }
+        const rootExists = await waitFor(() => !!document.getElementById('valki-root'));
+        const badge = await waitFor(() => document.getElementById('valki-bubble'));
+        const badgeVisible = !!badge && badge.getClientRects().length > 0;
+        if (badge) badge.click();
+        await new Promise((resolve) => setTimeout(resolve, 150));
+        const overlay = document.getElementById('valki-overlay');
+        const overlayOpen = !!overlay && overlay.classList.contains('is-visible');
+        if (rootExists && badgeVisible && overlayOpen) {
+          console.log('VALKI_SMOKE_OK');
+        } else {
+          console.warn('VALKI_SMOKE_FAIL', { rootExists, badgeVisible, overlayOpen });
+        }
+      };
+
+      runSmoke().catch((error) => {
+        console.error('VALKI_SMOKE_ERROR', error);
+      });
+    </script>
+  </body>
+</html>

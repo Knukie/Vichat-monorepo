@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>WordPress-like Host</title>
+    <!-- Simulates theme CSS overrides and high z-index headers -->
+    <style>
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: "Helvetica Neue", Arial, sans-serif;
+        background: #f4f4f7;
+        color: #222;
+      }
+      .site-header {
+        position: sticky;
+        top: 0;
+        background: #111827;
+        color: #fff;
+        padding: 20px 32px;
+        z-index: 999999;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .site-nav a {
+        color: #fff;
+        margin-right: 16px;
+        text-decoration: none;
+        font-weight: 600;
+      }
+      .hero {
+        padding: 60px 32px;
+        background: linear-gradient(120deg, #fdf2f8, #eff6ff);
+      }
+      .content {
+        padding: 32px;
+        max-width: 900px;
+        margin: 0 auto;
+      }
+      .cta {
+        background: #111827;
+        color: #fff;
+        padding: 24px;
+        border-radius: 12px;
+        margin-top: 24px;
+      }
+      .modal {
+        position: fixed;
+        inset: 20px;
+        border-radius: 24px;
+        background: rgba(17, 24, 39, 0.9);
+        z-index: 2147483000;
+        display: none;
+      }
+    </style>
+    <link rel="stylesheet" href="https://cdn.example.com/dist/vichat-widget.css" />
+    <script defer src="https://cdn.example.com/dist/vichat-widget.min.js"></script>
+    <script>
+      window.addEventListener('DOMContentLoaded', () => {
+        if (window.ViChat?.mount) {
+          window.ViChat.mount({ theme: 'valki', baseUrl: 'https://auth.valki.wiki' });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <!-- Notes: Header has extremely high z-index; widget should still appear above when opened. -->
+    <header class="site-header">
+      <div>WordPress-like Site</div>
+      <nav class="site-nav">
+        <a href="#">Home</a>
+        <a href="#">Blog</a>
+        <a href="#">Pricing</a>
+      </nav>
+    </header>
+    <section class="hero">
+      <h1>Theme demo page</h1>
+      <p>Simulated WordPress theme with strong base styles and sticky header.</p>
+    </section>
+    <main class="content">
+      <p>
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum feugiat
+        dui a sapien lacinia, non condimentum elit tristique.
+      </p>
+      <div class="cta">
+        <strong>Call to action</strong>
+        <p>Showcases high contrast sections with aggressive theme styles.</p>
+      </div>
+    </main>
+    <div class="modal"></div>
+  </body>
+</html>

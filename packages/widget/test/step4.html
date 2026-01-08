@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Valki Talki Widget Step 4</title>
+    <link rel="stylesheet" href="https://widget.valki.wiki/dist/vichat-widget.css" />
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        margin: 0;
+        padding: 24px;
+        background: #0b0b0b;
+        color: #fff;
+      }
+      .instructions {
+        max-width: 640px;
+        line-height: 1.5;
+      }
+    </style>
+    <script src="https://widget.valki.wiki/dist/vichat-widget.min.js"></script>
+    <script>
+      window.addEventListener('DOMContentLoaded', () => {
+        if (window.ViChat?.mount) {
+          window.__VICHAT_WIDGET__ = window.ViChat.mount({
+            theme: 'valki',
+            baseUrl: 'https://auth.valki.wiki'
+          });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <div class="instructions">
+      <h1>Step 4 Manual Checks</h1>
+      <ol>
+        <li>Send 3 guest messages. Login prompt should appear.</li>
+        <li>Send up to 6 guest messages. Composer should hard lock with login required.</li>
+        <li>If a token exists in localStorage, refresh to load /api/messages.</li>
+      </ol>
+    </div>
+  </body>
+</html>

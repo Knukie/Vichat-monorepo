@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' 'nonce-valki123'; style-src 'self' 'nonce-valki123'; img-src 'self' data:; connect-src https://auth.valki.wiki; frame-src 'self'; object-src 'none'; base-uri 'self'"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Host 1 Strict CSP</title>
+    <style nonce="valki123">
+      html, body {
+        margin: 0;
+        padding: 0;
+        font-family: system-ui, sans-serif;
+      }
+    </style>
+    <link rel="stylesheet" href="/dist/vichat-widget.css" />
+    <script nonce="valki123">
+      window.__VALKI_BASE_URL__ = 'https://auth.valki.wiki';
+      window.__VALKI_EMBED_MODE__ = 'shadow';
+    </script>
+  </head>
+  <body>
+    <h1>Strict CSP Host</h1>
+    <script src="/dist/vichat-widget.min.js"></script>
+    <script nonce="valki123">
+      window.addEventListener('DOMContentLoaded', () => {
+        if (window.ViChat?.mount) {
+          window.__VICHAT_WIDGET__ = window.ViChat.mount({
+            theme: 'valki',
+            baseUrl: window.__VALKI_BASE_URL__ || 'https://auth.valki.wiki'
+          });
+        }
+      });
+    </script>
+  </body>
+</html>

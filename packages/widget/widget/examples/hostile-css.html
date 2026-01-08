@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ViChat Widget Example - Hostile CSS</title>
+    <link rel="stylesheet" href="../../dist/vichat-widget.css" />
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: 'Comic Sans MS', 'Comic Sans', cursive;
+        background: linear-gradient(135deg, #020617, #1e293b);
+        color: #f8fafc;
+      }
+      button {
+        border-radius: 0 !important;
+      }
+      p {
+        max-width: 680px;
+        padding: 24px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1 style="padding: 24px 24px 0; margin: 0;">Hostile CSS example</h1>
+    <p>
+      This host page applies aggressive CSS rules. The widget should still render correctly
+      because it uses its own scoped styles.
+    </p>
+
+    <script src="../../dist/vichat-widget.min.js"></script>
+    <script>
+      window.addEventListener('DOMContentLoaded', () => {
+        if (window.ViChat?.mount) {
+          window.ViChat.mount({ theme: 'valki', baseUrl: 'https://auth.valki.wiki' });
+        }
+      });
+    </script>
+  </body>
+</html>

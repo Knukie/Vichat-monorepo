@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' https://auth.valki.wiki; style-src 'self' https://auth.valki.wiki; img-src 'self' https://auth.valki.wiki data:; connect-src 'self' https://auth.valki.wiki; frame-ancestors 'none'; base-uri 'none'; object-src 'none';"
+    />
+    <title>Valki Talki Strict CSP</title>
+    <link rel="stylesheet" href="../dist/vichat-widget.css" />
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        margin: 0;
+        padding: 24px;
+        background: #0b0b0b;
+        color: #fff;
+      }
+    </style>
+    <script src="../dist/vichat-widget.min.js"></script>
+    <script>
+      window.addEventListener('DOMContentLoaded', () => {
+        if (window.ViChat?.mount) {
+          window.__VICHAT_WIDGET__ = window.ViChat.mount({
+            theme: 'valki',
+            baseUrl: 'https://auth.valki.wiki'
+          });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1>Strict CSP Test</h1>
+    <p>Use the Valki badge to open chat and send a message.</p>
+  </body>
+</html>

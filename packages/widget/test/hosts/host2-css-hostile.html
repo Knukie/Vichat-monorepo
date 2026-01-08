@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Host 2 CSS Hostile</title>
+    <link rel="stylesheet" href="/dist/vichat-widget.css" />
+    <style>
+      * {
+        all: unset;
+      }
+
+      html, body {
+        font-size: 10px;
+        line-height: 1;
+        background: #f9fafb;
+        overflow: hidden;
+      }
+
+      body {
+        display: block;
+        padding: 24px;
+      }
+
+      #valki-mount {
+        position: relative;
+        z-index: 1;
+      }
+
+      .host-banner {
+        display: block;
+        font-size: 14px;
+        padding: 12px;
+        background: #111827;
+        color: #f9fafb;
+        border-radius: 8px;
+        margin-bottom: 16px;
+      }
+    </style>
+    <script>
+      window.__VALKI_BASE_URL__ = window.location.origin;
+      window.__VALKI_EMBED_MODE__ = 'shadow';
+      window.__VALKI_MOUNT_SELECTOR__ = '#valki-mount';
+    </script>
+  </head>
+  <body>
+    <div class="host-banner">Hostile CSS resets applied</div>
+    <div id="valki-mount"></div>
+    <script src="/dist/vichat-widget.min.js"></script>
+    <script>
+      window.addEventListener('DOMContentLoaded', () => {
+        if (window.ViChat?.mount) {
+          window.__VICHAT_WIDGET__ = window.ViChat.mount({
+            theme: 'valki',
+            baseUrl: window.__VALKI_BASE_URL__ || 'https://auth.valki.wiki',
+            target: window.__VALKI_MOUNT_SELECTOR__ || '#valki-mount'
+          });
+        }
+      });
+    </script>
+  </body>
+</html>

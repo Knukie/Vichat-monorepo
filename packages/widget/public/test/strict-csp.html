@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self';
+               script-src 'self' 'nonce-valki-test-inline' https://auth.valki.wiki;
+               style-src 'self' 'nonce-valki-test-inline' https://auth.valki.wiki;
+               img-src 'self' https://auth.valki.wiki data:;
+               connect-src 'self' https://auth.valki.wiki;
+               frame-ancestors 'none';
+               base-uri 'none';
+               object-src 'none';"
+    />
+    <title>Valki Talki Strict CSP</title>
+
+    <link rel="stylesheet" href="/dist/vichat-widget.css" />
+    <style nonce="valki-test-inline">
+      body {
+        font-family: system-ui, sans-serif;
+        margin: 0;
+        padding: 24px;
+        background: #0b0b0b;
+        color: #fff;
+      }
+      /* test-only controls: keep inside viewport, but invisible */
+      #valki-test-inject-wrap {
+        position: fixed;
+        left: 8px;
+        bottom: 8px;
+        z-index: 2147483647;
+        opacity: 0;
+        pointer-events: auto;
+      }
+    </style>
+
+    <script nonce="valki-test-inline">
+      window.__VALKI_TEST_HOOKS__ = { securitySmoke: true };
+      window.__VICHAT_TEST_HOOKS__ = true;
+    </script>
+  </head>
+
+  <body>
+    <h1>Strict CSP Test</h1>
+    <p>Use the Valki badge to open chat and send a message.</p>
+
+    <!-- Test-only controls (CSP-safe, no Playwright evaluate needed) -->
+    <div id="valki-test-inject-wrap" aria-hidden="true">
+      <textarea id="valki-test-inject-text"></textarea>
+      <button id="valki-test-inject-btn" type="button">inject</button>
+    </div>
+
+    <script src="/dist/vichat-widget.min.js"></script>
+
+    <script nonce="valki-test-inline">
+      window.addEventListener('DOMContentLoaded', () => {
+        const widget = window.ViChat?.mount?.({
+          theme: 'valki',
+          baseUrl: 'https://auth.valki.wiki'
+        });
+        if (widget?.messageController) {
+          document.body.setAttribute('data-valki-ready', 'true');
+        }
+
+        const btn = document.getElementById('valki-test-inject-btn');
+        const input = document.getElementById('valki-test-inject-text');
+
+        btn?.addEventListener('click', async () => {
+          const activeWidget = widget || window.__VICHAT_WIDGET__;
+          if (!activeWidget || !activeWidget.messageController) return;
+
+          const text = String(input?.value || '');
+          if (!text) return;
+
+          await activeWidget.messageController.addMessage({ type: 'bot', text });
+        });
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ViChat Widget Example - Iframe</title>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        margin: 0;
+        padding: 24px;
+        background: #0b1224;
+        color: #e2e8f0;
+      }
+      iframe {
+        width: 100%;
+        height: 70vh;
+        border: 1px solid rgba(226, 232, 240, 0.2);
+        border-radius: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Iframe embed example</h1>
+    <p>Loads the production bundle inside an iframe host page.</p>
+    <iframe
+      title="ViChat iframe host"
+      srcdoc="<!doctype html>
+<html lang='en'>
+  <head>
+    <meta charset='utf-8' />
+    <meta name='viewport' content='width=device-width, initial-scale=1' />
+    <link rel='stylesheet' href='../../dist/vichat-widget.css' />
+    <style>body{margin:0;font-family:system-ui;background:#0f172a;color:#e2e8f0;}</style>
+  </head>
+  <body>
+    <h2 style='padding:16px;'>Iframe host</h2>
+    <script src='../../dist/vichat-widget.min.js'></script>
+    <script>
+      window.addEventListener('DOMContentLoaded', () => {
+        if (window.ViChat?.mount) {
+          window.ViChat.mount({ theme: 'vichat', baseUrl: 'https://auth.valki.wiki' });
+        }
+      });
+    </script>
+  </body>
+</html>"
+    ></iframe>
+  </body>
+</html>

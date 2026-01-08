@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Valki Talki Embed (Shadow)</title>
+    <link rel="stylesheet" href="https://cdn.example.com/dist/vichat-widget.css" />
+    <script defer src="https://cdn.example.com/dist/vichat-widget.min.js"></script>
+    <script>
+      window.addEventListener('DOMContentLoaded', () => {
+        if (window.ViChat?.mount) {
+          window.ViChat.mount({ theme: 'valki', baseUrl: 'https://auth.valki.wiki' });
+        }
+      });
+    </script>
+  </head>
+  <body>
+  </body>
+</html>

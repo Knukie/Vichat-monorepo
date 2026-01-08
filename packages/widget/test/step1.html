@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Valki Talki Step 1</title>
+    <link rel="stylesheet" href="../dist/vichat-widget.css" />
+  </head>
+  <body>
+    <main>
+      <p>Click the Valki badge to open the overlay. Press Escape to close.</p>
+    </main>
+    <script src="../dist/vichat-widget.min.js"></script>
+    <script>
+      window.addEventListener('DOMContentLoaded', () => {
+        if (window.ViChat?.mount) {
+          window.__VICHAT_WIDGET__ = window.ViChat.mount({ theme: 'valki' });
+        }
+      });
+    </script>
+  </body>
+</html>

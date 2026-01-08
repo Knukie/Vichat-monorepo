@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Valki Talki Step 6</title>
+    <link rel="stylesheet" href="../dist/vichat-widget.css" />
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        margin: 0;
+        padding: 24px;
+        background: #0b0b0b;
+        color: #fff;
+      }
+      .panel {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        max-width: 560px;
+      }
+      label {
+        font-size: 13px;
+        opacity: 0.8;
+      }
+      input {
+        width: 100%;
+        padding: 8px 10px;
+        border-radius: 8px;
+        border: 1px solid #2a2a2a;
+        background: #141414;
+        color: #fff;
+      }
+      button {
+        border: 0;
+        border-radius: 999px;
+        padding: 8px 14px;
+        background: #4b7bff;
+        color: #fff;
+        cursor: pointer;
+      }
+      .hint {
+        font-size: 12px;
+        opacity: 0.7;
+        line-height: 1.4;
+      }
+    </style>
+    <script>
+      const readValue = (key) => {
+        try {
+          return localStorage.getItem(key) || '';
+        } catch (error) {
+          return '';
+        }
+      };
+      const writeValue = (key, value) => {
+        try {
+          localStorage.setItem(key, value);
+        } catch (error) {
+          // Ignore.
+        }
+      };
+      window.__VALKI_BASE_URL__ = readValue('valki_step6_base_url') || window.__VALKI_BASE_URL__;
+      window.__VALKI_TEST_GUEST_COUNT__ = Number(readValue('valki_step6_guest_count') || '') || window.__VALKI_TEST_GUEST_COUNT__;
+      window.addEventListener('DOMContentLoaded', () => {
+        const baseInput = document.querySelector('#base-url');
+        const guestInput = document.querySelector('#guest-count');
+        const applyBase = document.querySelector('#apply-base');
+        const applyGuest = document.querySelector('#apply-guest');
+        baseInput.value = window.__VALKI_BASE_URL__ || '';
+        guestInput.value = Number.isFinite(window.__VALKI_TEST_GUEST_COUNT__) ? String(window.__VALKI_TEST_GUEST_COUNT__) : '';
+        applyBase.addEventListener('click', () => {
+          writeValue('valki_step6_base_url', baseInput.value.trim());
+          window.__VALKI_BASE_URL__ = baseInput.value.trim();
+          window.location.reload();
+        });
+        applyGuest.addEventListener('click', () => {
+          const value = guestInput.value.trim();
+          writeValue('valki_step6_guest_count', value);
+          window.__VALKI_TEST_GUEST_COUNT__ = value ? Number(value) : undefined;
+          window.location.reload();
+        });
+      });
+    </script>
+    <script src="../dist/vichat-widget.min.js"></script>
+    <script>
+      window.addEventListener('DOMContentLoaded', () => {
+        if (window.ViChat?.mount) {
+          window.__VICHAT_WIDGET__ = window.ViChat.mount({
+            theme: 'valki',
+            baseUrl: window.__VALKI_BASE_URL__ || 'https://auth.valki.wiki'
+          });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <div class="panel">
+      <h1>Step 6 Manual Test</h1>
+      <label for="base-url">Override BASE_URL (reloads widget)</label>
+      <input id="base-url" type="text" placeholder="https://auth.valki.wiki" />
+      <button id="apply-base" type="button">Apply BASE_URL</button>
+      <label for="guest-count">Simulate guest count (reloads widget)</label>
+      <input id="guest-count" type="number" min="0" placeholder="0" />
+      <button id="apply-guest" type="button">Apply guest count</button>
+      <p class="hint">
+        Mobile checks: rotate device, open the keyboard inside chat, scroll the message list,
+        and send a message while staying near the bottom.
+      </p>
+    </div>
+  </body>
+</html>

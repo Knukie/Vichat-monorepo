@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Valki Talki Shell</title>
+    <style>
+      html, body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        background: transparent;
+      }
+    </style>
+    <script>
+      (() => {
+        const params = new URLSearchParams(window.location.search);
+        const base = params.get('base');
+        if (base) {
+          window.__VALKI_BASE_URL__ = base;
+        }
+        window.__VALKI_EMBED_MODE__ = 'shadow';
+        if (document.referrer) {
+          try {
+            window.__VALKI_PARENT_ORIGIN__ = new URL(document.referrer).origin;
+          } catch (error) {
+            window.__VALKI_PARENT_ORIGIN__ = '';
+          }
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <link rel="stylesheet" href="/dist/vichat-widget.css" />
+    <script src="/dist/vichat-widget.min.js"></script>
+    <script>
+      window.addEventListener('DOMContentLoaded', () => {
+        if (window.ViChat?.mount) {
+          window.__VICHAT_WIDGET__ = window.ViChat.mount({
+            theme: 'valki',
+            baseUrl: window.__VALKI_BASE_URL__ || 'https://auth.valki.wiki'
+          });
+        }
+      });
+    </script>
+  </body>
+</html>

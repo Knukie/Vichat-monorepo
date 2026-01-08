@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Host 3 Z-Index War</title>
+    <link rel="stylesheet" href="/dist/vichat-widget.css" />
+    <style>
+      html, body {
+        margin: 0;
+        padding: 0;
+        font-family: system-ui, sans-serif;
+      }
+
+      .header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 64px;
+        background: #0f172a;
+        color: #fff;
+        z-index: 2147483646;
+        display: flex;
+        align-items: center;
+        padding: 0 16px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+      }
+
+      .content {
+        padding-top: 80px;
+        min-height: 200vh;
+        background: #f8fafc;
+      }
+    </style>
+    <script>
+      window.__VALKI_BASE_URL__ = window.location.origin;
+      window.__VALKI_EMBED_MODE__ = 'shadow';
+    </script>
+  </head>
+  <body>
+    <div class="header">High z-index host header</div>
+    <div class="content">
+      <p>Scroll content under the widget overlay.</p>
+    </div>
+    <script src="/dist/vichat-widget.min.js"></script>
+    <script>
+      window.addEventListener('DOMContentLoaded', () => {
+        if (window.ViChat?.mount) {
+          window.__VICHAT_WIDGET__ = window.ViChat.mount({
+            theme: 'valki',
+            baseUrl: window.__VALKI_BASE_URL__ || 'https://auth.valki.wiki'
+          });
+        }
+      });
+    </script>
+  </body>
+</html>

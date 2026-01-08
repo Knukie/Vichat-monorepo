@@ -1,0 +1,33 @@
+{
+  "name": "vichat-widget",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "server.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node server.js",
+
+    "ci": "npm ci",
+
+    "build": "node build/esbuild.mjs",
+
+    "test:e2e": "npm run test:e2e:smoke",
+
+    "test:e2e:smoke": "npx playwright test --reporter=line tests/widget.spec.ts tests/security-smoke.spec.ts",
+
+    "test:e2e:full": "npx playwright test --reporter=line",
+
+    "test:embed": "npx playwright test --reporter=line tests/embed-compat.spec.ts"
+  },
+  "dependencies": {
+    "@valki/contracts": "workspace:*",
+    "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.42.1",
+    "esbuild": "file:build/esbuild-shim"
+  }
+}

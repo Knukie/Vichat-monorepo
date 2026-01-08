@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Shopify-like Host</title>
+    <!-- Notes: Global reset, overflow hidden sections, product grids -->
+    <style>
+      html, body {
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+        background: #ffffff;
+        color: #111;
+      }
+      img {
+        max-width: 100%;
+        display: block;
+      }
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+      .announcement {
+        background: #111827;
+        color: #fff;
+        text-align: center;
+        padding: 10px 0;
+        font-size: 12px;
+      }
+      .hero {
+        position: relative;
+        height: 360px;
+        overflow: hidden;
+        background: #f3f4f6;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .hero h1 {
+        font-size: 36px;
+        margin: 0;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 20px;
+        padding: 32px;
+      }
+      .card {
+        border: 1px solid #e5e7eb;
+        border-radius: 16px;
+        overflow: hidden;
+        background: #fff;
+        display: flex;
+        flex-direction: column;
+      }
+      .card-body {
+        padding: 16px;
+      }
+      .footer {
+        padding: 24px;
+        background: #f9fafb;
+        text-align: center;
+        font-size: 12px;
+      }
+    </style>
+    <link rel="stylesheet" href="https://cdn.example.com/dist/vichat-widget.css" />
+    <script defer src="https://cdn.example.com/dist/vichat-widget.min.js"></script>
+    <script>
+      window.addEventListener('DOMContentLoaded', () => {
+        if (window.ViChat?.mount) {
+          window.ViChat.mount({ theme: 'valki', baseUrl: 'https://auth.valki.wiki' });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <!-- Notes: This page stresses global resets and overflow hidden hero sections. -->
+    <div class="announcement">Free shipping on orders over $50</div>
+    <section class="hero">
+      <h1>Shopify-style storefront</h1>
+    </section>
+    <section class="grid">
+      <article class="card">
+        <img src="https://picsum.photos/400/260?random=1" alt="Product 1" />
+        <div class="card-body">
+          <strong>Product One</strong>
+          <p>$29.00</p>
+        </div>
+      </article>
+      <article class="card">
+        <img src="https://picsum.photos/400/260?random=2" alt="Product 2" />
+        <div class="card-body">
+          <strong>Product Two</strong>
+          <p>$48.00</p>
+        </div>
+      </article>
+      <article class="card">
+        <img src="https://picsum.photos/400/260?random=3" alt="Product 3" />
+        <div class="card-body">
+          <strong>Product Three</strong>
+          <p>$64.00</p>
+        </div>
+      </article>
+    </section>
+    <footer class="footer">© 2024 Example Store</footer>
+  </body>
+</html>

@@ -1,0 +1,178 @@
+<div class="valki-root" id="valki-root">
+
+  <!-- Floating Bubble Launcher -->
+  <button id="valki-bubble" class="valki-bubble" type="button" aria-label="Open Valki chat">
+    <span class="valki-bubble-ping" id="valki-bubble-ping" aria-hidden="true" style="display:none;"></span>
+
+    <svg class="valki-bubble-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M21 12c0 4.418-4.03 8-9 8a11.1 11.1 0 0 1-3.86-.68L3 20l1.54-3.08A7.3 7.3 0 0 1 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8Z"
+        stroke="currentColor"
+        stroke-width="2.2"
+        stroke-linejoin="round">
+      </path>
+
+      <path
+        d="M7.5 12h.01M12 12h.01M16.5 12h.01"
+        stroke="currentColor"
+        stroke-width="2.8"
+        stroke-linecap="round">
+      </path>
+    </svg>
+
+    <span class="valki-bubble-badge" id="valki-bubble-badge" aria-hidden="true" style="display:none;">1</span>
+  </button>
+
+  <!-- Chat overlay -->
+  <div id="valki-overlay" class="valki-overlay" aria-hidden="true">
+    <div class="valki-modal" role="dialog" aria-modal="true" aria-labelledby="valki-title">
+
+      <!-- Agent Hub -->
+      <div class="valki-agent-hub" id="valki-agent-hub" role="region" aria-label="Agent Hub">
+        <div class="valki-agent-hub-header">
+          <div class="valki-agent-hub-titles">
+            <div class="valki-agent-hub-title" id="valki-agent-title">Agents</div>
+            <div class="valki-agent-hub-subtitle" id="valki-agent-subtitle">Choose an agent to start chatting.</div>
+          </div>
+          <button id="valki-agent-close" class="valki-close-btn" type="button" aria-label="Close agent hub">✕</button>
+        </div>
+        <div class="valki-agent-list" id="valki-agent-list"></div>
+        <div class="valki-agent-empty" id="valki-agent-empty">No agents configured.</div>
+      </div>
+
+      <!-- Header -->
+      <div class="valki-modal-header">
+        <div class="valki-modal-header-inner">
+
+          <div class="valki-header-left">
+            <button id="valki-agent-back" class="valki-agent-back" type="button" aria-label="Back to agents">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M15 18l-6-6 6-6"></path>
+              </svg>
+            </button>
+            <img class="valki-header-avatar" id="valki-header-avatar"
+                 src="https://valki.wiki/blogmedia/Valki%20Talki.jpg"
+                 alt="Valki avatar" />
+            <div class="valki-modal-title-text">
+              <span class="name" id="valki-title">Valki Talki</span>
+              <span class="session" id="valki-session-label">Guest 🟠</span>
+            </div>
+          </div>
+
+          <div class="valki-header-actions">
+            <button class="valki-pill primary" id="valki-loginout-btn" type="button" title="Login">Login</button>
+            <button class="valki-pill" id="valki-deleteall-btn" type="button" title="Delete all messages">Delete</button>
+            <button id="valki-close" class="valki-close-btn" type="button" aria-label="Close chat">✕</button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Messages -->
+      <div id="valki-messages" class="valki-messages" role="log" aria-live="polite">
+        <div class="valki-messages-inner" id="valki-messages-inner"></div>
+      </div>
+
+      <!-- Composer -->
+      <form id="valki-chat-form" class="valki-chat-form" autocomplete="off">
+        <div class="valki-chat-form-inner">
+
+          <div class="valki-chat-inner">
+            <button class="valki-chat-attach" id="valki-chat-attach" type="button" aria-label="Upload image">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.9-9.9a4 4 0 015.66 5.66l-9.9 9.9a2 2 0 01-2.83-2.83l9.19-9.19"></path>
+              </svg>
+            </button>
+
+            <input id="valki-file-input" type="file" accept="image/jpeg,image/png" multiple style="display:none" />
+
+            <textarea id="valki-chat-input" class="valki-chat-input" rows="1"
+                      placeholder=""
+                      aria-label="Message Valki"
+                      enterkeyhint="send"></textarea>
+
+            <button class="valki-chat-send" id="valki-chat-send" type="submit" aria-label="Send message">
+              <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M12 19V5"></path>
+                <path d="M5 12l7-7 7 7"></path>
+              </svg>
+            </button>
+          </div>
+
+          <div class="valki-attachments" id="valki-attachments" aria-label="Attachments" style="display:none;"></div>
+
+          <div class="valki-disclaimer">
+            <div>Valki signals may distort. Verify info.</div>
+            <button type="button" class="valki-disclaimer-button"
+                    onclick="if (typeof displayPreferenceModal === 'function') { displayPreferenceModal(); }">
+              See cookie preferences.
+            </button>
+          </div>
+
+        </div>
+      </form>
+
+    </div>
+  </div>
+
+  <!-- Auth / Login overlay -->
+  <div id="valki-auth-overlay" class="valki-auth-overlay" aria-hidden="true">
+    <div class="valki-auth-modal" role="dialog" aria-modal="true" aria-label="Login required">
+      <div class="valki-auth-header">
+        <img src="https://valki.wiki/blogmedia/Valki%20Talki.jpg" class="valki-auth-avatar" alt="Valki avatar" />
+      </div>
+      <h2 class="valki-auth-title" id="valki-auth-title">Log in to continue</h2>
+      <p class="valki-auth-subtitle" id="valki-auth-subtitle">Sign in to keep your chat history and manage messages.</p>
+
+      <div class="valki-auth-buttons">
+        <button type="button" class="valki-auth-btn primary" id="valki-login-discord-btn">
+          <span aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
+              <path d="M20.3 4.7a19.6 19.6 0 0 0-4.9-1.5l-.2.3c1.8.5 2.6 1.2 2.6 1.2a16.4 16.4 0 0 0-5.8-1.8 16.4 16.4 0 0 0-5.8 1.8s.8-.7 2.6-1.2l-.2-.3A19.6 19.6 0 0 0 3.7 4.7C1.4 8 1 11 1 14c1.4 2.1 3.5 3.4 5.7 4 .4-.6.9-1.4 1.2-2.1-.7-.3-1.4-.6-2-.9l.5-.4c1.2.6 2.5 1 3.8 1.2a15 15 0 0 0 3.6 0c1.3-.2 2.6-.6 3.8-1.2l.5.4c-.6.3-1.3.6-2 .9.4.8.8 1.5 1.2 2.1 2.2-.6 4.3-1.9 5.7-4 0-3-.4-6-2.7-9.3ZM9 13.4c-.8 0-1.4-.7-1.4-1.6s.6-1.6 1.4-1.6 1.4.7 1.4 1.6-.6 1.4-1.4 1.6Zm6 0c-.8 0-1.4-.7-1.4-1.6s.6-1.6 1.4-1.6 1.4.7 1.4 1.6-.6 1.4-1.4 1.6Z"></path>
+            </svg>
+          </span>
+          <span>Continue with Discord</span>
+        </button>
+
+        <button type="button" class="valki-auth-btn" id="valki-login-google-btn">
+          <span aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
+              <path d="M12 10.2v3.9h5.4c-.2 1.3-1.6 3.9-5.4 3.9-3.3 0-6-2.7-6-6s2.7-6 6-6c1.9 0 3.2.8 3.9 1.5l2.7-2.6C17 3.3 14.8 2.4 12 2.4 6.9 2.4 2.8 6.5 2.8 11.6S6.9 20.8 12 20.8c5.9 0 9.8-4.1 9.8-9.8 0-.7-.1-1.2-.2-1.8H12z"></path>
+            </svg>
+          </span>
+          <span>Continue with Google</span>
+        </button>
+
+        <button type="button" class="valki-auth-btn" id="valki-join-discord-btn">Join Discord server</button>
+      </div>
+
+      <div class="valki-auth-note" id="valki-auth-note">Guest limits apply.</div>
+      <div class="valki-auth-dismiss" id="valki-auth-dismiss">Not now</div>
+    </div>
+  </div>
+
+  <!-- Confirm delete all -->
+  <div id="valki-confirm-overlay" class="valki-confirm-overlay" aria-hidden="true">
+    <div class="valki-confirm-modal" role="dialog" aria-modal="true" aria-label="Confirm delete">
+      <h3 class="valki-confirm-title">Delete all messages?</h3>
+      <p class="valki-confirm-sub">This will remove your chat history for this session.</p>
+      <div class="valki-confirm-actions">
+        <button type="button" class="valki-confirm-btn" id="valki-confirm-no"><span>No</span></button>
+        <button type="button" class="valki-confirm-btn danger" id="valki-confirm-yes"><span>Yes, delete</span></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirm logout (✅ class made consistent) -->
+  <div id="valki-logout-overlay" class="valki-logout-overlay" aria-hidden="true" style="display:none;">
+    <div class="valki-confirm-modal" role="dialog" aria-modal="true" aria-label="Confirm logout">
+      <h3 class="valki-confirm-title">Log out?</h3>
+      <p class="valki-confirm-sub">You will switch back to guest mode on this device.</p>
+      <div class="valki-confirm-actions">
+        <button type="button" class="valki-confirm-btn" id="valki-logout-no"><span>Cancel</span></button>
+        <button type="button" class="valki-confirm-btn danger" id="valki-logout-yes"><span>Yes, log out</span></button>
+      </div>
+    </div>
+  </div>
+
+</div>

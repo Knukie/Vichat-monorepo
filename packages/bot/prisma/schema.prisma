@@ -1,0 +1,106 @@
+// Prisma schema to mirror existing Postgres tables
+// Users, conversations, messages
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id              Int            @id @default(autoincrement())
+  uuid            String         @default(uuid()) @db.Uuid @unique
+  provider        String
+  providerUserId  String         @map("provider_user_id")
+  name            String         @default("")
+  role            String         @default("customer")
+  displayName     String?        @map("display_name")
+  avatarUrl       String?        @map("avatar_url")
+  status          String         @default("offline")
+  createdAt       DateTime       @default(now()) @map("created_at")
+  conversations           Conversation[] @relation("ConversationUser")
+  conversationsAsCustomer Conversation[] @relation("ConversationCustomer")
+  conversationsAsAgent    Conversation[] @relation("ConversationAssignedAgent")
+  uploads                 Upload[]
+
+  @@unique([provider, providerUserId])
+  @@map("users")
+}
+
+model Conversation {
+  id               String   @id
+  uuid             String   @default(uuid()) @db.Uuid @unique
+  summary          String   @default("")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @default(now()) @map("updated_at")
+  userId           Int?     @map("user_id")
+  user             User?    @relation("ConversationUser", fields: [userId], references: [id])
+  customerId       Int?     @map("customer_id")
+  customer         User?    @relation("ConversationCustomer", fields: [customerId], references: [id])
+  assignedAgentId  Int?     @map("assigned_agent_id")
+  assignedAgent    User?    @relation("ConversationAssignedAgent", fields: [assignedAgentId], references: [id])
+  departmentId     String?  @map("department_id")
+  status           String   @default("open")
+  lastMessageAt    DateTime? @map("last_message_at")
+  messages         Message[]
+  uploads          Upload[]
+
+  @@index([userId])
+  @@index([customerId])
+  @@index([assignedAgentId])
+  @@map("conversations")
+}
+
+model Message {
+  id             Int          @id @default(autoincrement())
+  uuid           String       @default(uuid()) @db.Uuid @unique
+  conversationId String       @map("conversation_id")
+  senderId       Int?         @map("sender_id")
+  role           String       @default("customer")
+  type           String       @default("text")
+  content        String
+  images         Json?        @db.JsonB
+  ts             DateTime     @default(now())
+  deletedAt      DateTime?    @map("deleted_at")
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         User?        @relation(fields: [senderId], references: [id], onDelete: SetNull)
+  uploads        Upload[]
+
+  @@index([conversationId, deletedAt])
+  @@index([senderId])
+  @@map("messages")
+}
+
+model Upload {
+  id               String        @id @default(uuid()) @db.Uuid
+  userUuid         String?       @db.Uuid @map("user_uuid")
+  conversationUuid String?       @db.Uuid @map("conversation_uuid")
+  messageUuid      String?       @db.Uuid @map("message_uuid")
+  storageProvider  String        @map("storage_provider")
+  storageBucket    String        @map("storage_bucket")
+  storageKey       String        @map("storage_key")
+  storageUrl       String?       @map("storage_url")
+  contentType      String?       @map("content_type")
+  sizeBytes        Int?          @map("size_bytes")
+  checksum         String?       @map("checksum")
+  privacy          String        @default("private")
+  retentionUntil   DateTime?     @map("retention_until")
+  deletedAt        DateTime?     @map("deleted_at")
+  caption          Json?
+  labels           Json?
+  embeddings       Json?
+  createdAt        DateTime      @default(now()) @map("created_at")
+  updatedAt        DateTime      @default(now()) @map("updated_at")
+  user             User?         @relation(fields: [userUuid], references: [uuid], onDelete: SetNull)
+  conversation     Conversation? @relation(fields: [conversationUuid], references: [uuid], onDelete: SetNull)
+  message          Message?      @relation(fields: [messageUuid], references: [uuid], onDelete: SetNull)
+
+  @@index([userUuid, createdAt])
+  @@index([conversationUuid, createdAt])
+  @@index([messageUuid])
+  @@index([createdAt])
+  @@map("uploads")
+}

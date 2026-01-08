@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Valki Talki Widget Step 2</title>
+    <link rel="stylesheet" href="../dist/vichat-widget.css" />
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        margin: 0;
+        padding: 24px;
+        background: #0b0b0b;
+        color: #fff;
+      }
+      .instructions {
+        max-width: 640px;
+        line-height: 1.5;
+      }
+    </style>
+    <script src="../dist/vichat-widget.min.js"></script>
+    <script>
+      window.addEventListener('DOMContentLoaded', () => {
+        if (window.ViChat?.mount) {
+          window.__VICHAT_WIDGET__ = window.ViChat.mount({ theme: 'valki' });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <div class="instructions">
+      <h1>Step 2 Manual Checks</h1>
+      <ol>
+        <li>Try landing submit (should open overlay and send).</li>
+        <li>Try overlay send (Enter to send, Shift+Enter new line).</li>
+        <li>Refresh the page (history persists).</li>
+        <li>Try delete (confirm dialog clears history).</li>
+      </ol>
+    </div>
+  </body>
+</html>

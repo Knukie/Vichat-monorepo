@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ViChat Widget Demo</title>
+  <style>
+    body{
+      font-family: system-ui,-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+      background: #0b0b0b;
+      color: #f5f5f5;
+      margin: 0;
+      padding: 32px 20px 160px;
+    }
+    h1{ margin-top:0; }
+    .demo-actions{
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
+      margin-bottom:16px;
+    }
+    .demo-actions button{
+      border: 1px solid rgba(255,255,255,.18);
+      background: rgba(255,255,255,.08);
+      color: #fff;
+      border-radius: 999px;
+      padding: 10px 16px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .demo-actions button:hover{
+      background: rgba(255,255,255,.12);
+    }
+    .demo-note{
+      color: rgba(255,255,255,.75);
+      font-size: 14px;
+      max-width: 720px;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <h1>ViChat Widget Demo</h1>
+  <p class="demo-note">
+    Click a theme to mount the widget. The markup, endpoints, and behaviors mirror the legacy
+    <code>valki-talki-single.html</code> implementation. Mounting a theme will replace any existing widget instance on the page.
+  </p>
+  <div class="demo-actions">
+    <button type="button" id="demo-vichat">Mount ViChat (default)</button>
+    <button type="button" id="demo-valki">Mount Valki Talki</button>
+  </div>
+
+  <script src="../dist/vichat-widget.min.js" defer></script>
+  <script>
+    window.addEventListener('DOMContentLoaded', () => {
+      const ensureMount = (theme) => {
+        if (!window.ViChat || typeof window.ViChat.mount !== 'function') return;
+        window.ViChat.mount({ theme });
+      };
+      document.getElementById('demo-vichat')?.addEventListener('click', () => ensureMount('vichat'));
+      document.getElementById('demo-valki')?.addEventListener('click', () => ensureMount('valki'));
+      ensureMount('vichat');
+    });
+  </script>
+</body>
+</html>

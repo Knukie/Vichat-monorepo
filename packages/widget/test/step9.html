@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Valki Talki Step 9</title>
+    <link rel="stylesheet" href="../dist/vichat-widget.css" />
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        margin: 0;
+        padding: 24px;
+        background: #0b0b0b;
+        color: #fff;
+      }
+      .panel {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        max-width: 620px;
+      }
+      button {
+        border: 0;
+        border-radius: 999px;
+        padding: 8px 14px;
+        background: #4b7bff;
+        color: #fff;
+        cursor: pointer;
+        font-size: 13px;
+      }
+      .row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .hint {
+        font-size: 12px;
+        opacity: 0.7;
+        line-height: 1.4;
+      }
+      code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        font-size: 12px;
+      }
+    </style>
+    <script>
+      const readValue = (key) => {
+        try {
+          return localStorage.getItem(key) || '';
+        } catch (error) {
+          return '';
+        }
+      };
+      const readJson = (key) => {
+        try {
+          const raw = localStorage.getItem(key);
+          return raw ? JSON.parse(raw) : null;
+        } catch (error) {
+          return null;
+        }
+      };
+      const debugEnabled = readValue('valki_step9_debug') === '1';
+      if (debugEnabled) {
+        window.__VALKI_DEBUG__ = true;
+      }
+      const storedFlags = readJson('valki_step9_flags');
+      if (storedFlags) {
+        window.__VALKI_FLAGS__ = storedFlags;
+      }
+
+      window.addEventListener('DOMContentLoaded', () => {
+        const debugStatus = document.querySelector('#debug-status');
+        const flagsStatus = document.querySelector('#flags-status');
+        const setDebug = document.querySelector('#enable-debug');
+        const clearDebug = document.querySelector('#disable-debug');
+        const disableFlags = document.querySelector('#disable-flags');
+        const resetFlags = document.querySelector('#reset-flags');
+        const seedLegacy = document.querySelector('#seed-legacy');
+
+        debugStatus.textContent = debugEnabled ? 'enabled' : 'disabled';
+        flagsStatus.textContent = storedFlags ? JSON.stringify(storedFlags) : 'default';
+
+        setDebug.addEventListener('click', () => {
+          localStorage.setItem('valki_step9_debug', '1');
+          window.location.reload();
+        });
+        clearDebug.addEventListener('click', () => {
+          localStorage.removeItem('valki_step9_debug');
+          window.location.reload();
+        });
+        disableFlags.addEventListener('click', () => {
+          localStorage.setItem('valki_step9_flags', JSON.stringify({
+            enableUploads: false,
+            enableAuth: false
+          }));
+          window.location.reload();
+        });
+        resetFlags.addEventListener('click', () => {
+          localStorage.removeItem('valki_step9_flags');
+          window.location.reload();
+        });
+        seedLegacy.addEventListener('click', () => {
+          const legacy = [
+            {
+              role: 'user',
+              text: 'Legacy question',
+              attachments: [
+                { dataUrl: 'https://cdn.example.com/images/sample.png' },
+                { dataUrl: 'data:image/png;base64,AAAA' }
+              ]
+            },
+            {
+              role: 'bot',
+              text: 'Legacy reply'
+            }
+          ];
+          localStorage.setItem('valki_history_v20', JSON.stringify(legacy));
+          localStorage.setItem('valki_client_id_v20', 'legacy-client-123');
+          localStorage.removeItem('valki_history_vNext');
+          localStorage.removeItem('valki_client_id');
+          localStorage.removeItem('valki_migrated_v1');
+          window.location.reload();
+        });
+      });
+    </script>
+    <script src="../dist/vichat-widget.min.js"></script>
+    <script>
+      window.addEventListener('DOMContentLoaded', () => {
+        if (window.ViChat?.mount) {
+          window.__VICHAT_WIDGET__ = window.ViChat.mount({
+            theme: 'valki',
+            baseUrl: 'https://auth.valki.wiki'
+          });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <div class="panel">
+      <h1>Step 9 Manual Test</h1>
+      <div class="row">
+        <button id="enable-debug" type="button">Enable debug + reload</button>
+        <button id="disable-debug" type="button">Disable debug + reload</button>
+      </div>
+      <div class="row">
+        <button id="disable-flags" type="button">Disable uploads/auth + reload</button>
+        <button id="reset-flags" type="button">Reset flags + reload</button>
+      </div>
+      <div class="row">
+        <button id="seed-legacy" type="button">Seed legacy storage + reload</button>
+      </div>
+      <p class="hint">Debug status: <code id="debug-status"></code></p>
+      <p class="hint">Flags: <code id="flags-status"></code></p>
+      <p class="hint">
+        Migration check: seed legacy storage, reload, then open DevTools and ensure
+        <code>valki_history_vNext</code> exists and <code>valki_migrated_v1</code> is "1".
+      </p>
+      <p class="hint">
+        Diagnostics: open the widget, then run
+        <code>window.__VALKI_DIAG__ && console.log(window.__VALKI_DIAG__())</code>.
+      </p>
+    </div>
+  </body>
+</html>
