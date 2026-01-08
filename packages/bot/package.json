@@ -8,7 +8,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "start": "npx prisma migrate deploy && node src/api/server.js",
+    "start": "prisma migrate deploy && node src/api/server.js",
     "start:api": "node src/api/server.js",
     "start:worker": "node src/worker/discord.js",
 
@@ -19,6 +19,8 @@
     "typecheck": "tsc --noEmit",
     "test": "echo \"No tests configured\"",
 
+    "prisma:generate": "prisma generate",
+    "build": "pnpm prisma:generate",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate deploy"
   },
