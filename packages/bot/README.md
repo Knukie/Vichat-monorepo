@@ -127,6 +127,11 @@ readme: |
   Production
   npm start
 
+  ## 🛠️ Build & Start Notes
+
+  - Build must run `prisma generate` (e.g. via `pnpm prisma:generate`).
+  - Start runs `prisma migrate deploy` before booting the server.
+
   ## 🚄 Railway notes
 
   - Set `PORT` via Railway (the API listens on `process.env.PORT`).
