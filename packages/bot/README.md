@@ -64,7 +64,8 @@ readme: |
   | POST    | `/api/valki`     | Hoofd chat endpoint |
   | GET     | `/api/messages`  | Ophalen messages |
   | POST    | `/api/upload`    | Afbeelding uploaden + normalisatie |
-  | GET     | `/api/health`    | Healthcheck |
+  | GET     | `/health`        | Liveness (process health) |
+  | GET     | `/ready`         | Readiness (DB connectivity) |
 
   De API volgt de shapes van **@valki/contracts**.
 
@@ -104,8 +105,15 @@ readme: |
   Maak een .env bestand op basis van:
 
   DATABASE_URL="postgres://..."
-  DISCORD_TOKEN="optioneel"
-  VALKI_API_KEY="optioneel"
+  OPENAI_API_KEY="..."
+  VALKI_PROMPT_ID="..."
+  AUTH_TOKEN_SECRET="..."
+  DISCORD_CLIENT_ID="..."
+  DISCORD_CLIENT_SECRET="..."
+  DISCORD_REDIRECT_URI="..."
+  GOOGLE_CLIENT_ID="..."
+  GOOGLE_CLIENT_SECRET="..."
+  GOOGLE_REDIRECT_URI="..."
   NODE_ENV=development
   PORT=8080
 
@@ -118,6 +126,13 @@ readme: |
 
   Production
   npm start
+
+  ## 🚄 Railway notes
+
+  - Set `PORT` via Railway (the API listens on `process.env.PORT`).
+  - Recommended healthchecks:
+    - Liveness: `/health`
+    - Readiness: `/ready`
 
   🧩 Belangrijke backend-onderdelen
   1. Chat Pipeline

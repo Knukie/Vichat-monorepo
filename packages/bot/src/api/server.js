@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import crypto from "crypto";
+import { PrismaClient } from "@prisma/client";
 import { cleanText, newConversationId, nowISO, pickPrimaryLocale } from "../core/utils.js";
 import {
   htmlPopupDone,
@@ -24,6 +25,8 @@ import { MAX_IMAGE_BYTES, storeUploadedFile, uploadDir } from "../core/uploads.j
 
 ensureApiEnv();
 
+const prisma = new PrismaClient();
+const READY_TIMEOUT_MS = Number(process.env.READY_TIMEOUT_MS) || 2000;
 const app = express();
 app.set("trust proxy", 1);
 app.use(express.json({ limit: config.JSON_BODY_LIMIT }));
@@ -58,7 +61,29 @@ app.use((err, req, res, next) => {
 });
 
 app.get("/", (_, res) => res.send("Valki Talki is live 🦅"));
-app.get("/health", (_, res) => res.json({ ok: true, env: config.NODE_ENV, ts: nowISO() }));
+app.get("/health", (_, res) =>
+  res.json({
+    ok: true,
+    service: "valki-bot",
+    env: config.NODE_ENV,
+    uptime: Math.floor(process.uptime())
+  })
+);
+
+app.get("/ready", async (_, res) => {
+  try {
+    await Promise.race([
+      prisma.$queryRaw`SELECT 1`,
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Database readiness timeout")), READY_TIMEOUT_MS)
+      )
+    ]);
+    return res.status(200).json({ ok: true });
+  } catch (e) {
+    const message = e?.message || String(e);
+    return res.status(503).json({ ok: false, error: message });
+  }
+});
 
 app.get("/db/check", async (_, res) => {
   try {
@@ -675,15 +700,27 @@ app.post("/api/valki", optionalAuth, async (req, res) => {
   }
 });
 
-const server = app.listen(Number(config.PORT) || 3000, () => {
-  console.log(`🌐 HTTP API running on port ${config.PORT} (${config.NODE_ENV})`);
+const port = Number(config.PORT) || 3000;
+const server = app.listen(port, () => {
+  console.log(`🌐 HTTP API running on port ${port} (${config.NODE_ENV})`);
 });
 
+let isShuttingDown = false;
 async function shutdown(signal) {
+  if (isShuttingDown) return;
+  isShuttingDown = true;
   try {
     console.log(`\n🧯 Shutdown (${signal})...`);
-    server?.close?.(() => console.log("HTTP server closed."));
-    await pool.end().catch(() => {});
+    await new Promise((resolve) => server?.close?.(resolve));
+    console.log("HTTP server closed.");
+    await prisma.$disconnect().then(
+      () => console.log("Prisma disconnected."),
+      (err) => console.warn("Prisma disconnect failed:", err?.message || err)
+    );
+    await pool.end().then(
+      () => console.log("Postgres pool closed."),
+      (err) => console.warn("Postgres pool close failed:", err?.message || err)
+    );
     process.exit(0);
   } catch {
     process.exit(1);

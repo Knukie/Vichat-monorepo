@@ -1,9 +1,8 @@
 import crypto from "crypto";
 import { AUTH_POSTMESSAGE_TYPE, cleanText } from "./utils.js";
-import { config, corsOrigins, mustEnv, ensureSharedEnv } from "./config.js";
+import { config, corsOrigins, ensureSharedEnv } from "./config.js";
 
 ensureSharedEnv();
-mustEnv("AUTH_TOKEN_SECRET", config.AUTH_TOKEN_SECRET);
 
 export function b64urlEncode(input) {
   const buf = Buffer.isBuffer(input) ? input : Buffer.from(String(input));

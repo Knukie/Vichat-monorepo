@@ -1,12 +1,5 @@
 import "dotenv/config";
 
-export function mustEnv(name, value) {
-  if (!value) {
-    console.error(`❌ Missing ${name}`);
-    process.exit(1);
-  }
-}
-
 const env = process.env;
 
 export const config = {
@@ -48,19 +41,28 @@ export const MAX_INPUT =
 export const MAX_OUTPUT =
   Number.isFinite(Number(config.MAX_OUTPUT_TOKENS)) ? Number(config.MAX_OUTPUT_TOKENS) : 800;
 
+function requireEnvVars(names) {
+  const missing = names.filter((name) => !config[name]);
+  if (!missing.length) return;
+  console.error("❌ Missing required environment variables:");
+  for (const name of missing) {
+    console.error(`  - ${name}`);
+  }
+  process.exit(1);
+}
+
 export function ensureSharedEnv() {
-  mustEnv("OPENAI_API_KEY", config.OPENAI_API_KEY);
-  mustEnv("DATABASE_URL", config.DATABASE_URL);
-  mustEnv("VALKI_PROMPT_ID", config.VALKI_PROMPT_ID);
-  mustEnv("AUTH_TOKEN_SECRET", config.AUTH_TOKEN_SECRET);
+  requireEnvVars(["DATABASE_URL", "OPENAI_API_KEY", "VALKI_PROMPT_ID", "AUTH_TOKEN_SECRET"]);
 }
 
 export function ensureApiEnv() {
   ensureSharedEnv();
-  mustEnv("DISCORD_CLIENT_ID", config.DISCORD_CLIENT_ID);
-  mustEnv("DISCORD_CLIENT_SECRET", config.DISCORD_CLIENT_SECRET);
-  mustEnv("DISCORD_REDIRECT_URI", config.DISCORD_REDIRECT_URI);
-  mustEnv("GOOGLE_CLIENT_ID", config.GOOGLE_CLIENT_ID);
-  mustEnv("GOOGLE_CLIENT_SECRET", config.GOOGLE_CLIENT_SECRET);
-  mustEnv("GOOGLE_REDIRECT_URI", config.GOOGLE_REDIRECT_URI);
+  requireEnvVars([
+    "DISCORD_CLIENT_ID",
+    "DISCORD_CLIENT_SECRET",
+    "DISCORD_REDIRECT_URI",
+    "GOOGLE_CLIENT_ID",
+    "GOOGLE_CLIENT_SECRET",
+    "GOOGLE_REDIRECT_URI"
+  ]);
 }
