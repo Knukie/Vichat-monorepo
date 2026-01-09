@@ -1,8 +1,10 @@
 import { ensureMarkdownLibs, hardenLinks, renderMarkdown } from '../markdown.js';
 
+/** @typedef {import('@valki/contracts').ImageMeta} ImageMeta */
 /** @typedef {import('@valki/contracts').Role} Role */
 /** @typedef {Role | 'user'} UiRole */
-/** @typedef {{ type: UiRole, text: string }} UiMessageInput */
+/** @typedef {Partial<ImageMeta> & { dataUrl?: string }} UiMessageImage */
+/** @typedef {{ type: UiRole, text: string, images?: UiMessageImage[] }} UiMessageInput */
 
 function isNearBottom(el, thresholdPx = 90) {
   if (!el) return true;
@@ -27,16 +29,16 @@ export function createMessageController({
   }
 
   /** @param {UiMessageInput} param0 */
-  async function addMessage({ type, text }) {
+  async function addMessage({ type, text, images }) {
     const stick = isNearBottom(messagesEl);
     if (type === 'bot') await ensureMarkdownLibs();
-    messagesInner.appendChild(createMessageRow({ type, text }));
+    messagesInner.appendChild(createMessageRow({ type, text, images }));
     scrollToBottom(stick);
     updateDeleteButtonVisibility?.();
   }
 
   /** @param {UiMessageInput} param0 */
-  function createMessageRow({ type, text }) {
+  function createMessageRow({ type, text, images }) {
     const row = document.createElement('div');
     row.className = `valki-msg-row ${type === 'user' ? 'user' : 'bot'}`;
 
@@ -59,6 +61,26 @@ export function createMessageController({
       hardenLinks(bubble);
     } else {
       bubble.textContent = text;
+    }
+
+    if (Array.isArray(images) && images.length) {
+      const attachmentTray = document.createElement('div');
+      attachmentTray.className = 'valki-msg-attachments';
+      images.forEach((image) => {
+        const src = image?.url || image?.dataUrl;
+        if (!src || typeof src !== 'string') return;
+        const wrap = document.createElement('div');
+        wrap.className = 'valki-msg-attachment';
+        const img = document.createElement('img');
+        img.src = src;
+        img.alt = image?.name || 'attachment';
+        img.loading = 'lazy';
+        wrap.appendChild(img);
+        attachmentTray.appendChild(wrap);
+      });
+      if (attachmentTray.children.length) {
+        bubble.appendChild(attachmentTray);
+      }
     }
 
     row.appendChild(bubble);

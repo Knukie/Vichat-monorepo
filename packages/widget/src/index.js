@@ -28,7 +28,7 @@ import { resolveTheme } from './themes/index.js';
 /** @typedef {import('@valki/contracts').Role} Role */
 /** @typedef {import('@valki/contracts').User} User */
 /** @typedef {Role | 'user'} UiRole */
-/** @typedef {Pick<Message, 'role'> & { role: UiRole, text: string }} UiMessage */
+/** @typedef {Pick<Message, 'role'> & { role: UiRole, text: string, images?: ImageMeta[] }} UiMessage */
 /** @typedef {{ type: UiRole, text: string }} UiGuestMessage */
 /** @typedef {User & { name?: string | null }} UiUser */
 /** @typedef {Partial<ImageMeta> & { name?: string, dataUrl?: string }} UiImagePayload */
@@ -638,7 +638,7 @@ class ViChatWidget {
     if (!ok && !messages.length) return false;
     this.messageController.clearMessagesUI();
     for (const m of messages || []) {
-      await this.messageController.addMessage({ type: m.role, text: m.text });
+      await this.messageController.addMessage({ type: m.role, text: m.text, images: m.images });
     }
     this.messageController.scrollToBottom(true);
     this.updateDeleteButtonVisibility();
@@ -730,7 +730,7 @@ class ViChatWidget {
       .snapshot()
       .filter((x) => x.dataUrl || x.file);
 
-    await this.messageController.addMessage({ type: 'user', text: q });
+    await this.messageController.addMessage({ type: 'user', text: q, images: imagesSnapshot });
 
     if (!this.isLoggedIn()) {
       this.guestHistory.push({ type: 'user', text: q });
