@@ -1,18 +1,18 @@
 # Project Audit Report (Vichat-monorepo)
 
-Date: 2025-02-14
+Date: 2025-09-27
 
 ## Summary
 
 **What works**
 - Shared contracts package exports core domain types (Message, Conversation, User, ImageMeta) from a single barrel file, with an ImageMetadata alias for compatibility.
 - Backend exposes an HTTP API with auth, message history, upload, and Valki inference routes; image normalization and storage are handled server-side.
-- Widget builds via an esbuild pipeline and has a consistent config layer for endpoint URLs.
+- Widget builds via an esbuild pipeline, uploads attachments via `/api/upload`, and renders image thumbnails in message bubbles.
 
 **What’s risky / unclear**
-- The widget collects image attachments as base64 data URLs and sends them in `images`, but the backend explicitly strips legacy base64 payloads and only accepts URL-based images; uploads are available but not used by the widget.
+- Guest message history persists base64 `dataUrl` images locally and imports them to `/api/import-guest` without uploading; backend strips base64 payloads, so guest image history is lost on login.
 - Backend uses both raw SQL (pg) and a Prisma schema; migrations exist, but runtime DB writes are done via `pg`, so Prisma-generated types may not reflect runtime usage.
-- Widget fetches message history but maps it down to `{ role, text }` only, losing images and metadata.
+- Bot responses that include images are not rendered or persisted in guest history because `/api/valki` response images are not passed into the UI renderer.
 - Widget README describes a React/TSX structure that does not exist in the current codebase, which can mislead UI work.
 - `/api/messages` requires auth or a guest conversation ID; the widget only fetches messages when logged in, so guest history is local-only.
 
@@ -59,11 +59,12 @@ export type { User, UserRole, UserStatus } from "./user.js";
    - Backend `ImageMeta` typedef includes `name`, `size`, `host` optional fields.
    - Contract `ImageMeta` only has `url` + `type`.
 
-2) **Widget sends base64 attachments in `images`, but backend strips them.**
-   - Backend sanitization explicitly removes `dataUrl` / `data` fields.
+2) **Guest history import still sends base64 images.**
+   - Guest history stores `dataUrl` values and imports them to `/api/import-guest`.
+   - Backend sanitization removes `dataUrl` / `data` fields, so imported images are dropped.
 
 **Minimal fix strategy**
-- **Preferred**: Add an upload step in the widget that calls `/api/upload` and converts attachments into `{ url, type, name, size }` before sending to `/api/valki`.
+- **Preferred**: Persist uploaded URLs in guest history (or upload during import) so `/api/import-guest` only receives URL-based images.
 - **If needed**: Extend `ImageMeta` in contracts to include optional `name`, `size`, `host` (to match backend), and update widget to use only URL-based images.
 
 ---
@@ -187,14 +188,16 @@ return res.status(500).json({ error: "ksshh… Internal backend error", requestI
   - `GET /api/messages`
   - `POST /api/clear`
   - `POST /api/import-guest`
+  - `POST /api/upload`
   - `POST /api/valki`
-- **No call to `/api/upload`** exists in the widget code.
+- Upload flow is used to convert local attachments into URL-based images before sending to `/api/valki`.
 
 Excerpt (endpoint build):
 ```
 return {
   baseUrl: trimmed,
   apiValki: `${trimmed}/api/valki`,
+  apiUpload: `${trimmed}/api/upload`,
   apiMe: `${trimmed}/api/me`,
   apiMessages: `${trimmed}/api/messages`,
   apiClear: `${trimmed}/api/clear`,
@@ -205,12 +208,12 @@ return {
 
 ### Payload shapes + contracts usage
 - Types are imported from `@valki/contracts` via JSDoc.
-- `askValki` payload includes `{ message, clientId, images, agentId }`.
-- Attachments are stored as `{ name, type, dataUrl }` and forwarded directly.
+- `askValki` payload includes `{ message, clientId, images, agentId }` with URL-based images returned by `/api/upload`.
+- Attachments are stored locally as `{ name, type, dataUrl, file }` for preview; base64 data is not sent to `/api/valki`.
 
 Excerpt (askValki payload):
 ```
-const payload = { message, clientId, images, agentId };
+const payload = { message, clientId, images: uploadedImages, agentId };
 ...
 await fetch(config.apiValki, {
   method: 'POST',
@@ -219,33 +222,43 @@ await fetch(config.apiValki, {
 });
 ```
 
-Excerpt (attachments snapshot includes dataUrl):
+Excerpt (attachments snapshot includes dataUrl for preview only):
 ```
 return (attachments || []).map((att) => ({
   name: att?.name || 'image',
   type: att?.type || 'image/jpeg',
-  dataUrl: att?.dataUrl || ''
+  dataUrl: att?.dataUrl || '',
+  file: att?.file
 }));
+```
+
+Excerpt (upload flow to `/api/upload`):
+```
+const res = await fetch(config.apiUpload, {
+  method: 'POST',
+  headers: uploadHeaders,
+  body: form
+});
 ```
 
 ### UI components for images
 - **Attachment tray + previews**: `packages/widget/src/core/attachments.js`
 - **Template container**: `packages/widget/src/core/ui/template.html`
-- **Message rendering**: `packages/widget/src/core/ui/messages.js` (text + markdown only; no image rendering)
+- **Message rendering**: `packages/widget/src/core/ui/messages.js` (text + markdown with image thumbnails)
 
 Current limitations / TODOs observed
-- No upload flow: attachments are base64 data URLs, but backend requires URL-only images.
-- No image rendering in message bubbles (only text/markdown).
-- Message history fetch ignores backend `images` payload and maps to `{ role, text }`.
+- Guest history import uses base64 `dataUrl` images when importing to `/api/import-guest`, so backend strips them and guest image history is lost on login.
+- Bot responses that include `images` are not rendered or stored because `/api/valki` response images are not passed into the message renderer.
+- Widget README remains out of sync with the actual JS/ESBuild structure.
 
-Excerpt (message rendering ignores images):
+Excerpt (message rendering includes images):
 ```
-function createMessageRow({ type, text }) {
+function createMessageRow({ type, text, images }) {
   ...
-  if (type === 'bot') {
-    bubble.innerHTML = renderMarkdown(text);
-  } else {
-    bubble.textContent = text;
+  if (Array.isArray(images) && images.length) {
+    const attachmentTray = document.createElement('div');
+    attachmentTray.className = 'valki-msg-attachments';
+    ...
   }
   ...
 }
@@ -255,22 +268,22 @@ function createMessageRow({ type, text }) {
 
 ## E) Blockers for UI work (Top 5)
 
-1) **Image flow mismatch**: Widget sends base64 images, backend strips them (only URL images accepted).
-2) **No upload call in widget**: `/api/upload` exists but unused, so images can’t be persisted or displayed.
-3) **Message history drops images**: Widget maps API messages to `{ role, text }` only.
-4) **Contracts vs backend image metadata mismatch**: backend stores `name/size/host`, contracts only define `url/type`.
-5) **Widget README is out of sync**: references TSX/React files that are absent, risking confusion in UI changes.
+1) **Guest image history import mismatch**: guest history stores base64 `dataUrl` images, and `/api/import-guest` strips them.
+2) **Bot reply images not shown**: `/api/valki` response images are not passed into the UI renderer or guest history.
+3) **Contracts vs backend image metadata mismatch**: backend stores `name/size/host`, contracts only define `url/type`.
+4) **Widget README is out of sync**: references TSX/React files that are absent, risking confusion in UI changes.
+5) **Guest history is still local-only**: `/api/messages` requires auth, so guest history remains client-side until login.
 
 ---
 
 ## F) Next UI tasks (prioritized, 10 items)
 
-1) Implement upload flow in widget: call `/api/upload`, then send returned `{ url, type, name, size }` to `/api/valki`.
-2) Update widget message rendering to display image thumbnails for messages containing images.
-3) Extend widget message history mapping to include `images` from `/api/messages`.
+1) Persist uploaded image URLs in guest history and use them when importing to `/api/import-guest` (avoid base64 payloads).
+2) If a guest history entry only has `dataUrl`, upload it during login import and replace with `{ url, type, name, size }`.
+3) Pass `/api/valki` response images into `addMessage` and guest history persistence so bot attachments render.
 4) Align `ImageMeta` type across contracts/backend/widget (add optional `name`, `size`, `host` or formalize separate UI type).
 5) Add UI feedback for upload errors (413 size, 400 invalid type) and retry option.
-6) Update attachment preview to show upload progress and remove once uploaded (URL-based). 
+6) Update attachment preview to show upload progress and remove once uploaded (URL-based).
 7) Add strict validation in widget for `image/jpeg` and `image/png`, consistent with backend rules.
 8) Add a unified image uploader utility in widget (shared by composer + any future gallery).
 9) Ensure CSP-safe rendering for uploaded images in the widget template.
@@ -297,38 +310,34 @@ const url = cleanText(item?.url);
 if (!isAllowedUrl(url)) continue;
 ```
 
-3) `packages/widget/src/core/api.js` (askValki payload)
+3) `packages/widget/src/core/api.js` (upload flow + URL-based payload)
 ```
-const payload = { message, clientId, images, agentId };
-...
-await fetch(config.apiValki, {
+const res = await fetch(config.apiUpload, {
   method: 'POST',
-  headers,
-  body: JSON.stringify(payload)
+  headers: uploadHeaders,
+  body: form
 });
+...
+const payload = { message, clientId, images: uploadedImages, agentId };
 ```
 
-4) `packages/widget/src/core/attachments.js` (base64 attachments)
+4) `packages/widget/src/core/attachments.js` (attachment snapshot)
 ```
 return (attachments || []).map((att) => ({
   name: att?.name || 'image',
   type: att?.type || 'image/jpeg',
-  dataUrl: att?.dataUrl || ''
+  dataUrl: att?.dataUrl || '',
+  file: att?.file
 }));
 ```
 
-5) `packages/bot/src/api/server.js` (upload route)
+5) `packages/widget/src/core/ui/messages.js` (message image rendering)
 ```
-app.post("/api/upload", optionalAuth, (req, res) => {
+if (Array.isArray(images) && images.length) {
+  const attachmentTray = document.createElement('div');
+  attachmentTray.className = 'valki-msg-attachments';
   ...
-  const meta = await storeUploadedFile({
-    buffer: file.buffer,
-    mime: normalizeMime(file.mimetype),
-    name: file.originalname,
-    size: file.size
-  });
-  return res.json({ url: publicUrl, mime: meta?.type, size: meta?.size, name: meta?.name });
-});
+}
 ```
 
 ---
