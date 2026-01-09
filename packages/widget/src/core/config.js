@@ -26,6 +26,7 @@ function buildEndpoints(baseUrl) {
   return {
     baseUrl: trimmed,
     apiValki: `${trimmed}/api/valki`,
+    apiUpload: `${trimmed}/api/upload`,
     apiMe: `${trimmed}/api/me`,
     apiMessages: `${trimmed}/api/messages`,
     apiClear: `${trimmed}/api/clear`,
