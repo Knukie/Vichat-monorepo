@@ -1,4 +1,5 @@
 import { config } from "./config.js";
+import { decodeDataUrlToBuffer, isDataImageUrl, uploadBufferAndGetPublicUrl } from "./imageProcessing.js";
 import { cleanText } from "./utils.js";
 
 export const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png"]);
@@ -82,6 +83,54 @@ export function sanitizeImages(input = []) {
   }
 
   return { images, warnings };
+}
+
+export async function normalizeImportImages(input = []) {
+  const warnings = [];
+
+  if (!Array.isArray(input) || !input.length) return { images: [], warnings };
+
+  const maxList = input.slice(0, MAX_IMAGES);
+  if (input.length > MAX_IMAGES) {
+    warnings.push("Too many images provided. Only the first 4 were kept.");
+  }
+
+  const normalized = [];
+
+  for (const item of maxList) {
+    const candidate = cleanText(item?.url || item?.dataUrl || item?.data);
+    if (!candidate) continue;
+
+    const name = cleanText(item?.name).slice(0, 180);
+    const type = normalizeMime(item?.type);
+    const size = Number(item?.size);
+
+    if (isDataImageUrl(candidate)) {
+      try {
+        const { buffer, mime } = decodeDataUrlToBuffer(candidate);
+        const uploaded = await uploadBufferAndGetPublicUrl(buffer, mime, name || "upload");
+        if (!uploaded?.url) continue;
+        normalized.push({
+          url: uploaded.url,
+          name: cleanText(uploaded.name) || name || undefined,
+          type: cleanText(uploaded.type) || mime || undefined,
+          size: Number(uploaded.size) || buffer.length
+        });
+      } catch (err) {
+        warnings.push("Failed to import one image from guest history.");
+      }
+      continue;
+    }
+
+    const entry = { url: candidate };
+    if (name) entry.name = name;
+    if (type && ALLOWED_IMAGE_TYPES.has(type)) entry.type = type;
+    if (Number.isFinite(size) && size > 0) entry.size = size;
+    normalized.push(entry);
+  }
+
+  const { images, warnings: sanitizeWarnings } = sanitizeImages(normalized);
+  return { images, warnings: warnings.concat(sanitizeWarnings) };
 }
 
 export function summarizeImageDiagnostics(images = []) {
