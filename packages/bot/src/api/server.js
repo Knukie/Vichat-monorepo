@@ -13,10 +13,12 @@ import {
 import {
   ensureTablesExistOrThrow,
   getOrCreateConversationForUser,
+  saveMessage,
   upsertUserDiscord,
   upsertUserGoogle,
   pool
 } from "../core/db.js";
+import { prepareGuestImportMessages } from "../core/importGuest.js";
 import { runValki, ValkiModelError } from "../core/valki.js";
 import { simpleRateLimit } from "../core/rateLimit.js";
 import { config, corsOrigins, ensureApiEnv } from "../core/config.js";
@@ -568,28 +570,14 @@ app.post("/api/import-guest", requireAuth, async (req, res) => {
     const items = Array.isArray(req.body?.messages) ? req.body.messages : [];
     if (!items.length) return res.json({ ok: true, imported: 0 });
 
-    const MAX_ITEMS = 80;
-    const MAX_LEN = 1200;
-
-    const cleaned = items
-      .slice(0, MAX_ITEMS)
-      .map((m) => {
-        const role = cleanText(m?.role) === "assistant" ? "assistant" : "user";
-        const content = cleanText(m?.content).slice(0, MAX_LEN);
-        return content ? { role, content } : null;
-      })
-      .filter(Boolean);
+    const cleaned = await prepareGuestImportMessages(items);
 
     if (!cleaned.length) return res.json({ ok: true, imported: 0 });
 
     const cid = await getOrCreateConversationForUser(req.user.id);
-    const ts = nowISO();
 
     for (const m of cleaned) {
-      await pool.query(
-        "INSERT INTO messages (conversation_id, role, content, ts) VALUES ($1,$2,$3,$4)",
-        [cid, m.role, m.content, ts]
-      );
+      await saveMessage(cid, m.role, m.content, m.images || []);
     }
 
     return res.json({ ok: true, imported: cleaned.length });
