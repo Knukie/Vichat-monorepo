@@ -5,7 +5,7 @@
 /** @typedef {Role | 'user'} UiRole */
 /** @typedef {Pick<Message, 'role'> & { role: UiRole, text: string }} UiMessage */
 /** @typedef {User & { name?: string | null }} UiUser */
-/** @typedef {Partial<ImageMeta> & { name?: string, dataUrl?: string }} UiImagePayload */
+/** @typedef {Partial<ImageMeta> & { name?: string, dataUrl?: string, file?: File }} UiImagePayload */
 /** @typedef {{ ok: boolean, messages: UiMessage[] }} FetchMessagesResult */
 
 /** @returns {Promise<UiUser | null>} */
@@ -87,7 +87,76 @@ export async function importGuestMessages({ token, guestHistory, config, agentId
 
 /** @param {{ message: string, clientId: string, images: UiImagePayload[], token: string, config: object, agentId: string }} args */
 export async function askValki({ message, clientId, images, token, config, agentId }) {
-  const payload = { message, clientId, images, agentId };
+  const uploadHeaders = {};
+  if (token) uploadHeaders.Authorization = `Bearer ${token}`;
+
+  /** @type {ImageMeta[]} */
+  const uploadedImages = [];
+  for (const image of images || []) {
+    if (image?.url) {
+      uploadedImages.push({
+        url: image.url,
+        type: image.type,
+        name: image.name,
+        size: image.size
+      });
+      continue;
+    }
+
+    let file = image?.file;
+    let name = image?.name || (file && file.name) || 'upload';
+    let type = image?.type || (file && file.type) || 'image/jpeg';
+
+    if (!file && image?.dataUrl) {
+      const res = await fetch(image.dataUrl).catch(() => null);
+      if (res) {
+        const blob = await res.blob().catch(() => null);
+        if (blob) {
+          if (!type) type = blob.type || 'image/jpeg';
+          file = new File([blob], name, { type: type || blob.type });
+        }
+      }
+    }
+
+    if (!file) continue;
+
+    const form = new FormData();
+    form.append('file', file, name);
+
+    try {
+      const res = await fetch(config.apiUpload, {
+        method: 'POST',
+        headers: uploadHeaders,
+        body: form
+      });
+
+      if (!res.ok) {
+        let errMsg = config.copy.genericError;
+        const ct = (res.headers.get('content-type') || '').toLowerCase();
+        if (ct.includes('application/json')) {
+          const json = await res.json().catch(() => null);
+          if (json && typeof json.error === 'string') {
+            errMsg = `ksshh… ${json.error}`;
+          }
+        }
+        return { ok: false, message: errMsg };
+      }
+
+      const data = await res.json().catch(() => null);
+      if (data && typeof data.url === 'string') {
+        uploadedImages.push({
+          url: data.url,
+          type: data.mime,
+          name: data.name,
+          size: data.size
+        });
+      }
+    } catch {
+      return { ok: false, message: config.copy.genericError };
+    }
+  }
+
+  const payload = { message, clientId, images: uploadedImages, agentId };
   const headers = { 'Content-Type': 'application/json' };
   if (token) headers.Authorization = `Bearer ${token}`;
 

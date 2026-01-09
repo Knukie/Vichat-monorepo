@@ -726,7 +726,9 @@ class ViChatWidget {
     this.setSendingState(true);
 
     /** @type {UiImagePayload[]} */
-    const imagesSnapshot = this.attachmentController.snapshot().filter((x) => x.dataUrl);
+    const imagesSnapshot = this.attachmentController
+      .snapshot()
+      .filter((x) => x.dataUrl || x.file);
 
     await this.messageController.addMessage({ type: 'user', text: q });
 
