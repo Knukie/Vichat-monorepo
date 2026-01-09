@@ -72,7 +72,7 @@ client.on(Events.MessageCreate, async (m) => {
 
     const cid = m.inGuild() ? m.channel.id : m.author.id;
     const requestId = m.id;
-    const reply = await runValki({
+    const { reply } = await runValki({
       userText: input,
       conversationId: cid,
       preferredLocale: "",
