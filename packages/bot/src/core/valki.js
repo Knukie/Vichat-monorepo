@@ -74,9 +74,12 @@ export async function runValki({
   const hasImages = sanitizedImages.length > 0;
   const hasText = !!rawText && !isPlaceholderImage;
 
-  if (!hasText && !hasImages) return MSG_LOST;
-  if (hasText && rawText.length > MAX_INPUT)
-    return `🦅 krrt… too long. Keep it under ${MAX_INPUT} chars.`;
+  if (!hasText && !hasImages) {
+    return { reply: MSG_LOST, assistantImages: [] };
+  }
+  if (hasText && rawText.length > MAX_INPUT) {
+    return { reply: `🦅 krrt… too long. Keep it under ${MAX_INPUT} chars.`, assistantImages: [] };
+  }
 
   await ensureTablesExistOrThrow();
 
@@ -156,5 +159,5 @@ export async function runValki({
     // best-effort summary, ignore errors
   }
 
-  return reply;
+  return { reply, assistantImages: [] };
 }
