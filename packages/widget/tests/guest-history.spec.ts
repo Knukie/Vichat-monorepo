@@ -85,6 +85,10 @@ test('guest history persists text-only messages', async ({ page }) => {
   await page.reload({ waitUntil: 'domcontentloaded' });
   await waitForWidget(page);
 
+  const restoredHistory = await page.evaluate(() => window.__VICHAT_WIDGET__.guestHistory);
+  expect(restoredHistory[0]).toMatchObject({ type: 'user', text: 'Hello guest' });
+  expect(restoredHistory[0].images).toBeUndefined();
+
   const restoredBubble = page
     .locator('.valki-msg-row.user .valki-msg-bubble')
     .filter({ hasText: 'Hello guest' });
@@ -116,6 +120,10 @@ test('guest history persists image attachments', async ({ page }) => {
 
   await page.reload({ waitUntil: 'domcontentloaded' });
   await waitForWidget(page);
+
+  const restoredHistory = await page.evaluate(() => window.__VICHAT_WIDGET__.guestHistory);
+  expect(restoredHistory[0]).toMatchObject({ type: 'user', text: 'Image guest' });
+  expect(restoredHistory[0].images?.[0]?.dataUrl).toContain('data:image');
 
   const restoredBubble = page
     .locator('.valki-msg-row.user .valki-msg-bubble')

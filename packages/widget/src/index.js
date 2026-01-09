@@ -29,7 +29,8 @@ import { resolveTheme } from './themes/index.js';
 /** @typedef {import('@valki/contracts').User} User */
 /** @typedef {Role | 'user'} UiRole */
 /** @typedef {Pick<Message, 'role'> & { role: UiRole, text: string, images?: ImageMeta[] }} UiMessage */
-/** @typedef {{ type: UiRole, text: string, images?: ImageMeta[] }} UiGuestMessage */
+/** @typedef {Partial<ImageMeta> & { dataUrl?: string }} UiGuestImage */
+/** @typedef {{ type: UiRole, text: string, images?: UiGuestImage[] }} UiGuestMessage */
 /** @typedef {User & { name?: string | null }} UiUser */
 /** @typedef {Partial<ImageMeta> & { name?: string, dataUrl?: string }} UiImagePayload */
 
@@ -619,6 +620,7 @@ class ViChatWidget {
       config: this.config,
       agentId: this.currentAgentId
     });
+    // TODO: Guest image attachments are saved client-side but not yet imported server-side.
     this.guestHistory = [];
     clearGuestHistory(this.config, this.currentAgentId);
     await this.loadLoggedInMessagesToUI({ forceOpen: true });
