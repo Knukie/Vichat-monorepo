@@ -1205,6 +1205,33 @@ html.valki-chat-open #valki-root .valki-messages{
 }
 
 /* =========================================================
+   Message attachments
+========================================================= */
+
+#valki-root .valki-msg-attachments{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+#valki-root .valki-msg-attachment{
+  width: 120px;
+  height: 120px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.12);
+  background: #101010;
+}
+
+#valki-root .valki-msg-attachment img{
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* =========================================================
    Bot message bubble — subtle glass blur for readability
 ========================================================= */
 

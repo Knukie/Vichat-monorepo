@@ -3,7 +3,7 @@
 /** @typedef {import('@valki/contracts').Role} Role */
 /** @typedef {import('@valki/contracts').User} User */
 /** @typedef {Role | 'user'} UiRole */
-/** @typedef {Pick<Message, 'role'> & { role: UiRole, text: string }} UiMessage */
+/** @typedef {Pick<Message, 'role'> & { role: UiRole, text: string, images?: ImageMeta[] }} UiMessage */
 /** @typedef {User & { name?: string | null }} UiUser */
 /** @typedef {Partial<ImageMeta> & { name?: string, dataUrl?: string, file?: File }} UiImagePayload */
 /** @typedef {{ ok: boolean, messages: UiMessage[] }} FetchMessagesResult */
@@ -42,7 +42,8 @@ export async function fetchMessages({ token, config, agentId }) {
       ok: true,
       messages: data.messages.map((m) => ({
         role: m.role === 'assistant' ? 'bot' : 'user',
-        text: String(m.content || '')
+        text: String(m.content || ''),
+        images: Array.isArray(m.images) ? m.images : []
       }))
     };
   } catch {
