@@ -1,7 +1,12 @@
 import { MAX_INPUT, MAX_OUTPUT } from "./config.js";
 import { ensureTablesExistOrThrow, getConversation, saveMessage, setConversationSummary } from "./db.js";
 import { sanitizeImages } from "./images.js";
-import { isValidHttpUrl } from "./imageProcessing.js";
+import {
+  decodeDataUrlToBuffer,
+  isDataImageUrl,
+  isValidHttpUrl,
+  uploadBufferAndGetPublicUrl
+} from "./imageProcessing.js";
 import { openai } from "./openai.js";
 import {
   MSG_LOST,
@@ -61,6 +66,82 @@ function defaultImagePrompt(locale = "") {
   return "Analyze these images.";
 }
 
+function normalizeAssistantMime(mime) {
+  const m = cleanText(mime || "").toLowerCase();
+  if (m === "image/jpg") return "image/jpeg";
+  return m;
+}
+
+function pickAssistantImageUrl(part) {
+  return (
+    cleanText(part?.image_url?.url) ||
+    cleanText(part?.image_url) ||
+    cleanText(part?.url) ||
+    cleanText(part?.image?.url) ||
+    cleanText(part?.image?.image_url)
+  );
+}
+
+function pickAssistantImageBase64(part) {
+  return (
+    cleanText(part?.b64_json) ||
+    cleanText(part?.data) ||
+    cleanText(part?.image?.b64_json) ||
+    cleanText(part?.image?.data)
+  );
+}
+
+async function materializeAssistantImage(part) {
+  const url = pickAssistantImageUrl(part);
+  if (url) {
+    if (isDataImageUrl(url)) {
+      const { buffer, mime } = decodeDataUrlToBuffer(url);
+      const uploaded = await uploadBufferAndGetPublicUrl(buffer, mime, "assistant-image");
+      return uploaded?.url ? uploaded : null;
+    }
+
+    return {
+      url,
+      name: cleanText(part?.name),
+      type: normalizeAssistantMime(part?.mime_type || part?.image?.mime_type),
+      size: Number(part?.size) || undefined
+    };
+  }
+
+  const base64 = pickAssistantImageBase64(part);
+  if (!base64) return null;
+
+  const mime = normalizeAssistantMime(part?.mime_type || part?.image?.mime_type || "image/png");
+  const buffer = Buffer.from(base64, "base64");
+  if (!buffer?.length) return null;
+  const uploaded = await uploadBufferAndGetPublicUrl(buffer, mime, "assistant-image");
+  return uploaded?.url ? uploaded : null;
+}
+
+async function extractAssistantImages(resp) {
+  const parts = [];
+  for (const item of resp?.output || []) {
+    if (item?.type === "message") {
+      for (const c of item?.content || []) parts.push(c);
+    } else {
+      parts.push(item);
+    }
+  }
+
+  const images = [];
+  for (const part of parts) {
+    try {
+      const image = await materializeAssistantImage(part);
+      if (image?.url) images.push(image);
+    } catch (err) {
+      console.warn("Skipping assistant image payload:", err?.message || err);
+    }
+  }
+
+  const { images: sanitized } = sanitizeImages(images);
+  return sanitized;
+}
+
 export async function runValki({
   userText,
   conversationId,
@@ -103,6 +184,7 @@ export async function runValki({
   await saveMessage(conversationId, "user", effectiveText, sanitizedImages, { requestId });
 
   let reply = "";
+  let assistantImages = [];
   try {
     /** @type {import("openai/resources/responses/responses").ResponseInputMessageContentList} */
     const userParts = [];
@@ -137,6 +219,7 @@ export async function runValki({
     });
 
     reply = extractTextFromResponse(resp) || MSG_LOST;
+    assistantImages = await extractAssistantImages(resp);
 
     if (!reply) {
       console.log("⚠️ Empty OpenAI response:", JSON.stringify(resp, null, 2));
@@ -147,7 +230,7 @@ export async function runValki({
     throw new ValkiModelError("Temporary error analyzing image.");
   }
 
-  await saveMessage(conversationId, "assistant", reply, [], { requestId });
+  await saveMessage(conversationId, "assistant", reply, assistantImages, { requestId });
 
   try {
     const freshMemory = await getConversation(conversationId);
@@ -156,5 +239,5 @@ export async function runValki({
     // best-effort summary, ignore errors
   }
 
-  return reply;
+  return { reply, assistantImages };
 }

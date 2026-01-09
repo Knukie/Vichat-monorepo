@@ -664,7 +664,7 @@ app.post("/api/valki", optionalAuth, async (req, res) => {
 
     const userTextForRun = hasText ? userMessage : "[image]";
 
-    const reply = await runValki({
+    const { reply, assistantImages } = await runValki({
       userText: userTextForRun,
       conversationId: cid,
       preferredLocale,
@@ -675,6 +675,14 @@ app.post("/api/valki", optionalAuth, async (req, res) => {
     const responseBody = { reply, conversationId: cid };
     const cleanedImages = responseImages(normalizedImages);
     if (cleanedImages.length) responseBody.images = cleanedImages;
+    const cleanedAssistantImages = responseImages(assistantImages);
+    if (cleanedAssistantImages.length) {
+      responseBody.assistantImages = cleanedAssistantImages;
+      responseBody.assistant = {
+        content: reply,
+        images: cleanedAssistantImages
+      };
+    }
     if (imageWarnings.length) responseBody.warnings = Array.from(new Set(imageWarnings));
 
     return res.json(responseBody);
