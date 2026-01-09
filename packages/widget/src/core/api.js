@@ -64,15 +64,29 @@ export async function clearMessages({ token, config, agentId }) {
   }
 }
 
-/** @param {{ token: string, guestHistory: Array<{ type: UiRole, text: string }>, config: object, agentId: string }} args */
+/** @param {{ token: string, guestHistory: Array<{ type: UiRole, text: string, images?: ImageMeta[] }>, config: object, agentId: string }} args */
 export async function importGuestMessages({ token, guestHistory, config, agentId }) {
   if (!token || !Array.isArray(guestHistory) || !guestHistory.length) return;
   const payload = {
     agentId,
-    messages: guestHistory.slice(-80).map((m) => ({
-      role: m.type === 'bot' ? 'assistant' : 'user',
-      content: String(m.text || '')
-    }))
+    messages: guestHistory.slice(-80).map((m) => {
+      const entry = {
+        role: m.type === 'bot' ? 'assistant' : 'user',
+        content: String(m.text || '')
+      };
+      const images = Array.isArray(m.images)
+        ? m.images
+            .map((image) => ({
+              url: image?.url || image?.dataUrl,
+              type: image?.type,
+              name: image?.name,
+              size: image?.size
+            }))
+            .filter((image) => typeof image.url === 'string' && image.url)
+        : [];
+      if (images.length) entry.images = images;
+      return entry;
+    })
   };
 
   try {

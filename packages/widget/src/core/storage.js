@@ -59,17 +59,37 @@ function resolveHistoryKey(config, agentId) {
   return `${config.historyKey}:${agentId}`;
 }
 
+function normalizeGuestHistoryEntry(item) {
+  if (!item) return null;
+  const type = item.type === 'user' || item.type === 'bot' ? item.type : null;
+  if (!type || typeof item.text !== 'string') return null;
+  const entry = { type, text: item.text };
+  if (Array.isArray(item.images)) {
+    const images = item.images
+      .filter((image) => image && typeof image === 'object')
+      .map((image) => ({
+        url: typeof image.url === 'string' ? image.url : undefined,
+        dataUrl: typeof image.dataUrl === 'string' ? image.dataUrl : undefined,
+        type: typeof image.type === 'string' ? image.type : undefined,
+        name: typeof image.name === 'string' ? image.name : undefined,
+        size: Number.isFinite(image.size) ? image.size : undefined
+      }))
+      .filter((image) => image.url || image.dataUrl);
+    if (images.length) entry.images = images;
+  }
+  return entry;
+}
+
 export function loadGuestHistory(config = DEFAULT_CONSTANTS, agentId) {
   const raw = readLocalStorage(resolveHistoryKey(config, agentId));
   const arr = safeJsonParse(raw, []);
   if (!Array.isArray(arr)) return [];
-  return arr.filter(
-    (item) => item && (item.type === 'user' || item.type === 'bot') && typeof item.text === 'string'
-  );
+  return arr.map(normalizeGuestHistoryEntry).filter(Boolean);
 }
 
 export function saveGuestHistory(arr, config = DEFAULT_CONSTANTS, agentId) {
-  writeLocalStorage(resolveHistoryKey(config, agentId), JSON.stringify(arr || []));
+  const safeHistory = Array.isArray(arr) ? arr.map(normalizeGuestHistoryEntry).filter(Boolean) : [];
+  writeLocalStorage(resolveHistoryKey(config, agentId), JSON.stringify(safeHistory));
 }
 
 export function clearGuestHistory(config = DEFAULT_CONSTANTS, agentId) {
