@@ -29,7 +29,7 @@ import { resolveTheme } from './themes/index.js';
 /** @typedef {import('@valki/contracts').User} User */
 /** @typedef {Role | 'user'} UiRole */
 /** @typedef {Pick<Message, 'role'> & { role: UiRole, text: string, images?: ImageMeta[] }} UiMessage */
-/** @typedef {{ type: UiRole, text: string }} UiGuestMessage */
+/** @typedef {{ type: UiRole, text: string, images?: ImageMeta[] }} UiGuestMessage */
 /** @typedef {User & { name?: string | null }} UiUser */
 /** @typedef {Partial<ImageMeta> & { name?: string, dataUrl?: string }} UiImagePayload */
 
@@ -700,7 +700,7 @@ class ViChatWidget {
   async renderGuestHistoryToUI() {
     this.messageController.clearMessagesUI();
     for (const m of this.guestHistory) {
-      await this.messageController.addMessage({ type: m.type, text: m.text });
+      await this.messageController.addMessage({ type: m.type, text: m.text, images: m.images });
     }
     this.messageController.scrollToBottom(true);
     this.updateDeleteButtonVisibility();
@@ -729,11 +729,14 @@ class ViChatWidget {
     const imagesSnapshot = this.attachmentController
       .snapshot()
       .filter((x) => x.dataUrl || x.file);
+    const guestImages = imagesSnapshot.length
+      ? imagesSnapshot.map(({ file, ...rest }) => ({ ...rest }))
+      : undefined;
 
     await this.messageController.addMessage({ type: 'user', text: q, images: imagesSnapshot });
 
     if (!this.isLoggedIn()) {
-      this.guestHistory.push({ type: 'user', text: q });
+      this.guestHistory.push({ type: 'user', text: q, images: guestImages });
       saveGuestHistory(this.guestHistory, this.config, this.currentAgentId);
       this.guestMeter.bumpGuestCount();
     }
@@ -741,9 +744,9 @@ class ViChatWidget {
     const typingRow = this.messageController.createTypingRow();
     const payloadImages = imagesSnapshot;
 
-    const persistGuestBot = (msg) => {
+    const persistGuestBot = (msg, images) => {
       if (this.isLoggedIn()) return;
-      this.guestHistory.push({ type: 'bot', text: msg });
+      this.guestHistory.push({ type: 'bot', text: msg, images });
       saveGuestHistory(this.guestHistory, this.config, this.currentAgentId);
       this.guestMeter.maybePromptLoginAfterSend((opts) => this.openAuthOverlay(opts.hard));
     };
@@ -768,8 +771,9 @@ class ViChatWidget {
 
       removeTyping();
       const reply = res.ok ? res.message : res.message || this.config.copy.genericError;
+      const botImages = Array.isArray(res.images) ? res.images : undefined;
       await this.messageController.addMessage({ type: 'bot', text: reply });
-      persistGuestBot(reply);
+      persistGuestBot(reply, botImages);
       if (res.ok) this.messageController.scrollToBottomHard();
     } catch (err) {
       console.error(err);

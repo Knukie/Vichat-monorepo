@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Valki Talki Guest History</title>
+    <link rel="stylesheet" href="../dist/vichat-widget.css" />
+    <script>
+      window.__VICHAT_TEST_HOOKS__ = true;
+    </script>
+    <script src="../dist/vichat-widget.min.js"></script>
+    <script>
+      window.addEventListener('DOMContentLoaded', () => {
+        if (window.ViChat?.mount) {
+          window.ViChat.mount({
+            theme: 'valki',
+            baseUrl: window.location.origin,
+            agents: [
+              { id: 'agent-a', name: 'Agent A' },
+              { id: 'agent-b', name: 'Agent B' }
+            ],
+            startAgentId: 'agent-a'
+          });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1>Guest history test</h1>
+  </body>
+</html>
