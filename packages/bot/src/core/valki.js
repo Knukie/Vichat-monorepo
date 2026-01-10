@@ -103,7 +103,7 @@ export async function runValki({
       ? `[Important] If asked about Valki/VALKI, do NOT substitute it with similarly named assets (e.g., Valkyr/VALKYR). If not found on aggregators, say so.\n`
       : "");
 
-  await saveMessage(conversationId, "user", effectiveText, sanitizedImages, { requestId });
+  await saveMessage(conversationId, "customer", effectiveText, sanitizedImages, { requestId });
 
   let reply = "";
   try {

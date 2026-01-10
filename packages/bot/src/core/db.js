@@ -3,6 +3,9 @@ import { config, ensureSharedEnv } from "./config.js";
 import { hostFromUrl, sanitizeImages, summarizeImageDiagnostics } from "./images.js";
 import { cleanText, nowISO } from "./utils.js";
 
+/** @typedef {import("@valki/contracts").ImageMeta} ImageMeta */
+/** @typedef {import("@valki/contracts").Role} Role */
+
 ensureSharedEnv();
 
 const { Pool } = pg;
@@ -153,6 +156,13 @@ function ensureJsonSafeImages(images) {
   }
 }
 
+/**
+ * @param {string} conversationId
+ * @param {Role} role
+ * @param {string} content
+ * @param {ImageMeta[]} images
+ * @param {object} meta
+ */
 export async function saveMessage(conversationId, role, content, images = [], meta = {}) {
   const ts = nowISO();
   let safeImages = [];

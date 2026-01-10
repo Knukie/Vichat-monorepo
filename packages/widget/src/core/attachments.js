@@ -1,7 +1,7 @@
 import { generateId } from './storage.js';
 
 /** @typedef {import('@valki/contracts').ImageMeta} ImageMeta */
-/** @typedef {Partial<ImageMeta> & { id: string, name: string, type: string, dataUrl: string, file?: File }} UiAttachment */
+/** @typedef {Partial<ImageMeta> & { id: string, name: string, mime: string, dataUrl: string, file?: File }} UiAttachment */
 
 export function createAttachmentController({
   attachTray,
@@ -71,7 +71,8 @@ export function createAttachmentController({
   function snapshot() {
     return (attachments || []).map((att) => ({
       name: att?.name || 'image',
-      type: att?.type || 'image/jpeg',
+      type: att?.type || 'user-upload',
+      mime: att?.mime || 'image/jpeg',
       dataUrl: att?.dataUrl || '',
       file: att?.file
     }));
@@ -101,7 +102,8 @@ export function createAttachmentController({
       attachments.push({
         id: generateId('att'),
         name: file.name || 'image',
-        type,
+        type: 'user-upload',
+        mime: type,
         dataUrl,
         file
       });

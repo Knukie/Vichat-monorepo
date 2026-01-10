@@ -18,6 +18,7 @@ import {
   upsertUserGoogle,
   pool
 } from "../core/db.js";
+import { normalizeRole } from "../core/contracts.js";
 import { prepareGuestImportMessages } from "../core/importGuest.js";
 import { runValki, ValkiModelError } from "../core/valki.js";
 import { simpleRateLimit } from "../core/rateLimit.js";
@@ -61,6 +62,17 @@ app.use((err, req, res, next) => {
   }
   return next(err);
 });
+
+function toContractMessage(row, conversationId) {
+  return {
+    id: String(row?.id ?? ""),
+    conversationId: String(conversationId || ""),
+    role: normalizeRole(String(row?.role || "")),
+    content: String(row?.content ?? ""),
+    images: sanitizeImages(row?.images || []).images,
+    ts: String(row?.ts ?? "")
+  };
+}
 
 app.get("/", (_, res) => res.send("Valki Talki is live 🦅"));
 app.get("/health", (_, res) =>
@@ -367,7 +379,7 @@ function responseImages(images = []) {
     .map((img) => ({
       url: cleanText(img?.url),
       name: cleanText(img?.name),
-      type: cleanText(img?.type),
+      type: cleanText(img?.type) || "external",
       size: Number(img?.size) || undefined
     }))
     .filter((img) => !!img.url);
@@ -511,10 +523,7 @@ app.get("/api/messages", optionalAuth, async (req, res) => {
       [cid]
     );
 
-    const messages = (r.rows || []).map((m) => ({
-      ...m,
-      images: sanitizeImages(m.images || []).images
-    }));
+    const messages = (r.rows || []).map((m) => toContractMessage(m, cid));
 
     return res.json({ conversationId: cid, messages });
   } catch (e) {

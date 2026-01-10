@@ -27,12 +27,12 @@ import { resolveTheme } from './themes/index.js';
 /** @typedef {import('@valki/contracts').Message} Message */
 /** @typedef {import('@valki/contracts').Role} Role */
 /** @typedef {import('@valki/contracts').User} User */
-/** @typedef {Role | 'user'} UiRole */
+/** @typedef {Role} UiRole */
 /** @typedef {Pick<Message, 'role'> & { role: UiRole, text: string, images?: ImageMeta[] }} UiMessage */
 /** @typedef {Partial<ImageMeta> & { dataUrl?: string }} UiGuestImage */
 /** @typedef {{ type: UiRole, text: string, images?: UiGuestImage[] }} UiGuestMessage */
 /** @typedef {User & { name?: string | null }} UiUser */
-/** @typedef {Partial<ImageMeta> & { name?: string, dataUrl?: string }} UiImagePayload */
+/** @typedef {Partial<ImageMeta> & { name?: string, dataUrl?: string, mime?: string }} UiImagePayload */
 
 const REQUIRED_IDS = [
   'valki-root',
@@ -735,10 +735,10 @@ class ViChatWidget {
       ? imagesSnapshot.map(({ file, ...rest }) => ({ ...rest }))
       : undefined;
 
-    await this.messageController.addMessage({ type: 'user', text: q, images: imagesSnapshot });
+    await this.messageController.addMessage({ type: 'customer', text: q, images: imagesSnapshot });
 
     if (!this.isLoggedIn()) {
-      this.guestHistory.push({ type: 'user', text: q, images: guestImages });
+      this.guestHistory.push({ type: 'customer', text: q, images: guestImages });
       saveGuestHistory(this.guestHistory, this.config, this.currentAgentId);
       this.guestMeter.bumpGuestCount();
     }
@@ -748,7 +748,7 @@ class ViChatWidget {
 
     const persistGuestBot = (msg, images) => {
       if (this.isLoggedIn()) return;
-      this.guestHistory.push({ type: 'bot', text: msg, images });
+      this.guestHistory.push({ type: 'assistant', text: msg, images });
       saveGuestHistory(this.guestHistory, this.config, this.currentAgentId);
       this.guestMeter.maybePromptLoginAfterSend((opts) => this.openAuthOverlay(opts.hard));
     };
@@ -774,13 +774,13 @@ class ViChatWidget {
       removeTyping();
       const reply = res.ok ? res.message : res.message || this.config.copy.genericError;
       const botImages = Array.isArray(res.images) ? res.images : undefined;
-      await this.messageController.addMessage({ type: 'bot', text: reply });
+      await this.messageController.addMessage({ type: 'assistant', text: reply });
       persistGuestBot(reply, botImages);
       if (res.ok) this.messageController.scrollToBottomHard();
     } catch (err) {
       console.error(err);
       removeTyping();
-      await this.messageController.addMessage({ type: 'bot', text: this.config.copy.genericError });
+      await this.messageController.addMessage({ type: 'assistant', text: this.config.copy.genericError });
       persistGuestBot(this.config.copy.genericError);
     } finally {
       this.isSending = false;
