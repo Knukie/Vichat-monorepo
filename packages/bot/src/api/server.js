@@ -681,7 +681,7 @@ app.post("/api/valki", optionalAuth, async (req, res) => {
       requestId
     });
 
-    const responseBody = { reply, conversationId: cid };
+    const responseBody = { ok: true, message: reply, reply, conversationId: cid };
     const cleanedImages = responseImages(normalizedImages);
     if (cleanedImages.length) responseBody.images = cleanedImages;
     if (assistantImages?.length) responseBody.assistantImages = assistantImages;
