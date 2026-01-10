@@ -5,7 +5,8 @@ const env = process.env;
 export const config = {
   PORT: env.PORT ?? "3000",
   NODE_ENV: env.NODE_ENV ?? "production",
-  CORS_ORIGINS: env.CORS_ORIGINS ?? "https://valki.wiki,https://www.valki.wiki",
+  CORS_ORIGINS:
+    env.CORS_ORIGINS ?? "https://valki.wiki,https://www.valki.wiki,https://auth.valki.wiki",
   JSON_BODY_LIMIT: env.JSON_BODY_LIMIT ?? "20mb",
   MAX_INPUT_CHARS: env.MAX_INPUT_CHARS ?? "800",
   MAX_OUTPUT_TOKENS: env.MAX_OUTPUT_TOKENS ?? "800",
