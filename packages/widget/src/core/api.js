@@ -9,6 +9,7 @@
 /** @typedef {{ ok: boolean, messages: UiMessage[] }} FetchMessagesResult */
 
 import { normalizeRole } from './roles.js';
+import { loadConversationId, setConversationId } from './conversationId.js';
 
 const IMAGE_META_TYPES = new Set(['user-upload', 'assistant-generated', 'external']);
 
@@ -114,6 +115,7 @@ export async function importGuestMessages({ token, guestHistory, config, agentId
 export async function askValki({ message, clientId, images, token, config, agentId }) {
   const uploadHeaders = {};
   if (token) uploadHeaders.Authorization = `Bearer ${token}`;
+  const conversationId = loadConversationId();
 
   /** @type {ImageMeta[]} */
   const uploadedImages = [];
@@ -181,7 +183,13 @@ export async function askValki({ message, clientId, images, token, config, agent
     }
   }
 
-  const payload = { message, clientId, images: uploadedImages, agentId };
+  const payload = {
+    message,
+    clientId,
+    images: uploadedImages,
+    agentId,
+    conversationId: conversationId || undefined
+  };
   const headers = { 'Content-Type': 'application/json' };
   if (token) headers.Authorization = `Bearer ${token}`;
 
@@ -195,22 +203,28 @@ export async function askValki({ message, clientId, images, token, config, agent
     if (!res.ok) {
       let errMsg = config.copy.genericError;
       const ct = (res.headers.get('content-type') || '').toLowerCase();
+      let responseConversationId;
       if (ct.includes('application/json')) {
         const json = await res.json().catch(() => null);
-        if (json && typeof json.error === 'string') {
+        if (json?.conversationId) {
+          responseConversationId = json.conversationId;
+          setConversationId(json.conversationId);
+        }
+        if (json && typeof json.message === 'string') {
+          errMsg = json.message;
+        } else if (json && typeof json.error === 'string') {
           errMsg = `ksshh… ${json.error}`;
         }
       }
-      return { ok: false, message: errMsg };
+      return { ok: false, message: errMsg, conversationId: responseConversationId };
     }
 
     const data = await res.json().catch(() => null);
-    const reply =
-      data && typeof data.reply === 'string' && data.reply.trim()
-        ? String(data.reply)
-        : config.copy.noResponse;
+    if (data?.conversationId) setConversationId(data.conversationId);
+    const replySource = typeof data?.message === 'string' ? data.message : data?.reply;
+    const reply = replySource && String(replySource).trim() ? String(replySource) : config.copy.noResponse;
 
-    return { ok: true, message: reply };
+    return { ok: true, message: reply, conversationId: data?.conversationId };
   } catch {
     return { ok: false, message: config.copy.genericError };
   }

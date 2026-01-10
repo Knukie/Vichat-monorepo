@@ -22,6 +22,7 @@ import { createOverlayController, setVisible } from './core/ui/overlay.js';
 import { createAuthController } from './core/auth.js';
 import { askValki, clearMessages, fetchMe, fetchMessages, importGuestMessages } from './core/api.js';
 import { resolveTheme } from './themes/index.js';
+import { loadConversationId } from './core/conversationId.js';
 
 /** @typedef {import('@valki/contracts').ImageMeta} ImageMeta */
 /** @typedef {import('@valki/contracts').Message} Message */
@@ -146,6 +147,7 @@ class ViChatWidget {
     this.theme = resolveTheme(this.config.theme);
     this.token = getAuthToken(this.config);
     this.clientId = getOrCreateClientId(this.config);
+    this.conversationId = loadConversationId();
     /** @type {UiUser | null} */
     this.me = null;
     this.authHard = false;
@@ -772,6 +774,7 @@ class ViChatWidget {
       });
 
       removeTyping();
+      if (res?.conversationId) this.conversationId = res.conversationId;
       const reply = res.ok ? res.message : res.message || this.config.copy.genericError;
       const botImages = Array.isArray(res.images) ? res.images : undefined;
       await this.messageController.addMessage({ type: 'assistant', text: reply });
