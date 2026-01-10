@@ -12,6 +12,7 @@ import {
 } from "../core/auth.js";
 import {
   ensureTablesExistOrThrow,
+  getConversation,
   getOrCreateConversationForUser,
   saveMessage,
   upsertUserDiscord,
@@ -600,10 +601,12 @@ app.use("/api/valki", simpleRateLimit({ windowMs: 60_000, max: 60 }));
 
 app.post("/api/valki", optionalAuth, async (req, res) => {
   const requestId = crypto.randomUUID();
+  let responseConversationId = "";
   try {
     const body = req.body || {};
     const { message, conversationId, locale, clientId } = body;
     const userMessage = typeof message === "string" ? message : "";
+    const incomingConversationId = cleanText(conversationId);
     const headerLocale = pickPrimaryLocale(req.headers["accept-language"]);
     const preferredLocale = cleanText(locale) || headerLocale;
 
@@ -636,29 +639,35 @@ app.post("/api/valki", optionalAuth, async (req, res) => {
       urlLengths: imageUrlLengths
     });
 
+    await ensureTablesExistOrThrow();
+
     const hasText = !!cleanText(userMessage);
     const hasImages = normalizedImages.length > 0;
+
+    let cid = "";
+    if (req.user?.id) {
+      cid = await getOrCreateConversationForUser(req.user.id);
+    } else if (incomingConversationId) {
+      cid = incomingConversationId;
+      await getConversation(cid);
+    } else {
+      cid = newConversationId();
+    }
+    responseConversationId = cid;
 
     if (!hasText && !hasImages) {
       const errorMessage = attemptedImages
         ? "Invalid image payload. Send image URLs only."
         : "Message or image required.";
-      return res.status(400).json({ error: errorMessage });
+      return res.status(400).json({ ok: false, message: errorMessage, conversationId: cid });
     }
 
     if (!hasImages && attemptedImages > 0) {
-      return res
-        .status(400)
-        .json({ error: "ksshh… I couldn't read that image. Please try a JPEG/PNG under 5MB." });
-    }
-
-    await ensureTablesExistOrThrow();
-
-    let cid = "";
-    if (req.user?.id) {
-      cid = await getOrCreateConversationForUser(req.user.id);
-    } else {
-      cid = cleanText(conversationId) || newConversationId();
+      return res.status(400).json({
+        ok: false,
+        message: "ksshh… I couldn't read that image. Please try a JPEG/PNG under 5MB.",
+        conversationId: cid
+      });
     }
 
     console.info("[valki] request", {
@@ -681,7 +690,7 @@ app.post("/api/valki", optionalAuth, async (req, res) => {
       requestId
     });
 
-    const responseBody = { reply, conversationId: cid };
+    const responseBody = { ok: true, message: reply, conversationId: cid };
     const cleanedImages = responseImages(normalizedImages);
     if (cleanedImages.length) responseBody.images = cleanedImages;
     if (assistantImages?.length) responseBody.assistantImages = assistantImages;
@@ -691,10 +700,20 @@ app.post("/api/valki", optionalAuth, async (req, res) => {
   } catch (err) {
     if (err instanceof ValkiModelError) {
       console.error("/api/valki OpenAI error:", { requestId, message: err.message });
-      return res.status(502).json({ error: "Temporary error analyzing image.", requestId });
+      return res.status(502).json({
+        ok: false,
+        message: "Temporary error analyzing image.",
+        conversationId: responseConversationId || cleanText(req.body?.conversationId) || newConversationId(),
+        requestId
+      });
     }
     console.error("/api/valki error:", { requestId, message: err?.message || err });
-    return res.status(500).json({ error: "ksshh… Internal backend error", requestId });
+    return res.status(500).json({
+      ok: false,
+      message: "ksshh… Internal backend error",
+      conversationId: responseConversationId || cleanText(req.body?.conversationId) || newConversationId(),
+      requestId
+    });
   }
 });
 
