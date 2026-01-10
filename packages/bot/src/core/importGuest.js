@@ -1,3 +1,4 @@
+import { normalizeRole } from "./contracts.js";
 import { normalizeImportImages } from "./images.js";
 import { cleanText } from "./utils.js";
 
@@ -9,7 +10,7 @@ export async function prepareGuestImportMessages(items = []) {
   const cleaned = [];
 
   for (const item of list) {
-    const role = cleanText(item?.role) === "assistant" ? "assistant" : "user";
+    const role = normalizeRole(cleanText(item?.role));
     const content = cleanText(item?.content).slice(0, MAX_LEN);
     const { images } = await normalizeImportImages(Array.isArray(item?.images) ? item.images : []);
 

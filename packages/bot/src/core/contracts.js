@@ -1,19 +1,26 @@
 /**
  * Canonical backend contracts (Phase 1.1)
- *
- * TODO: Normalize legacy roles ("user") to "customer" when standardizing API responses.
- * TODO: Align id fields to UUIDs in runtime responses (messages/users) in later phases.
  */
 
+/** @typedef {import("@valki/contracts").Role} Role */
+/** @typedef {import("@valki/contracts").ImageMeta} ImageMeta */
+/** @typedef {import("@valki/contracts").Message} Message */
+
 export const ROLE_VALUES = /** @type {const} */ ([
-  "customer",
-  "agent",
   "assistant",
+  "customer",
   "system",
-  "bot"
+  "tool"
 ]);
 
-/** @typedef {typeof ROLE_VALUES[number]} Role */
+const ROLE_SET = new Set(ROLE_VALUES);
+
+/** @param {string} rawRole @returns {Role} */
+export function normalizeRole(rawRole) {
+  if (rawRole === "user") return "customer";
+  if (ROLE_SET.has(rawRole)) return rawRole;
+  return "customer";
+}
 
 export const CONVERSATION_STATUS_VALUES = /** @type {const} */ (["open", "pending", "closed"]);
 
@@ -31,15 +38,6 @@ export const USER_ROLE_VALUES = /** @type {const} */ ([
 export const USER_STATUS_VALUES = /** @type {const} */ (["online", "offline", "away"]);
 
 /** @typedef {typeof USER_STATUS_VALUES[number]} UserStatus */
-
-/**
- * @typedef {Object} ImageMeta
- * @property {string} url
- * @property {string} type
- * @property {string=} name
- * @property {number=} size
- * @property {string=} host
- */
 
 /**
  * @typedef {Object} Message

@@ -1,8 +1,9 @@
 import { ensureMarkdownLibs, hardenLinks, renderMarkdown } from '../markdown.js';
+import { isCustomerRole } from '../roles.js';
 
 /** @typedef {import('@valki/contracts').ImageMeta} ImageMeta */
 /** @typedef {import('@valki/contracts').Role} Role */
-/** @typedef {Role | 'user'} UiRole */
+/** @typedef {Role} UiRole */
 /** @typedef {Partial<ImageMeta> & { dataUrl?: string }} UiMessageImage */
 /** @typedef {{ type: UiRole, text: string, images?: UiMessageImage[] }} UiMessageInput */
 
@@ -31,7 +32,7 @@ export function createMessageController({
   /** @param {UiMessageInput} param0 */
   async function addMessage({ type, text, images }) {
     const stick = isNearBottom(messagesEl);
-    if (type === 'bot') await ensureMarkdownLibs();
+    if (type !== 'customer') await ensureMarkdownLibs();
     messagesInner.appendChild(createMessageRow({ type, text, images }));
     scrollToBottom(stick);
     updateDeleteButtonVisibility?.();
@@ -39,10 +40,11 @@ export function createMessageController({
 
   /** @param {UiMessageInput} param0 */
   function createMessageRow({ type, text, images }) {
+    const isCustomer = isCustomerRole(type);
     const row = document.createElement('div');
-    row.className = `valki-msg-row ${type === 'user' ? 'user' : 'bot'}`;
+    row.className = `valki-msg-row ${isCustomer ? 'user' : 'bot'}`;
 
-    if (type === 'bot') {
+    if (!isCustomer) {
       const avatarWrap = document.createElement('div');
       avatarWrap.className = 'valki-bot-avatar-wrap';
       const avatar = document.createElement('img');
@@ -56,7 +58,7 @@ export function createMessageController({
     const bubble = document.createElement('div');
     bubble.className = 'valki-msg-bubble';
 
-    if (type === 'bot') {
+    if (!isCustomer) {
       bubble.innerHTML = renderMarkdown(text);
       hardenLinks(bubble);
     } else {

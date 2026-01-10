@@ -11,7 +11,7 @@ test("prepareGuestImportMessages keeps text-only guest messages", async () => {
   const cleaned = await prepareGuestImportMessages(items);
 
   assert.equal(cleaned.length, 1);
-  assert.equal(cleaned[0].role, "user");
+  assert.equal(cleaned[0].role, "customer");
   assert.equal(cleaned[0].content, "Hello there");
   assert.deepEqual(cleaned[0].images, []);
 });

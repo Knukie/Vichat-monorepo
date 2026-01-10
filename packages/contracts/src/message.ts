@@ -1,6 +1,6 @@
 import type { ImageMeta } from "./image.js";
 
-export type Role = "customer" | "assistant" | "agent" | "system" | "bot";
+export type Role = "assistant" | "customer" | "system" | "tool";
 
 export type Message = {
   id: string;

@@ -2,9 +2,12 @@ import { config } from "./config.js";
 import { decodeDataUrlToBuffer, isDataImageUrl, uploadBufferAndGetPublicUrl } from "./imageProcessing.js";
 import { cleanText } from "./utils.js";
 
+/** @typedef {import("@valki/contracts").ImageMeta} ImageMeta */
+
 export const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png"]);
 export const MAX_IMAGES = 4;
 const MAX_URL_LENGTH = 2048;
+const IMAGE_META_TYPES = new Set(["user-upload", "assistant-generated", "external"]);
 
 function normalizeMime(mime) {
   const m = cleanText(mime || "").toLowerCase();
@@ -42,11 +45,24 @@ function isAllowedUrl(url) {
   return false;
 }
 
+function inferImageMetaType(rawType, url = "") {
+  const cleanType = cleanText(rawType).toLowerCase();
+  if (IMAGE_META_TYPES.has(cleanType)) return cleanType;
+
+  const base = uploadBaseUrl();
+  const normalizedUrl = cleanText(url);
+  if (base && normalizedUrl.startsWith(base)) return "user-upload";
+  if (normalizedUrl.startsWith("/uploads/")) return "user-upload";
+  if (normalizedUrl.startsWith("http://") || normalizedUrl.startsWith("https://")) return "external";
+  return "user-upload";
+}
+
 export function sanitizeImages(input = []) {
   const warnings = [];
 
   if (!Array.isArray(input) || !input.length) return { images: [], warnings };
 
+  /** @type {ImageMeta[]} */
   const images = [];
   const seen = new Set();
   const maxList = input.slice(0, MAX_IMAGES);
@@ -65,12 +81,9 @@ export function sanitizeImages(input = []) {
     if (!isAllowedUrl(url)) continue;
     if (seen.has(url)) continue;
 
-    const image = { url };
+    const image = { url, type: inferImageMetaType(item?.type, url) };
     const name = cleanText(item?.name).slice(0, 180);
     if (name) image.name = name;
-
-    const mime = normalizeMime(item?.type);
-    if (mime && ALLOWED_IMAGE_TYPES.has(mime)) image.type = mime;
 
     const size = Number(item?.size);
     if (Number.isFinite(size) && size > 0) image.size = size;
@@ -102,7 +115,7 @@ export async function normalizeImportImages(input = []) {
     if (!candidate) continue;
 
     const name = cleanText(item?.name).slice(0, 180);
-    const type = normalizeMime(item?.type);
+    const inferredType = inferImageMetaType(item?.type, candidate);
     const size = Number(item?.size);
 
     if (isDataImageUrl(candidate)) {
@@ -113,7 +126,7 @@ export async function normalizeImportImages(input = []) {
         normalized.push({
           url: uploaded.url,
           name: cleanText(uploaded.name) || name || undefined,
-          type: cleanText(uploaded.type) || mime || undefined,
+          type: "user-upload",
           size: Number(uploaded.size) || buffer.length
         });
       } catch (err) {
@@ -124,7 +137,7 @@ export async function normalizeImportImages(input = []) {
 
     const entry = { url: candidate };
     if (name) entry.name = name;
-    if (type && ALLOWED_IMAGE_TYPES.has(type)) entry.type = type;
+    if (inferredType) entry.type = inferredType;
     if (Number.isFinite(size) && size > 0) entry.size = size;
     normalized.push(entry);
   }

@@ -1,4 +1,7 @@
 import { DEFAULT_CONSTANTS } from './config.js';
+import { normalizeRole } from './roles.js';
+
+const IMAGE_TYPES = new Set(['user-upload', 'assistant-generated', 'external']);
 
 export function cleanText(value) {
   return String(value ?? '').replace(/\u0000/g, '').trim();
@@ -61,18 +64,29 @@ function resolveHistoryKey(config, agentId) {
 
 function normalizeGuestHistoryEntry(item) {
   if (!item) return null;
-  const type = item.type === 'user' || item.type === 'bot' ? item.type : null;
-  if (!type || typeof item.text !== 'string') return null;
-  const entry = { type, text: item.text };
+  const rawRole =
+    typeof item.type === 'string' ? item.type : typeof item.role === 'string' ? item.role : '';
+  if (!rawRole || typeof item.text !== 'string') return null;
+  const role = normalizeRole(rawRole);
+  const entry = { type: role, text: item.text };
   if (Array.isArray(item.images)) {
     const images = item.images
       .filter((image) => image && typeof image === 'object')
       .map((image) => ({
         url: typeof image.url === 'string' ? image.url : undefined,
         dataUrl: typeof image.dataUrl === 'string' ? image.dataUrl : undefined,
-        type: typeof image.type === 'string' ? image.type : undefined,
+        type:
+          typeof image.type === 'string' && IMAGE_TYPES.has(image.type)
+            ? image.type
+            : image?.type && String(image.type).startsWith('image/')
+              ? 'user-upload'
+              : undefined,
         name: typeof image.name === 'string' ? image.name : undefined,
         size: Number.isFinite(image.size) ? image.size : undefined
+      }))
+      .map((image) => ({
+        ...image,
+        type: image.type || ((image.url || image.dataUrl) && 'user-upload') || undefined
       }))
       .filter((image) => image.url || image.dataUrl);
     if (images.length) entry.images = images;

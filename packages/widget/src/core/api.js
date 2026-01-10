@@ -2,11 +2,21 @@
 /** @typedef {import('@valki/contracts').Message} Message */
 /** @typedef {import('@valki/contracts').Role} Role */
 /** @typedef {import('@valki/contracts').User} User */
-/** @typedef {Role | 'user'} UiRole */
+/** @typedef {Role} UiRole */
 /** @typedef {Pick<Message, 'role'> & { role: UiRole, text: string, images?: ImageMeta[] }} UiMessage */
 /** @typedef {User & { name?: string | null }} UiUser */
-/** @typedef {Partial<ImageMeta> & { name?: string, dataUrl?: string, file?: File }} UiImagePayload */
+/** @typedef {Partial<ImageMeta> & { name?: string, dataUrl?: string, file?: File, mime?: string }} UiImagePayload */
 /** @typedef {{ ok: boolean, messages: UiMessage[] }} FetchMessagesResult */
+
+import { normalizeRole } from './roles.js';
+
+const IMAGE_META_TYPES = new Set(['user-upload', 'assistant-generated', 'external']);
+
+function normalizeImageType(rawType) {
+  if (typeof rawType === 'string' && IMAGE_META_TYPES.has(rawType)) return rawType;
+  if (typeof rawType === 'string' && rawType.startsWith('image/')) return 'user-upload';
+  return 'user-upload';
+}
 
 /** @returns {Promise<UiUser | null>} */
 export async function fetchMe({ token, config }) {
@@ -41,7 +51,7 @@ export async function fetchMessages({ token, config, agentId }) {
     return {
       ok: true,
       messages: data.messages.map((m) => ({
-        role: m.role === 'assistant' ? 'bot' : 'user',
+        role: normalizeRole(String(m.role || '')),
         text: String(m.content || ''),
         images: Array.isArray(m.images) ? m.images : []
       }))
@@ -71,14 +81,14 @@ export async function importGuestMessages({ token, guestHistory, config, agentId
     agentId,
     messages: guestHistory.slice(-80).map((m) => {
       const entry = {
-        role: m.type === 'bot' ? 'assistant' : 'user',
+        role: normalizeRole(String(m.type || '')),
         content: String(m.text || '')
       };
       const images = Array.isArray(m.images)
         ? m.images
             .map((image) => ({
               url: image?.url || image?.dataUrl,
-              type: image?.type,
+              type: normalizeImageType(image?.type),
               name: image?.name,
               size: image?.size
             }))
@@ -111,7 +121,7 @@ export async function askValki({ message, clientId, images, token, config, agent
     if (image?.url) {
       uploadedImages.push({
         url: image.url,
-        type: image.type,
+        type: normalizeImageType(image.type),
         name: image.name,
         size: image.size
       });
@@ -120,7 +130,7 @@ export async function askValki({ message, clientId, images, token, config, agent
 
     let file = image?.file;
     let name = image?.name || (file && file.name) || 'upload';
-    let type = image?.type || (file && file.type) || 'image/jpeg';
+    let type = image?.mime || (file && file.type) || 'image/jpeg';
 
     if (!file && image?.dataUrl) {
       const res = await fetch(image.dataUrl).catch(() => null);
@@ -161,7 +171,7 @@ export async function askValki({ message, clientId, images, token, config, agent
       if (data && typeof data.url === 'string') {
         uploadedImages.push({
           url: data.url,
-          type: data.mime,
+          type: 'user-upload',
           name: data.name,
           size: data.size
         });
