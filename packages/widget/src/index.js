@@ -19,6 +19,7 @@ import { createAgentHubController } from './core/ui/agentHub.js';
 import { createMessageController } from './core/ui/messages.js';
 import { createComposerController } from './core/ui/composer.js';
 import { createOverlayController, setVisible } from './core/ui/overlay.js';
+import { createWidgetHost } from './core/ui/widgetHost.js';
 import { createAuthController } from './core/auth.js';
 import { askValki, clearMessages, fetchMe, fetchMessages, importGuestMessages } from './core/api.js';
 import { resolveTheme } from './themes/index.js';
@@ -90,9 +91,10 @@ function isDesktopLayout() {
   return !!(window.matchMedia && window.matchMedia('(min-width: 1024px)').matches);
 }
 
-function mountTemplate(theme, target) {
+function mountTemplate(theme, target, hostConfig) {
   const existing = document.getElementById('valki-root');
   if (existing) {
+    const existingHost = existing.closest('.widget-host');
     const body = document.body;
     if (body?.dataset?.valkiScrollY) {
       body.style.position = '';
@@ -106,6 +108,9 @@ function mountTemplate(theme, target) {
     }
     document.documentElement.classList.remove('valki-chat-open');
     existing.remove();
+    if (existingHost && !existingHost.querySelector('#valki-root')) {
+      existingHost.remove();
+    }
   }
 
   const container = document.createElement('div');
@@ -114,7 +119,8 @@ function mountTemplate(theme, target) {
   if (!root) throw new Error('ViChat root not found in template');
 
   const targetEl = target || document.body || document.documentElement;
-  targetEl.appendChild(root);
+  const widgetHost = createWidgetHost({ target: targetEl, config: hostConfig });
+  widgetHost.appendChild(root);
 
   const elements = { 'valki-root': root };
   REQUIRED_IDS.forEach((id) => {
@@ -139,7 +145,7 @@ function mountTemplate(theme, target) {
   elements['valki-bubble'].setAttribute('aria-label', theme.bubbleLabel || 'Open chat');
   elements['valki-header-avatar'].src = theme.avatarUrl || elements['valki-header-avatar'].src;
 
-  return elements;
+  return { elements, host: widgetHost };
 }
 
 class ViChatWidget {
@@ -175,13 +181,24 @@ class ViChatWidget {
     this.agentHubController = null;
     this.guestMeter = null;
     this.authController = null;
+    this.widgetHost = null;
     this._layoutRaf = 0;
+    this._layoutNudge = 0;
   }
 
   mount(mountTarget) {
     ensureStyle(this.theme);
-    this.elements = mountTemplate(this.theme, mountTarget);
+    const hostConfig = {
+      type: 'chat',
+      provider: 'valki-vichat',
+      ...this.config.widgetHost,
+      mode: this.config.mode
+    };
+    const { elements, host } = mountTemplate(this.theme, mountTarget, hostConfig);
+    this.elements = elements;
+    this.widgetHost = host;
     this.bindUi();
+    this.scheduleLayoutNudge('mount');
     void this.boot();
   }
 
@@ -439,6 +456,9 @@ class ViChatWidget {
         backBtn.style.display = this.agents.length > 1 && view === 'chat' ? 'inline-flex' : 'none';
       }
     }
+    if (effectiveView === 'chat') {
+      this.scheduleLayoutNudge('view-change');
+    }
   }
 
   applyAgentToHeader(agent) {
@@ -505,6 +525,28 @@ class ViChatWidget {
     } catch {
       /* ignore */
     }
+  }
+
+  scheduleLayoutNudge(reason) {
+    if (!this.elements) return;
+    if (this._layoutNudge) cancelAnimationFrame(this._layoutNudge);
+    const host = this.widgetHost;
+    if (host) {
+      host.dataset.widgetState = 'mounting';
+      host.dataset.widgetNudge = reason;
+    }
+    this._layoutNudge = requestAnimationFrame(() => {
+      if (typeof this.updateViewportLayout === 'function') {
+        // Force a re-measure after view switches (agent hub -> chat) to avoid
+        // first-render composer misalignment when the widget toggles visibility.
+        this.updateViewportLayout();
+      }
+      this.composerController?.clampComposer();
+      if (host) {
+        void host.offsetHeight;
+        host.dataset.widgetState = 'ready';
+      }
+    });
   }
 
   isLoggedIn() {
