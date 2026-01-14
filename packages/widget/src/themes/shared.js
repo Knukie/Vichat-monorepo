@@ -32,7 +32,7 @@ export const sharedCss = `/* ===================================================
 
   --font: system-ui,-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
 
-  --valki-vh: 1vh;
+  --valki-vh: 1dvh;
   --vvh: calc(var(--valki-vh, 1vh) * 100);
 
   /* (Fallback) composer height – als je later JS toevoegt kan dit dynamisch */
@@ -227,7 +227,7 @@ html.valki-chat-open #valki-root .valki-bubble{
   inset: 0;
 
   /* IMPORTANT: var(--vvh) = calc(var(--valki-vh) * 100) */
-  height: var(--vvh);
+  height: min(var(--vvh), 100dvh);
   width: 100%;
 
   /* default hidden state */
@@ -263,7 +263,7 @@ html.valki-chat-open #valki-root .valki-bubble{
 
 /* Fullscreen modal follows the same vh logic */
 #valki-root .valki-modal{
-  height: var(--vvh);
+  height: min(var(--vvh), 100dvh);
   width: 100%;
 }
 
