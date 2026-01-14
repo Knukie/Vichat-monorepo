@@ -265,6 +265,9 @@ html.valki-chat-open #valki-root .valki-bubble{
 #valki-root .valki-modal{
   height: var(--vvh);
   width: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 /* Visible state */
@@ -816,7 +819,7 @@ html.valki-chat-open #valki-root .valki-bubble{
   overflow-y:auto;
   overscroll-behavior:contain;
   -webkit-overflow-scrolling:touch;
-  padding: 18px 0 10px;
+  padding: 18px 0 12px;
   display: block !important;
   width: 100% !important;
   scrollbar-width:thin;
@@ -838,6 +841,11 @@ html.valki-chat-open #valki-root .valki-bubble{
   margin: 0 auto !important;
   padding-left: var(--gutter) !important;
   padding-right: var(--gutter) !important;
+  padding-bottom: 8px;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
 }
 
 #valki-root .valki-messages-inner:empty{ min-height: 220px; }
@@ -1161,18 +1169,9 @@ html.valki-chat-open #valki-root .valki-bubble{
   text-align:center;
 }
 
-/* Keep last messages visible — dynamic (composer height + safe area + 2px) */
-html.valki-chat-open #valki-root{
-  --composer-h: 110px; /* fallback; JS zet ‘m exact */
-}
-
-html.valki-chat-open #valki-root .valki-messages-inner{
-  padding-bottom: calc(var(--composer-h, 110px) + env(safe-area-inset-bottom) + 2px) !important;
-}
-
-/* Optional: makes wheel/touch scroll land nicely above composer */
+/* Keep a small buffer so the last message sits above the composer */
 html.valki-chat-open #valki-root .valki-messages{
-  scroll-padding-bottom: calc(var(--composer-h, 110px) + env(safe-area-inset-bottom) + 2px);
+  scroll-padding-bottom: 8px;
 }
 
 /* Mobile tweaks + disable vignette/blur */
