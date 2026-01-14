@@ -819,7 +819,10 @@ html.valki-chat-open #valki-root .valki-bubble{
   overscroll-behavior:contain;
   -webkit-overflow-scrolling:touch;
   padding: 18px 0 12px;
-  display: block !important;
+  display: flex !important;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: stretch;
   width: 100% !important;
   scrollbar-width:thin;
   scrollbar-color: rgba(255,255,255,.22) transparent;
@@ -844,35 +847,36 @@ html.valki-chat-open #valki-root .valki-bubble{
   min-height: 100%;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
+  justify-content: flex-start;
 }
 
 #valki-root .valki-messages-inner:empty{ min-height: 220px; }
 
 #valki-root .valki-msg-row{
   display:flex;
+  align-items: flex-start;
   margin: 14px 0;
-  gap: 10px;
+  gap: 8px;
+  justify-content: flex-start;
   max-width: var(--col) !important;
   margin-left: auto !important;
   margin-right: auto !important;
   padding-left: var(--gutter) !important;
   padding-right: var(--gutter) !important;
 }
-#valki-root .valki-msg-row.user{ justify-content:flex-end; }
-#valki-root .valki-msg-row.bot{ justify-content:flex-start; }
 
-#valki-root .valki-bot-avatar-wrap{ flex:0 0 auto; padding-top: 2px; }
+#valki-root .valki-bot-avatar-wrap{ flex:0 0 auto; margin-top: 4px; }
 #valki-root .valki-bot-avatar{
-  width:26px;height:26px;border-radius:50%;
+  width:32px;height:32px;border-radius:50%;
   border: 1px solid rgba(255,255,255,.16);
   background: rgba(255,255,255,.05);
 }
 
 #valki-root .valki-msg-bubble{
-  max-width: 680px;
-  width: fit-content;
+  flex: 1 1 auto;
+  max-width: 100%;
   padding: 10px 14px;
+  position: relative;
   border-radius: var(--radius);
   line-height: 1.58;
   font-size: 15px;
@@ -885,6 +889,18 @@ html.valki-chat-open #valki-root .valki-bubble{
 #valki-root .valki-msg-row.bot .valki-msg-bubble{
   background: rgba(255,255,255,.035);
   border: 1px solid rgba(255,255,255,.08);
+}
+
+#valki-root .valki-msg-row.bot .valki-msg-bubble::before{
+  content:"";
+  position: absolute;
+  left: -6px;
+  top: 14px;
+  width: 12px;
+  height: 12px;
+  background: inherit;
+  transform: rotate(45deg);
+  border-radius: 2px;
 }
 
 #valki-root .valki-msg-row.user .valki-msg-bubble{
