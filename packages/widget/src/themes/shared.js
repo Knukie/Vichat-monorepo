@@ -54,6 +54,12 @@ export const sharedCss = `/* ===================================================
   --chat-block-blur: 10px;
 }
 
+@supports (height: 100dvh){
+  #valki-root{
+    --vvh: 100dvh;
+  }
+}
+
 #valki-root, #valki-root *{ box-sizing:border-box; }
 
 #valki-root button,
