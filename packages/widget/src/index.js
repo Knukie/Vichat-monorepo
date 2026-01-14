@@ -131,7 +131,9 @@ function mountTemplate(theme, target) {
     throw new Error(`ViChat mount failed. Missing elements: ${missing.join(', ')}`);
   }
 
-  elements['valki-root'].style.setProperty('--valki-vh', `${(window.innerHeight || 0) * 0.01}px`);
+  const vv = window.visualViewport;
+  const initialHeight = vv?.height || document.documentElement?.clientHeight || window.innerHeight || 0;
+  elements['valki-root'].style.setProperty('--valki-vh', `${initialHeight * 0.01}px`);
 
   elements['valki-title'].textContent = theme.overlayTitle || theme.title || 'ViChat';
   elements['valki-bubble'].setAttribute('aria-label', theme.bubbleLabel || 'Open chat');
@@ -216,6 +218,7 @@ class ViChatWidget {
     this.overlayController = createOverlayController({
       overlay: el['valki-overlay'],
       chatInput: el['valki-chat-input'],
+      updateValkiVh: () => this.updateValkiVh(),
       updateComposerHeight,
       clampComposer,
       scrollToBottom: (force) => this.messageController?.scrollToBottom(force)
@@ -373,6 +376,7 @@ class ViChatWidget {
 
     if (window.visualViewport) {
       window.visualViewport.addEventListener('resize', () => {
+        this.updateValkiVh();
         updateComposerHeight();
         this.messageController.scrollToBottom(false);
       });
@@ -490,7 +494,7 @@ class ViChatWidget {
   updateValkiVh() {
     try {
       const vv = window.visualViewport;
-      const height = vv && vv.height ? vv.height : window.innerHeight;
+      const height = vv?.height || document.documentElement?.clientHeight || window.innerHeight;
       this.elements['valki-root'].style.setProperty('--valki-vh', `${height * 0.01}px`);
     } catch {
       /* ignore */

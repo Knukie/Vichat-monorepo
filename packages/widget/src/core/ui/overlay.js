@@ -53,16 +53,25 @@ function unlockBodyScroll() {
   lockState = null;
 }
 
-export function createOverlayController({ overlay, chatInput, updateComposerHeight, clampComposer, scrollToBottom }) {
+export function createOverlayController({
+  overlay,
+  chatInput,
+  updateValkiVh,
+  updateComposerHeight,
+  clampComposer,
+  scrollToBottom
+}) {
   function isChatOpen() {
     return overlay?.classList.contains('is-visible');
   }
 
   function openOverlay() {
     if (!overlay) return;
+    updateValkiVh?.();
     setVisible(overlay, true);
     lockBodyScroll();
     setTimeout(() => {
+      updateValkiVh?.();
       updateComposerHeight?.();
       scrollToBottom?.(true);
       try {
