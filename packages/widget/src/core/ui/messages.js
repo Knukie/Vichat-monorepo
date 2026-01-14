@@ -31,10 +31,9 @@ export function createMessageController({
 
   /** @param {UiMessageInput} param0 */
   async function addMessage({ type, text, images }) {
-    const stick = isNearBottom(messagesEl);
     if (type !== 'customer') await ensureMarkdownLibs();
     messagesInner.appendChild(createMessageRow({ type, text, images }));
-    scrollToBottom(stick);
+    scrollToBottom(true);
     updateDeleteButtonVisibility?.();
   }
 
@@ -116,9 +115,8 @@ export function createMessageController({
     </div>`;
     typingRow.appendChild(bubbleEl);
 
-    const stick = isNearBottom(messagesEl);
     messagesInner.appendChild(typingRow);
-    scrollToBottom(stick);
+    scrollToBottom(true);
 
     return typingRow;
   }
