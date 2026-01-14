@@ -198,11 +198,15 @@ class ViChatWidget {
       }
     };
 
+    const updateViewportLayout = () => {
+      updateComposerHeight();
+      this.updateValkiVh();
+    };
+
     const scheduleLayoutMetrics = () => {
       if (this._layoutRaf) cancelAnimationFrame(this._layoutRaf);
       this._layoutRaf = requestAnimationFrame(() => {
-        updateComposerHeight();
-        this.updateValkiVh();
+        updateViewportLayout();
       });
     };
 
@@ -220,6 +224,7 @@ class ViChatWidget {
       chatInput: el['valki-chat-input'],
       updateValkiVh: () => this.updateValkiVh(),
       updateComposerHeight,
+      updateViewportLayout,
       clampComposer,
       scrollToBottom: (force) => this.messageController?.scrollToBottom(force)
     });
@@ -300,6 +305,7 @@ class ViChatWidget {
     });
     el['valki-chat-input'].addEventListener('input', clampComposer);
     el['valki-chat-input'].addEventListener('paste', () => setTimeout(clampComposer, 0));
+    el['valki-chat-input'].addEventListener('focus', scheduleLayoutMetrics);
 
     el['valki-chat-attach'].addEventListener('click', () => {
       if (el['valki-chat-input'].disabled || this.isSending) return;
@@ -376,8 +382,7 @@ class ViChatWidget {
 
     if (window.visualViewport) {
       window.visualViewport.addEventListener('resize', () => {
-        this.updateValkiVh();
-        updateComposerHeight();
+        updateViewportLayout();
         this.messageController.scrollToBottom(false);
       });
     }
@@ -393,6 +398,7 @@ class ViChatWidget {
 
     this.scheduleLayoutMetrics = scheduleLayoutMetrics;
     this.updateComposerHeight = updateComposerHeight;
+    this.updateViewportLayout = updateViewportLayout;
     this.updateValkiVh = this.updateValkiVh.bind(this);
   }
 

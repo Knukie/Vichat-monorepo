@@ -58,6 +58,7 @@ export function createOverlayController({
   chatInput,
   updateValkiVh,
   updateComposerHeight,
+  updateViewportLayout,
   clampComposer,
   scrollToBottom
 }) {
@@ -67,10 +68,15 @@ export function createOverlayController({
 
   function openOverlay() {
     if (!overlay) return;
+    updateViewportLayout?.();
     updateValkiVh?.();
     setVisible(overlay, true);
     lockBodyScroll();
+    requestAnimationFrame(() => {
+      updateViewportLayout?.();
+    });
     setTimeout(() => {
+      updateViewportLayout?.();
       updateValkiVh?.();
       updateComposerHeight?.();
       scrollToBottom?.(true);
@@ -81,6 +87,7 @@ export function createOverlayController({
       }
       clampComposer?.();
       updateComposerHeight?.();
+      updateViewportLayout?.();
     }, 60);
   }
 
