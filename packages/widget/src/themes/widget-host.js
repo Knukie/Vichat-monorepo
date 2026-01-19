@@ -11,10 +11,18 @@ export const widgetHostCss = `/* ===============================================
   --widget-host-max-height: 80vh;
   --widget-host-min-height: 320px;
   --widget-host-z: 2147482997;
+  --widget-host-safe-right: env(safe-area-inset-right);
+  --widget-host-safe-bottom: env(safe-area-inset-bottom);
+  --widget-launcher-size: 72px;
+  --widget-launcher-bubble-size: 64px;
+  --widget-launcher-right: calc(var(--widget-host-right) + var(--widget-host-safe-right));
+  --widget-launcher-bottom: calc(var(--widget-host-bottom) + var(--widget-host-safe-bottom));
+  --widget-launcher-z: calc(var(--widget-host-z) + 1);
+  --widget-overlay-z: calc(var(--widget-host-z) + 3);
 
   position: fixed;
-  right: var(--widget-host-right);
-  bottom: var(--widget-host-bottom);
+  right: var(--widget-launcher-right);
+  bottom: var(--widget-launcher-bottom);
   width: var(--widget-host-width);
   height: var(--widget-host-height);
   max-width: var(--widget-host-max-width);
@@ -63,6 +71,20 @@ export const widgetHostCss = `/* ===============================================
   min-height: 0;
 }
 
+.widget-host[data-state="closed"][data-widget-placement="floating"]{
+  width: var(--widget-launcher-size);
+  height: var(--widget-launcher-size);
+  max-width: var(--widget-launcher-size);
+  max-height: var(--widget-launcher-size);
+  min-height: 0;
+  min-width: 0;
+}
+
+.widget-host[data-state="closed"] > #valki-root{
+  min-height: 0;
+  height: 100%;
+}
+
 .widget-host iframe{
   width: 100%;
   height: 100%;
@@ -71,10 +93,11 @@ export const widgetHostCss = `/* ===============================================
 }
 
 @media (max-width: 640px){
-  .widget-host[data-widget-placement="floating"]{
+  .widget-host[data-widget-placement="floating"][data-state="open"]{
     right: 0;
     bottom: 0;
     width: 100%;
+    height: 100%;
     max-width: 100%;
     max-height: 100dvh;
     min-height: 0;

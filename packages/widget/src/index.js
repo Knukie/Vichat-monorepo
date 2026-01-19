@@ -107,6 +107,7 @@ function mountTemplate(theme, target, hostConfig) {
       delete body.dataset.valkiScrollY;
     }
     document.documentElement.classList.remove('valki-chat-open');
+    document.documentElement.classList.remove('vichat-open');
     existing.remove();
     if (existingHost && !existingHost.querySelector('#valki-root')) {
       existingHost.remove();
@@ -184,6 +185,8 @@ class ViChatWidget {
     this.widgetHost = null;
     this._layoutRaf = 0;
     this._layoutNudge = 0;
+    this._readyDispatched = false;
+    this.isOpen = false;
   }
 
   mount(mountTarget) {
@@ -197,9 +200,33 @@ class ViChatWidget {
     const { elements, host } = mountTemplate(this.theme, mountTarget, hostConfig);
     this.elements = elements;
     this.widgetHost = host;
+    this.setWidgetState('closed', { emit: false });
     this.bindUi();
     this.scheduleLayoutNudge('mount');
     void this.boot();
+  }
+
+  dispatchWidgetEvent(name, detail = {}) {
+    if (typeof window === 'undefined') return;
+    window.dispatchEvent(new CustomEvent(name, { detail }));
+  }
+
+  setWidgetState(state, { emit = true } = {}) {
+    const root = this.elements?.['valki-root'];
+    const host = this.widgetHost;
+    if (!root || !host) return;
+    if (root.dataset.state === state && this.isOpen === (state === 'open')) return;
+    root.dataset.state = state;
+    host.dataset.state = state;
+    this.isOpen = state === 'open';
+    if (!emit) return;
+    if (state === 'open') {
+      this.dispatchWidgetEvent('vichat:open', { state });
+      if (typeof this.config.onOpen === 'function') this.config.onOpen();
+    } else {
+      this.dispatchWidgetEvent('vichat:close', { state });
+      if (typeof this.config.onClose === 'function') this.config.onClose();
+    }
   }
 
   bindUi() {
@@ -243,7 +270,9 @@ class ViChatWidget {
       updateComposerHeight,
       updateViewportLayout,
       clampComposer,
-      scrollToBottom: (force) => this.messageController?.scrollToBottom(force)
+      scrollToBottom: (force) => this.messageController?.scrollToBottom(force),
+      onOpen: () => this.setWidgetState('open'),
+      onClose: () => this.setWidgetState('closed')
     });
 
     this.guestMeter = createGuestMeter({
@@ -893,6 +922,10 @@ class ViChatWidget {
     this.scheduleLayoutMetrics?.();
     this.composerController.clampComposer();
     this.scheduleLayoutMetrics?.();
+    if (!this._readyDispatched) {
+      this._readyDispatched = true;
+      this.dispatchWidgetEvent('vichat:ready', { state: 'ready' });
+    }
   }
 }
 

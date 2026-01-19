@@ -34,6 +34,7 @@ function lockBodyScroll() {
   body.style.overflow = 'hidden';
   body.style.touchAction = 'none';
   document.documentElement.classList.add('valki-chat-open');
+  document.documentElement.classList.add('vichat-open');
 }
 
 function unlockBodyScroll() {
@@ -47,6 +48,7 @@ function unlockBodyScroll() {
   body.style.overflow = state?.overflow || '';
   body.style.touchAction = state?.touchAction || '';
   document.documentElement.classList.remove('valki-chat-open');
+  document.documentElement.classList.remove('vichat-open');
   const y = parseInt(body.dataset.valkiScrollY || '0', 10);
   delete body.dataset.valkiScrollY;
   window.scrollTo({ top: y, behavior: 'auto' });
@@ -60,7 +62,9 @@ export function createOverlayController({
   updateComposerHeight,
   updateViewportLayout,
   clampComposer,
-  scrollToBottom
+  scrollToBottom,
+  onOpen,
+  onClose
 }) {
   function isChatOpen() {
     return overlay?.classList.contains('is-visible');
@@ -72,6 +76,7 @@ export function createOverlayController({
     updateValkiVh?.();
     setVisible(overlay, true);
     lockBodyScroll();
+    onOpen?.();
     requestAnimationFrame(() => {
       updateViewportLayout?.();
     });
@@ -97,6 +102,7 @@ export function createOverlayController({
     setTimeout(() => {
       setVisible(overlay, false);
       unlockBodyScroll();
+      onClose?.();
     }, 220);
   }
 
