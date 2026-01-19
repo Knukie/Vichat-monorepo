@@ -463,14 +463,11 @@ html.valki-chat-open #valki-root .valki-hero-actions{
 /* Rows: also forced inside the column */
 #valki-root .valki-msg-row{
   display:flex;
-  margin: 14px 0;
+  align-items: flex-start;
+  width: 100%;
+  max-width: var(--col);
+  margin: 14px auto;
   gap: 10px;
-
-  max-width: var(--col) !important;
-  margin-left: auto !important;
-  margin-right: auto !important;
-  padding-left: var(--gutter) !important;
-  padding-right: var(--gutter) !important;
 }
 #valki-root .valki-msg-row.user{ justify-content:flex-end; }
 #valki-root .valki-msg-row.bot{ justify-content:flex-start; }
