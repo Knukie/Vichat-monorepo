@@ -22,6 +22,7 @@ export function createMessageController({
 }) {
   let botAvatarUrl = avatarUrl;
   let botAvatarAlt = 'Valki icon';
+  let userLabel = 'You';
 
   function scrollToBottom(force = false) {
     if (!messagesEl) return;
@@ -42,7 +43,8 @@ export function createMessageController({
         avatarUrl: botAvatarUrl,
         avatarAlt: botAvatarAlt,
         renderMarkdown: isCustomer ? undefined : renderMarkdown,
-        hardenLinks: isCustomer ? undefined : hardenLinks
+        hardenLinks: isCustomer ? undefined : hardenLinks,
+        authorLabel: isCustomer ? userLabel : undefined
       })
     );
     scrollToBottom(true);
@@ -86,12 +88,17 @@ export function createMessageController({
     botAvatarAlt = name ? `${name} icon` : 'Valki icon';
   }
 
+  function setUserLabel(nextLabel) {
+    userLabel = nextLabel || 'You';
+  }
+
   return {
     addMessage,
     clearMessagesUI,
     createTypingRow: createTypingMessageRow,
     hasAnyRealMessages,
     setAgentMeta,
+    setUserLabel,
     scrollToBottom,
     scrollToBottomHard
   };

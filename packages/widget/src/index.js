@@ -603,11 +603,19 @@ class ViChatWidget {
 
   updateSessionLabel() {
     const sessionLabel = this.elements['valki-session-label'];
-    if (this.me && this.me.name) {
-      sessionLabel.textContent = `${this.me.name} 🟢`;
+    const displayName = this.me?.displayName;
+    if (displayName) {
+      sessionLabel.textContent = `${displayName} 🟢`;
+      this.messageController?.setUserLabel(displayName);
       return;
     }
-    sessionLabel.textContent = this.isLoggedIn() ? 'you 🟢' : 'Guest 🟠';
+    if (this.isLoggedIn()) {
+      sessionLabel.textContent = 'You 🟢';
+      this.messageController?.setUserLabel('You');
+      return;
+    }
+    sessionLabel.textContent = 'Guest 🟠';
+    this.messageController?.setUserLabel('You');
   }
 
   updateLoginOutButtonLabel() {
