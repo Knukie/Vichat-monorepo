@@ -840,7 +840,7 @@ html.valki-chat-open #valki-root .valki-bubble{
 #valki-root .valki-messages-inner{
   max-width: var(--col) !important;
   width: 100% !important;
-  margin: 0 auto !important;
+  margin: 0 !important;
   padding-left: var(--gutter) !important;
   padding-right: var(--gutter) !important;
   padding-bottom: 8px;
@@ -855,25 +855,41 @@ html.valki-chat-open #valki-root .valki-bubble{
 #valki-root .valki-msg-row{
   display:flex;
   align-items: flex-start;
+  width: 100%;
   margin: 14px 0;
-  gap: 8px;
+  gap: 10px;
   justify-content: flex-start;
-  max-width: var(--col) !important;
-  margin-left: auto !important;
-  margin-right: auto !important;
-  padding-left: var(--gutter) !important;
-  padding-right: var(--gutter) !important;
 }
 
-#valki-root .valki-bot-avatar-wrap{ flex:0 0 auto; margin-top: 4px; }
+#valki-root .valki-msg-row.user{
+  justify-content: flex-end;
+  padding-left: var(--valki-avatar-col, 28px);
+}
+
+#valki-root .valki-msg-row.bot{
+  justify-content: flex-start;
+}
+
+#valki-root .valki-bot-avatar-wrap{
+  flex:0 0 var(--valki-avatar-col, 28px);
+  width: var(--valki-avatar-col, 28px);
+  display:flex;
+  align-items:flex-start;
+  justify-content:center;
+  margin-top: -4px;
+}
+#valki-root .valki-bot-avatar-spacer{
+  flex:0 0 var(--valki-avatar-col, 28px);
+  width: var(--valki-avatar-col, 28px);
+}
 #valki-root .valki-bot-avatar{
-  width:32px;height:32px;border-radius:50%;
+  width:22px;height:22px;border-radius:50%;
   border: 1px solid rgba(255,255,255,.16);
   background: rgba(255,255,255,.05);
 }
 
 #valki-root .valki-msg-bubble{
-  flex: 1 1 auto;
+  flex: 0 1 auto;
   max-width: 100%;
   padding: 10px 14px;
   position: relative;
@@ -887,6 +903,9 @@ html.valki-chat-open #valki-root .valki-bubble{
 }
 
 #valki-root .valki-msg-row.bot .valki-msg-bubble{
+  flex: 1 1 auto;
+  width: 100%;
+  max-width: min(100%, 720px);
   background: rgba(255,255,255,.035);
   border: 1px solid rgba(255,255,255,.08);
 }
@@ -904,6 +923,7 @@ html.valki-chat-open #valki-root .valki-bubble{
 }
 
 #valki-root .valki-msg-row.user .valki-msg-bubble{
+  max-width: 78%;
   background: #f1f1f1;
   border: 1px solid rgba(255,255,255,.20);
   color: #0b0b0b;
