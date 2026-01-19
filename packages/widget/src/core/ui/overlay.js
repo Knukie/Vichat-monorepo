@@ -1,4 +1,5 @@
 let lockState = null;
+let closeTimerId = null;
 
 export function setVisible(el, on) {
   if (!el) return;
@@ -13,6 +14,7 @@ export function setVisible(el, on) {
 }
 
 function lockBodyScroll() {
+  if (lockState) return;
   const y = window.scrollY || 0;
   const body = document.body;
   lockState = {
@@ -38,6 +40,7 @@ function lockBodyScroll() {
 }
 
 function unlockBodyScroll() {
+  if (!lockState) return;
   const body = document.body;
   const state = lockState;
   body.style.position = state?.position || '';
@@ -72,11 +75,18 @@ export function createOverlayController({
 
   function openOverlay() {
     if (!overlay) return;
+    if (closeTimerId) {
+      clearTimeout(closeTimerId);
+      closeTimerId = null;
+    }
+    const wasOpen = isChatOpen();
     updateViewportLayout?.();
     updateValkiVh?.();
     setVisible(overlay, true);
     lockBodyScroll();
-    onOpen?.();
+    if (!wasOpen) {
+      onOpen?.();
+    }
     requestAnimationFrame(() => {
       updateViewportLayout?.();
     });
@@ -98,11 +108,16 @@ export function createOverlayController({
 
   function closeOverlay() {
     if (!overlay) return;
+    if (!isChatOpen() && !closeTimerId) return;
     overlay.classList.remove('is-visible');
-    setTimeout(() => {
+    if (closeTimerId) {
+      clearTimeout(closeTimerId);
+    }
+    closeTimerId = setTimeout(() => {
       setVisible(overlay, false);
       unlockBodyScroll();
       onClose?.();
+      closeTimerId = null;
     }, 220);
   }
 
