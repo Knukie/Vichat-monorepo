@@ -187,10 +187,13 @@ class ViChatWidget {
     this._layoutNudge = 0;
     this._readyDispatched = false;
     this.isOpen = false;
+    this.teardownUi = null;
   }
 
   mount(mountTarget) {
     ensureStyle(this.theme);
+    this.teardownUi?.();
+    this.teardownUi = null;
     const hostConfig = {
       type: 'chat',
       provider: 'valki-vichat',
@@ -231,6 +234,16 @@ class ViChatWidget {
 
   bindUi() {
     const el = this.elements;
+    this.teardownUi?.();
+    this.teardownUi = null;
+    if (!el) return;
+
+    const cleanupFns = [];
+    const on = (node, event, handler, options) => {
+      if (!node) return;
+      node.addEventListener(event, handler, options);
+      cleanupFns.push(() => node.removeEventListener(event, handler, options));
+    };
 
     const updateComposerHeight = () => {
       try {
@@ -310,31 +323,32 @@ class ViChatWidget {
     });
 
     this.composerController.applyPlaceholders();
-    window.addEventListener('languagechange', () => this.composerController.applyPlaceholders());
+    const onLanguageChange = () => this.composerController?.applyPlaceholders();
+    on(window, 'languagechange', onLanguageChange);
 
-    el['valki-loginout-btn'].addEventListener('click', () => this.openAuthOverlay(false));
-    el['valki-deleteall-btn'].addEventListener('click', () => this.onDeleteAll());
-    el['valki-confirm-no'].addEventListener('click', () => this.closeConfirm());
-    el['valki-confirm-overlay'].addEventListener('click', (e) => {
+    on(el['valki-loginout-btn'], 'click', () => this.openAuthOverlay(false));
+    on(el['valki-deleteall-btn'], 'click', () => this.onDeleteAll());
+    on(el['valki-confirm-no'], 'click', () => this.closeConfirm());
+    on(el['valki-confirm-overlay'], 'click', (e) => {
       if (e.target === el['valki-confirm-overlay']) this.closeConfirm();
     });
-    el['valki-confirm-yes'].addEventListener('click', async () => {
+    on(el['valki-confirm-yes'], 'click', async () => {
       this.closeConfirm();
       await this.clearChatAll();
       this.updateDeleteButtonVisibility();
     });
 
-    el['valki-logout-yes'].addEventListener('click', async () => {
+    on(el['valki-logout-yes'], 'click', async () => {
       this.closeLogoutPrompt();
       await this.logout();
     });
-    el['valki-logout-no'].addEventListener('click', () => this.closeLogoutPrompt());
-    el['valki-logout-overlay'].addEventListener('click', (e) => {
+    on(el['valki-logout-no'], 'click', () => this.closeLogoutPrompt());
+    on(el['valki-logout-overlay'], 'click', (e) => {
       if (e.target === el['valki-logout-overlay']) this.closeLogoutPrompt();
     });
 
-    el['valki-bubble'].addEventListener('click', (e) => this.openFromBubble(e));
-    el['valki-chat-form'].addEventListener('submit', (e) => {
+    on(el['valki-bubble'], 'click', (e) => this.openFromBubble(e));
+    on(el['valki-chat-form'], 'submit', (e) => {
       e.preventDefault();
       const q = cleanText(el['valki-chat-input'].value);
       if (!q) return;
@@ -343,33 +357,33 @@ class ViChatWidget {
       this.ask(q);
     });
 
-    el['valki-chat-input'].addEventListener('keydown', (e) => {
+    on(el['valki-chat-input'], 'keydown', (e) => {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         el['valki-chat-form'].dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
       }
     });
-    el['valki-chat-input'].addEventListener('input', clampComposer);
-    el['valki-chat-input'].addEventListener('paste', () => setTimeout(clampComposer, 0));
-    el['valki-chat-input'].addEventListener('focus', scheduleLayoutMetrics);
+    on(el['valki-chat-input'], 'input', clampComposer);
+    on(el['valki-chat-input'], 'paste', () => setTimeout(clampComposer, 0));
+    on(el['valki-chat-input'], 'focus', scheduleLayoutMetrics);
 
-    el['valki-chat-attach'].addEventListener('click', () => {
+    on(el['valki-chat-attach'], 'click', () => {
       if (el['valki-chat-input'].disabled || this.isSending) return;
       el['valki-file-input'].click();
     });
 
-    el['valki-file-input'].addEventListener('change', async () => {
+    on(el['valki-file-input'], 'change', async () => {
       await this.attachmentController.addFiles(el['valki-file-input'].files);
       el['valki-file-input'].value = '';
       clampComposer();
       scheduleLayoutMetrics();
     });
 
-    el['valki-close'].addEventListener('click', () => this.overlayController.closeOverlay());
-    el['valki-agent-close'].addEventListener('click', () => this.overlayController.closeOverlay());
-    el['valki-agent-back'].addEventListener('click', () => this.showAgentHub());
+    on(el['valki-close'], 'click', () => this.overlayController.closeOverlay());
+    on(el['valki-agent-close'], 'click', () => this.overlayController.closeOverlay());
+    on(el['valki-agent-back'], 'click', () => this.showAgentHub());
 
-    document.addEventListener('keydown', (e) => {
+    on(document, 'keydown', (e) => {
       if (e.key !== 'Escape') return;
       if (el['valki-logout-overlay'].classList.contains('is-visible')) {
         this.closeLogoutPrompt();
@@ -392,7 +406,7 @@ class ViChatWidget {
       el['valki-session-label']
     ];
     accountTriggers.forEach((node) => {
-      node.addEventListener('click', (e) => {
+      on(node, 'click', (e) => {
         e.preventDefault();
         e.stopPropagation();
         if (this.isLoggedIn()) this.openLogoutPrompt();
@@ -400,16 +414,17 @@ class ViChatWidget {
       });
     });
 
-    el['valki-login-discord-btn'].addEventListener('click', () => this.authController.openDiscordLogin());
-    el['valki-login-google-btn'].addEventListener('click', () => this.authController.openGoogleLogin());
-    el['valki-join-discord-btn'].addEventListener('click', () => this.authController.openDiscordInvite());
+    on(el['valki-login-discord-btn'], 'click', () => this.authController.openDiscordLogin());
+    on(el['valki-login-google-btn'], 'click', () => this.authController.openGoogleLogin());
+    on(el['valki-join-discord-btn'], 'click', () => this.authController.openDiscordInvite());
 
-    el['valki-auth-dismiss'].addEventListener('click', () => this.closeAuthOverlay());
-    el['valki-auth-overlay'].addEventListener('click', (event) => {
+    on(el['valki-auth-dismiss'], 'click', () => this.closeAuthOverlay());
+    on(el['valki-auth-overlay'], 'click', (event) => {
       if (event.target === el['valki-auth-overlay']) this.closeAuthOverlay();
     });
 
-    window.addEventListener(
+    on(
+      window,
       'resize',
       () => {
         scheduleLayoutMetrics();
@@ -417,7 +432,8 @@ class ViChatWidget {
       },
       { passive: true }
     );
-    window.addEventListener(
+    on(
+      window,
       'orientationchange',
       () => setTimeout(() => {
         scheduleLayoutMetrics();
@@ -427,7 +443,7 @@ class ViChatWidget {
     );
 
     if (window.visualViewport) {
-      window.visualViewport.addEventListener('resize', () => {
+      on(window.visualViewport, 'resize', () => {
         updateViewportLayout();
         this.messageController.scrollToBottom(false);
       });
@@ -446,6 +462,9 @@ class ViChatWidget {
     this.updateComposerHeight = updateComposerHeight;
     this.updateViewportLayout = updateViewportLayout;
     this.updateValkiVh = this.updateValkiVh.bind(this);
+    this.teardownUi = () => {
+      cleanupFns.splice(0).forEach((cleanup) => cleanup());
+    };
   }
 
   resolveInitialAgentState() {
