@@ -841,7 +841,7 @@ html.valki-chat-open #valki-root .valki-bubble{
 #valki-root .valki-messages-inner{
   max-width: var(--col) !important;
   width: 100% !important;
-  margin: 0 !important;
+  margin: 0 auto !important;
   padding-left: var(--gutter) !important;
   padding-right: var(--gutter) !important;
   padding-bottom: 8px;
@@ -857,7 +857,8 @@ html.valki-chat-open #valki-root .valki-bubble{
   display:flex;
   align-items: flex-start;
   width: 100%;
-  margin: 14px 0;
+  max-width: var(--col);
+  margin: 14px auto;
   gap: 10px;
   justify-content: flex-start;
 }
