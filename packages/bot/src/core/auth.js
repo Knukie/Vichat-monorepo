@@ -77,9 +77,11 @@ export function optionalAuth(req, _res, next) {
     return next();
   }
 
+  const displayName = cleanText(payload.displayName || payload.name) || "";
   req.user = {
     id: Number(payload.uid),
-    name: cleanText(payload.name) || "",
+    name: displayName,
+    displayName,
     provider: cleanText(payload.provider) || "discord"
   };
   return next();

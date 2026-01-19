@@ -30,7 +30,8 @@ function createAvatarSpacer() {
  *  avatarUrl?: string,
  *  avatarAlt?: string,
  *  renderMarkdown?: (text: string) => string | Node,
- *  hardenLinks?: (root: HTMLElement) => void
+ *  hardenLinks?: (root: HTMLElement) => void,
+ *  authorLabel?: string
  * }} args
  */
 export function createChatMessageRow({
@@ -40,7 +41,8 @@ export function createChatMessageRow({
   avatarUrl,
   avatarAlt,
   renderMarkdown,
-  hardenLinks
+  hardenLinks,
+  authorLabel
 }) {
   const row = document.createElement('div');
   row.className = `valki-msg-row ${role}`;
@@ -54,16 +56,28 @@ export function createChatMessageRow({
   const bubble = document.createElement('div');
   bubble.className = 'valki-msg-bubble';
 
+  let contentTarget = bubble;
+  if (role === 'user' && authorLabel) {
+    const label = document.createElement('div');
+    label.className = 'valki-msg-author';
+    label.textContent = authorLabel;
+    bubble.appendChild(label);
+    const content = document.createElement('div');
+    content.className = 'valki-msg-content';
+    bubble.appendChild(content);
+    contentTarget = content;
+  }
+
   if (role === 'bot' && typeof renderMarkdown === 'function') {
     const rendered = renderMarkdown(text || '');
     if (typeof rendered === 'string') {
-      bubble.innerHTML = rendered;
+      contentTarget.innerHTML = rendered;
     } else if (rendered && typeof rendered === 'object') {
-      bubble.appendChild(rendered);
+      contentTarget.appendChild(rendered);
     }
-    if (typeof hardenLinks === 'function') hardenLinks(bubble);
+    if (typeof hardenLinks === 'function') hardenLinks(contentTarget);
   } else {
-    bubble.textContent = text || '';
+    contentTarget.textContent = text || '';
   }
 
   if (Array.isArray(images) && images.length) {

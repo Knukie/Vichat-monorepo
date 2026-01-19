@@ -31,7 +31,7 @@ test('widget reopens after close for guest and authenticated flows', async ({ pa
   await page.route('**/api/me', async (route) => {
     await route.fulfill({
       status: 200,
-      body: JSON.stringify({ loggedIn: true, user: { name: 'Auth User' } }),
+      body: JSON.stringify({ loggedIn: true, user: { displayName: 'Auth User' } }),
       headers: { 'content-type': 'application/json' }
     });
   });

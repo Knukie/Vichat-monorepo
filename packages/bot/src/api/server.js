@@ -165,15 +165,18 @@ app.get("/auth/discord/callback", async (req, res) => {
     const me = await meRes.json();
 
     const discordId = cleanText(me?.id);
-    const name = cleanText(me?.global_name) || cleanText(me?.username) || "Discord user";
+    const displayName = cleanText(me?.global_name) || cleanText(me?.username) || "Discord user";
     if (!discordId) return res.status(500).send("Discord user missing id");
 
     await ensureTablesExistOrThrow();
 
-    const userId = await upsertUserDiscord({ discordId, name });
+    const userId = await upsertUserDiscord({ discordId, name: displayName });
     await getOrCreateConversationForUser(userId);
 
-    const authToken = signAuthToken({ uid: userId, name, provider: "discord" }, 60 * 60 * 24 * 14);
+    const authToken = signAuthToken(
+      { uid: userId, name: displayName, displayName, provider: "discord" },
+      60 * 60 * 24 * 14
+    );
 
     return res
       .status(200)
@@ -181,7 +184,7 @@ app.get("/auth/discord/callback", async (req, res) => {
       .send(
         htmlPopupDone({
           token: authToken,
-          user: { id: userId, name, provider: "discord" },
+          user: { id: userId, name: displayName, displayName, provider: "discord" },
           targetOrigin
         })
       );
@@ -257,16 +260,19 @@ app.get("/auth/google/callback", async (req, res) => {
     }
 
     const sub = cleanText(info?.sub);
-    const name = cleanText(info?.name) || cleanText(info?.email) || "Google user";
+    const displayName = cleanText(info?.name) || cleanText(info?.given_name) || "Google user";
 
     if (!sub) return res.status(500).send("Google auth failed (missing sub)");
 
     await ensureTablesExistOrThrow();
 
-    const userId = await upsertUserGoogle({ googleSub: sub, name });
+    const userId = await upsertUserGoogle({ googleSub: sub, name: displayName });
     await getOrCreateConversationForUser(userId);
 
-    const authToken = signAuthToken({ uid: userId, name, provider: "google" }, 60 * 60 * 24 * 14);
+    const authToken = signAuthToken(
+      { uid: userId, name: displayName, displayName, provider: "google" },
+      60 * 60 * 24 * 14
+    );
 
     return res
       .status(200)
@@ -274,7 +280,7 @@ app.get("/auth/google/callback", async (req, res) => {
       .send(
         htmlPopupDone({
           token: authToken,
-          user: { id: userId, name, provider: "google" },
+          user: { id: userId, name: displayName, displayName, provider: "google" },
           targetOrigin
         })
       );

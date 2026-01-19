@@ -904,6 +904,22 @@ html.valki-chat-open #valki-root .valki-bubble{
   user-select:text;
 }
 
+#valki-root .valki-msg-author{
+  font-size: 11px;
+  text-transform: none;
+  letter-spacing: .02em;
+  opacity: .65;
+  margin-bottom: 6px;
+}
+
+#valki-root .valki-msg-row.user .valki-msg-author{
+  color: rgba(0,0,0,.65);
+}
+
+#valki-root .valki-msg-row.bot .valki-msg-author{
+  color: rgba(255,255,255,.65);
+}
+
 #valki-root .valki-msg-row.bot .valki-msg-bubble{
   flex: 1 1 auto;
   width: 100%;
