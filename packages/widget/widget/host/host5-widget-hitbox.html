@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ViChat Widget Hitbox + Z-Index Demo</title>
+    <link rel="stylesheet" href="../../dist/vichat-widget.css" />
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        margin: 0;
+        padding: 24px;
+        min-height: 200vh;
+        background: #f7f7fb;
+      }
+
+      .page-card {
+        max-width: 680px;
+        background: white;
+        padding: 24px;
+        border-radius: 16px;
+        box-shadow: 0 16px 40px rgba(15, 15, 25, 0.1);
+        margin-bottom: 32px;
+      }
+
+      .fake-cookie-banner {
+        position: fixed;
+        left: 16px;
+        right: 16px;
+        bottom: 16px;
+        background: #111827;
+        color: white;
+        padding: 16px 18px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        z-index: 2147484000;
+      }
+
+      .fake-cookie-banner button {
+        border: 0;
+        background: #f97316;
+        color: white;
+        padding: 8px 14px;
+        border-radius: 999px;
+        cursor: pointer;
+      }
+
+      .floating-link {
+        position: fixed;
+        right: 28px;
+        bottom: 120px;
+        background: #2563eb;
+        color: white;
+        padding: 10px 14px;
+        border-radius: 10px;
+        text-decoration: none;
+        z-index: 1;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page-card">
+      <h1>Widget Hitbox + Cookie Banner Demo</h1>
+      <p>
+        This page validates that the launcher hitbox stays small when closed. Tap/click the
+        floating link behind the bubble to confirm the page remains interactive.
+      </p>
+      <p>
+        When you open the chat, the overlay should go full screen. The cookie banner should
+        stay above the widget because it uses a higher z-index.
+      </p>
+    </div>
+
+    <a href="https://example.com" class="floating-link" target="_blank" rel="noreferrer">
+      Floating link (should be clickable)
+    </a>
+
+    <div class="fake-cookie-banner" id="cookie-banner">
+      <span>We use cookies for a better chat. Manage preferences anytime.</span>
+      <button type="button" onclick="document.getElementById('cookie-banner').remove();">Dismiss</button>
+    </div>
+
+    <script src="../../dist/vichat-widget.min.js"></script>
+    <script>
+      if (window.ViChat?.mount) {
+        window.ViChat.mount({
+          theme: 'vichat',
+          widgetHost: {
+            zIndex: 2147483000,
+            offset: { x: 18, y: 18 },
+            useSafeAreaInsets: true
+          },
+          onOpen: () => console.log('ViChat opened'),
+          onClose: () => console.log('ViChat closed')
+        });
+      }
+    </script>
+  </body>
+</html>

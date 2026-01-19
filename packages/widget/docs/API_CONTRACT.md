@@ -34,9 +34,24 @@ These keys are stable and backward-compatible:
 - `baseUrl` (API/auth origin)
 - `target` (element or selector to mount into)
 - `avatarUrl`
+- `onOpen`
+- `onClose`
 - `agents`
 - `startAgentId`
 - `mode`
+- `widgetHost`:
+  - `zIndex`
+  - `offset` (`{ x, y }` or `{ right, bottom }`)
+  - `useSafeAreaInsets`
+
+## State + Events (Stable)
+
+- Root node: `data-state="open|closed"`
+- Document root: `html.vichat-open` class while open
+- Window events (CustomEvent):
+  - `vichat:ready`
+  - `vichat:open`
+  - `vichat:close`
 
 ## Backward Compatibility Promise
 

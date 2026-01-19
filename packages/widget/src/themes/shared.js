@@ -118,10 +118,10 @@ html.valki-chat-open #valki-root #valki-bg{
 ========================================================= */
 #valki-root .valki-bubble{
   position: fixed;
-  right: 18px;
-  bottom: calc(18px + env(safe-area-inset-bottom));
-  width: 64px;
-  height: 64px;
+  right: var(--widget-launcher-right, 18px);
+  bottom: var(--widget-launcher-bottom, calc(18px + env(safe-area-inset-bottom)));
+  width: var(--widget-launcher-bubble-size, 64px);
+  height: var(--widget-launcher-bubble-size, 64px);
   border-radius: 999px;
 
   /* Subtle gradient + inner ring */
@@ -137,7 +137,7 @@ html.valki-chat-open #valki-root #valki-bg{
   align-items:center;
   justify-content:center;
 
-  z-index: 2147482998;
+  z-index: var(--widget-launcher-z, 2147482998);
   transform: translateZ(0);
   transition: transform .16s ease, box-shadow .16s ease, filter .16s ease;
 }
@@ -215,7 +215,7 @@ html.valki-chat-open #valki-root .valki-bubble{
 #valki-root #valki-auth-overlay,
 #valki-root #valki-confirm-overlay,
 #valki-root #valki-logout-overlay{
-  z-index: 2147483000 !important;
+  z-index: var(--widget-overlay-z, 2147483000) !important;
 }
 
 /* Base overlay layout */

@@ -124,6 +124,22 @@ clientId → identificatie van de embed/site/klant
 
 optioneel: agentId / departmentId voor directe routering
 
+Widget host opties (layout / layering):
+
+widgetHost.zIndex → basis z-index voor launcher + overlay
+
+widgetHost.offset → { x, y } of { right, bottom } om de launcher te verplaatsen
+
+widgetHost.useSafeAreaInsets → true/false (default true) om env(safe-area-inset-*) te gebruiken
+
+State hooks:
+
+data-state=\"open|closed\" op de widget root
+
+html.vichat-open class wanneer chat open is
+
+window CustomEvents: vichat:ready, vichat:open, vichat:close
+
 📡 Verwachte backend contracten
 
 De Vichat widget praat met de backend op basis van @valki/contracts.
