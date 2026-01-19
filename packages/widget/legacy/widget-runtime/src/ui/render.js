@@ -1,3 +1,5 @@
+import { createChatMessageRow, createTypingRow } from '../../../../src/core/ui/chatMessageRow.js';
+
 export const renderMessages = ({
   container,
   messages,
@@ -13,47 +15,31 @@ export const renderMessages = ({
   container.innerHTML = '';
   const fragment = document.createDocumentFragment();
   messages.forEach((message) => {
-    const row = document.createElement('div');
-    row.className = `message-row ${message.role}`;
-    const bubble = document.createElement('div');
-    bubble.className = 'bubble';
-    if (message.role === 'bot') {
-      if (typeof renderMarkdown === 'function') {
-        bubble.appendChild(renderMarkdown(message.text || ''));
-      } else if (message.text) {
-        bubble.textContent = message.text;
-      }
-    } else if (message.text) {
-      bubble.textContent = message.text;
-    }
-    if (message.attachments && message.attachments.length) {
-      const attachmentsEl = document.createElement('div');
-      attachmentsEl.className = 'message-attachments';
-      message.attachments.forEach((attachment) => {
-        const wrap = document.createElement('div');
-        wrap.className = 'message-attachment';
-        const img = document.createElement('img');
-        img.alt = 'attachment';
-        img.src = attachment.dataUrl;
-        wrap.appendChild(img);
-        attachmentsEl.appendChild(wrap);
-      });
-      bubble.appendChild(attachmentsEl);
-    }
-    row.appendChild(bubble);
+    const row = createChatMessageRow({
+      role: message.role === 'bot' ? 'bot' : 'user',
+      text: message.text || '',
+      images: message.attachments?.map((attachment) => ({ dataUrl: attachment.dataUrl })) || [],
+      renderMarkdown: message.role === 'bot' ? renderMarkdown : undefined
+    });
     fragment.appendChild(row);
   });
   if (typing) {
-    const row = document.createElement('div');
-    row.className = 'message-row bot';
-    const bubble = document.createElement('div');
-    bubble.className = 'bubble';
-    const typingEl = document.createElement('div');
-    typingEl.className = 'typing';
-    typingEl.innerHTML = '<span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>';
-    bubble.appendChild(typingEl);
-    row.appendChild(bubble);
-    fragment.appendChild(row);
+    const typingRow = createTypingRow({ label: '' });
+    const typingDots = typingRow.querySelector('.valki-typing-dots');
+    const typingLabel = typingRow.querySelector('.valki-typing-label');
+    if (typingDots) {
+      typingDots.innerHTML = '<span></span><span></span><span></span>';
+    }
+    if (typingLabel) {
+      typingLabel.textContent = '';
+      typingLabel.remove();
+    }
+    typingRow.querySelector('.valki-typing-bar')?.classList.add('typing');
+    typingRow.querySelectorAll('.valki-typing-dots span').forEach((dot, index) => {
+      dot.classList.add('typing-dot');
+      dot.style.animationDelay = `${index * 0.2}s`;
+    });
+    fragment.appendChild(typingRow);
   }
   container.appendChild(fragment);
   if (shouldStick) scrollToBottom();
