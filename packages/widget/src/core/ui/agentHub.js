@@ -14,6 +14,7 @@ function createAgentRow(agent, onSelect, selectedAgentId) {
   button.setAttribute('aria-label', `Chat with ${agent.name}`);
   if (selectedAgentId && agent.id === selectedAgentId) {
     button.classList.add('is-active');
+    button.dataset.selected = 'true';
     button.setAttribute('aria-current', 'true');
   }
 

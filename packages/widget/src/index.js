@@ -191,6 +191,7 @@ class ViChatWidget {
     this._layoutRaf = 0;
     this._layoutNudge = 0;
     this._agentSelectRaf = 0;
+    this._agentSelectTimer = 0;
     this._pendingAgentSelect = null;
     this._readyDispatched = false;
     this.isOpen = false;
@@ -534,13 +535,17 @@ class ViChatWidget {
       return;
     }
     if (this._agentSelectRaf) cancelAnimationFrame(this._agentSelectRaf);
+    if (this._agentSelectTimer) clearTimeout(this._agentSelectTimer);
     this._pendingAgentSelect = agent.id;
     this._agentSelectRaf = requestAnimationFrame(() => {
       this._agentSelectRaf = 0;
-      const pending = this._pendingAgentSelect;
-      this._pendingAgentSelect = null;
-      if (!pending) return;
-      void this.selectAgent(pending);
+      this._agentSelectTimer = window.setTimeout(() => {
+        this._agentSelectTimer = 0;
+        const pending = this._pendingAgentSelect;
+        this._pendingAgentSelect = null;
+        if (!pending) return;
+        void this.selectAgent(pending);
+      }, 100);
     });
   }
 
