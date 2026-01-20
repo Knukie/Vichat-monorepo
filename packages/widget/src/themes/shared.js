@@ -739,9 +739,22 @@ html.valki-chat-open #valki-root .valki-bubble{
   align-items:center;
   gap: 12px;
   padding: 14px var(--gutter);
-  border-bottom: 1px solid rgba(255,255,255,.06);
+  position: relative;
   text-align:left;
   transition: background .16s ease;
+}
+
+#valki-root .valki-agent-row::after{
+  content:"";
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:0;
+  height:1px;
+  background: rgba(255,255,255,.06);
+  pointer-events:none;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 18%);
+  mask-image: linear-gradient(90deg, transparent 0%, #000 18%);
 }
 
 #valki-root .valki-agent-row:hover{
