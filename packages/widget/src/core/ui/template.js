@@ -156,13 +156,22 @@ export const templateHtml = `<div class="valki-root" id="valki-root">
   </div>
 
   <!-- Confirm delete all -->
-  <div id="valki-confirm-overlay" class="valki-confirm-overlay" aria-hidden="true">
-    <div class="valki-confirm-modal" role="dialog" aria-modal="true" aria-label="Confirm delete">
-      <h3 class="valki-confirm-title">Delete all messages?</h3>
-      <p class="valki-confirm-sub">This will remove your chat history for this session.</p>
-      <div class="valki-confirm-actions">
-        <button type="button" class="valki-confirm-btn" id="valki-confirm-no"><span>No</span></button>
-        <button type="button" class="valki-confirm-btn danger" id="valki-confirm-yes"><span>Yes, delete</span></button>
+  <div id="valki-confirm-overlay" class="valki-auth-overlay valki-confirm-overlay" aria-hidden="true">
+    <div
+      class="valki-auth-modal valki-confirm-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="valki-confirm-title"
+      aria-describedby="valki-confirm-subtitle"
+    >
+      <div class="valki-auth-header">
+        <img src="https://valki.wiki/blogmedia/Valki%20Talki.jpg" class="valki-auth-avatar" alt="Valki avatar" />
+      </div>
+      <h2 class="valki-auth-title" id="valki-confirm-title">Delete all messages?</h2>
+      <p class="valki-auth-subtitle" id="valki-confirm-subtitle">This will remove your chat history for this session.</p>
+      <div class="valki-auth-buttons">
+        <button type="button" class="valki-auth-btn" id="valki-confirm-no">Cancel</button>
+        <button type="button" class="valki-auth-btn danger" id="valki-confirm-yes">Delete</button>
       </div>
     </div>
   </div>

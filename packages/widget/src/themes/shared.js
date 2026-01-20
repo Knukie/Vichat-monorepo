@@ -372,6 +372,12 @@ html.valki-chat-open #valki-root .valki-bubble{
   color: #0b0b0b;
 }
 
+#valki-root .valki-auth-btn.danger{
+  background: #ff4b4b;
+  border-color: rgba(255,255,255,.18);
+  color: #fff;
+}
+
 /* Footer tekst */
 #valki-root .valki-auth-note{
   font-size: 11px;
@@ -418,6 +424,15 @@ html.valki-chat-open #valki-root .valki-bubble{
     border-color: rgba(0,0,0,.08);
     box-shadow: 0 18px 44px rgba(0,0,0,.38);
     filter: brightness(1.01);         /* subtiel, geen grijs */
+  }
+}
+
+@media (hover:hover){
+  #valki-root .valki-auth-btn.danger:hover{
+    transform: translateY(-1px);
+    background: #ff5c5c;
+    border-color: rgba(255,255,255,.28);
+    box-shadow: 0 18px 44px rgba(0,0,0,.38);
   }
 }
 

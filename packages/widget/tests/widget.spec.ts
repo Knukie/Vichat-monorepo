@@ -58,6 +58,39 @@ test('strict csp chat flow', async ({ page }) => {
   await page.screenshot({ path: 'csp-chat-working.png', fullPage: true });
 });
 
+test('delete confirm modal matches auth shell', async ({ page }) => {
+  const strictCspHtmlPath = path.join(__dirname, '..', 'public', 'test', 'strict-csp.html');
+  await routeHtml(page, '/test/strict-csp.html', strictCspHtmlPath);
+  await maybeRouteBuildAssets(page);
+
+  await page.goto(`${ORIGIN}/test/strict-csp.html`, { waitUntil: 'domcontentloaded' });
+
+  await expect(page.locator('body[data-valki-ready="true"]')).toHaveCount(1);
+
+  const badge = page.locator('#valki-bubble');
+  await expect(badge).toBeVisible();
+  await badge.click();
+
+  await page.locator('#valki-test-inject-text').fill('hello');
+  await page.locator('#valki-test-inject-btn').click();
+
+  const deleteButton = page.locator('#valki-deleteall-btn');
+  await expect(deleteButton).toBeVisible();
+  await deleteButton.click();
+
+  const confirmDialog = page.locator('#valki-confirm-overlay .valki-auth-modal[role="dialog"]');
+  await expect(confirmDialog).toBeVisible();
+  await expect(confirmDialog).toHaveAttribute('aria-labelledby', 'valki-confirm-title');
+  await expect(confirmDialog).toHaveAttribute('aria-describedby', 'valki-confirm-subtitle');
+  await expect(page.locator('#valki-confirm-title')).toHaveText('Delete all messages?');
+  await expect(page.locator('#valki-confirm-subtitle')).toHaveText(
+    'This will remove your chat history for this session.'
+  );
+  await expect(page.locator('#valki-confirm-no')).toHaveText('Cancel');
+  await expect(page.locator('#valki-confirm-yes')).toHaveText('Delete');
+  await expect(page.locator('#valki-confirm-no')).toBeFocused();
+});
+
 test('desktop hub selects agent and shows chat header', async ({ page }) => {
   const agentHubHtmlPath = path.join(__dirname, '..', 'public', 'test', 'agent-hub.html');
   await routeHtml(page, '/test/agent-hub.html', agentHubHtmlPath);
