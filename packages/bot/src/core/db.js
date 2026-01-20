@@ -167,6 +167,7 @@ export async function saveMessage(conversationId, role, content, images = [], me
   const ts = nowISO();
   let safeImages = [];
   let warnings = [];
+  let jsonPayload = "[]";
 
   try {
     const { images: storedImages, warnings: imageWarnings } = safeImagesForStorage(images);
@@ -177,10 +178,12 @@ export async function saveMessage(conversationId, role, content, images = [], me
       (img) => img && typeof img === "object" && !Array.isArray(img)
     );
     safeImages = ensureJsonSafeImages(filteredImages);
+    jsonPayload = JSON.stringify(safeImages ?? []);
   } catch (err) {
     console.warn("Failed to normalize images for storage:", err?.message || err);
     safeImages = [];
     warnings = [];
+    jsonPayload = "[]";
   }
 
   if (warnings.length) {
@@ -204,13 +207,15 @@ export async function saveMessage(conversationId, role, content, images = [], me
 
   try {
     await pool.query(
-      "INSERT INTO messages (conversation_id, role, content, images, ts) VALUES ($1,$2,$3,$4,$5)",
-      [conversationId, role, content, safeImages, ts]
+      "INSERT INTO messages (conversation_id, role, content, images, ts) VALUES ($1,$2,$3,$4::jsonb,$5)",
+      [conversationId, role, content, jsonPayload, ts]
     );
   } catch (err) {
     const diagnostics = summarizeImageDiagnostics(safeImages);
     const imageHosts = Array.isArray(diagnostics.hosts) ? diagnostics.hosts : [];
     const imageUrlLengths = normalizeImageUrlLengths(diagnostics.minUrlLength, diagnostics.maxUrlLength);
+    const imagesValueType = Array.isArray(safeImages) ? "array" : typeof safeImages;
+    const imagesPreview = jsonPayload ? jsonPayload.slice(0, 180) : "";
     console.error("saveMessage error:", {
       conversationId,
       role,
@@ -218,6 +223,8 @@ export async function saveMessage(conversationId, role, content, images = [], me
       imageCount: safeImages.length,
       imageHosts,
       imageUrlLengths,
+      imagesValueType,
+      imagesPreview,
       requestId: meta?.requestId,
       message: err?.message || String(err)
     });

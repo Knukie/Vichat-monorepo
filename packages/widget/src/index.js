@@ -375,7 +375,10 @@ class ViChatWidget {
     on(el['valki-chat-form'], 'submit', (e) => {
       e.preventDefault();
       const q = cleanText(el['valki-chat-input'].value);
-      if (!q) return;
+      const hasAttachments = this.attachmentController
+        .snapshot()
+        .some((attachment) => attachment?.dataUrl || attachment?.file);
+      if (!q && !hasAttachments) return;
       el['valki-chat-input'].value = '';
       clampComposer();
       this.ask(q);
@@ -905,7 +908,12 @@ class ViChatWidget {
 
   async ask(text) {
     const q = cleanText(text);
-    if (!q || this.isSending) return;
+    if (this.isSending) return;
+    /** @type {UiImagePayload[]} */
+    const imagesSnapshot = this.attachmentController
+      .snapshot()
+      .filter((x) => x.dataUrl || x.file);
+    if (!q && imagesSnapshot.length === 0) return;
     if (this.guestMeter.guestHardBlocked()) {
       this.openAuthOverlay(true);
       return;
@@ -914,10 +922,6 @@ class ViChatWidget {
     this.isSending = true;
     this.setSendingState(true);
 
-    /** @type {UiImagePayload[]} */
-    const imagesSnapshot = this.attachmentController
-      .snapshot()
-      .filter((x) => x.dataUrl || x.file);
     const guestImages = imagesSnapshot.length
       ? imagesSnapshot.map(({ file, ...rest }) => ({ ...rest }))
       : undefined;
@@ -950,7 +954,7 @@ class ViChatWidget {
 
     try {
       const res = await askValki({
-        message: q,
+        message: q || '',
         clientId: this.clientId,
         images: payloadImages,
         token: this.token,
