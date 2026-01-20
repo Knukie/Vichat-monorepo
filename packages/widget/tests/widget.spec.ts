@@ -57,3 +57,29 @@ test('strict csp chat flow', async ({ page }) => {
 
   await page.screenshot({ path: 'csp-chat-working.png', fullPage: true });
 });
+
+test('desktop hub selects agent and shows chat header', async ({ page }) => {
+  const agentHubHtmlPath = path.join(__dirname, '..', 'public', 'test', 'agent-hub.html');
+  await routeHtml(page, '/test/agent-hub.html', agentHubHtmlPath);
+  await maybeRouteBuildAssets(page);
+
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto(`${ORIGIN}/test/agent-hub.html`, { waitUntil: 'domcontentloaded' });
+
+  await expect(page.locator('body[data-valki-ready="true"]')).toHaveCount(1);
+
+  const badge = page.locator('#valki-bubble');
+  await expect(badge).toBeVisible();
+  await badge.click();
+
+  const sidebar = page.locator('#valki-sidebar');
+  await expect(sidebar).toBeVisible();
+
+  const firstAgent = page.locator('#valki-agent-list .valki-agent-row').first();
+  await expect(firstAgent).toBeVisible();
+  const name = await firstAgent.locator('.valki-agent-name').innerText();
+  await firstAgent.click();
+
+  await expect(page.locator('#valki-title')).toHaveText(name);
+  await expect(page.locator('#valki-chat-input')).toBeVisible();
+});
