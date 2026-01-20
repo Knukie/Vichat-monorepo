@@ -1237,10 +1237,12 @@ html.valki-chat-open #valki-root .valki-bubble{
   transition: border-color .15s ease, background .15s ease, box-shadow .15s ease;
 }
 
-#valki-root .valki-chat-inner:focus-within{
-  background: rgba(255,255,255,.055);
-  border-color: rgba(255,255,255,.20);
-  box-shadow: 0 20px 70px rgba(0,0,0,.62), 0 0 0 3px var(--ring);
+@media (hover: hover) and (pointer: fine){
+  #valki-root .valki-chat-inner:focus-within{
+    background: rgba(255,255,255,.055);
+    border-color: rgba(255,255,255,.20);
+    box-shadow: 0 20px 70px rgba(0,0,0,.62), 0 0 0 3px var(--ring);
+  }
 }
 
 #valki-root .valki-chat-attach{
