@@ -60,15 +60,70 @@ function unlockBodyScroll() {
 
 export function createOverlayController({
   overlay,
+  dialogEl,
   chatInput,
   updateValkiVh,
   updateComposerHeight,
   updateViewportLayout,
   clampComposer,
   scrollToBottom,
+  getInitialFocus,
   onOpen,
   onClose
 }) {
+  let focusTrapActive = false;
+
+  const focusableSelector =
+    'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+  function getFocusableElements() {
+    if (!dialogEl) return [];
+    return Array.from(dialogEl.querySelectorAll(focusableSelector)).filter((el) => {
+      if (!(el instanceof HTMLElement)) return false;
+      if (el.hasAttribute('disabled') || el.getAttribute('aria-hidden') === 'true') return false;
+      const style = window.getComputedStyle(el);
+      if (style.display === 'none' || style.visibility === 'hidden') return false;
+      return true;
+    });
+  }
+
+  function focusFirstAvailable() {
+    const target = getInitialFocus?.();
+    if (target && dialogEl?.contains(target)) {
+      try {
+        target.focus({ preventScroll: true });
+      } catch {
+        target.focus();
+      }
+      return;
+    }
+    const focusable = getFocusableElements();
+    if (!focusable.length) return;
+    try {
+      focusable[0].focus({ preventScroll: true });
+    } catch {
+      focusable[0].focus();
+    }
+  }
+
+  function onTrapKeydown(event) {
+    if (event.key !== 'Tab') return;
+    if (!focusTrapActive || !dialogEl) return;
+    const focusable = getFocusableElements();
+    if (!focusable.length) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    const active = document.activeElement;
+    if (event.shiftKey) {
+      if (active === first || !dialogEl.contains(active)) {
+        event.preventDefault();
+        last.focus();
+      }
+    } else if (active === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  }
   function isChatOpen() {
     return overlay?.classList.contains('is-visible');
   }
@@ -87,6 +142,10 @@ export function createOverlayController({
     if (!wasOpen) {
       onOpen?.();
     }
+    if (!focusTrapActive) {
+      focusTrapActive = true;
+      document.addEventListener('keydown', onTrapKeydown);
+    }
     requestAnimationFrame(() => {
       updateViewportLayout?.();
     });
@@ -95,11 +154,7 @@ export function createOverlayController({
       updateValkiVh?.();
       updateComposerHeight?.();
       scrollToBottom?.(true);
-      try {
-        chatInput?.focus({ preventScroll: true });
-      } catch {
-        chatInput?.focus();
-      }
+      focusFirstAvailable();
       clampComposer?.();
       updateComposerHeight?.();
       updateViewportLayout?.();
@@ -116,6 +171,10 @@ export function createOverlayController({
     closeTimerId = setTimeout(() => {
       setVisible(overlay, false);
       unlockBodyScroll();
+      if (focusTrapActive) {
+        document.removeEventListener('keydown', onTrapKeydown);
+        focusTrapActive = false;
+      }
       onClose?.();
       closeTimerId = null;
     }, 220);

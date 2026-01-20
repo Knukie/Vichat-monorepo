@@ -72,6 +72,11 @@ test('desktop hub selects agent and shows chat header', async ({ page }) => {
   await expect(badge).toBeVisible();
   await badge.click();
 
+  const dialog = page.locator('#valki-chat-shell[role="dialog"]');
+  await expect(dialog).toHaveCount(1);
+  await expect(dialog.locator('#valki-sidebar')).toHaveCount(1);
+  await expect(page.locator('.valki-modal[role="dialog"]')).toHaveCount(0);
+
   const sidebar = page.locator('#valki-sidebar');
   await expect(sidebar).toBeVisible();
 
