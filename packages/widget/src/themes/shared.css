@@ -867,6 +867,15 @@ html.valki-chat-open #valki-root .valki-bubble{
   display: flex;
 }
 
+#valki-root #valki-overlay[data-layout="mobile"] .valki-modal{
+  box-shadow: none;
+}
+
+#valki-root #valki-overlay[data-layout="mobile"] .valki-agent-hub{
+  border: none;
+  border-radius: 0;
+}
+
 #valki-root #valki-overlay[data-layout="mobile"] .valki-sidebar,
 #valki-root #valki-overlay[data-layout="mobile"] .valki-modal{
   position: absolute;
