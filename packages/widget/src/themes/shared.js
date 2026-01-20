@@ -35,6 +35,12 @@ export const sharedCss = `/* ===================================================
   --valki-panel-bg: rgba(12,12,12,.92);
   --valki-panel-border: rgba(255,255,255,.06);
   --valki-panel-shadow: 0 30px 70px rgba(0,0,0,.55);
+  --valki-panel-frame-border-soft: rgba(255,255,255,.04);
+  --valki-panel-frame-shadow-soft: 0 18px 50px rgba(0,0,0,.38);
+  --valki-panel-frame-border-none: transparent;
+  --valki-panel-frame-shadow-none: none;
+  --valki-panel-frame-border: var(--valki-panel-frame-border-soft);
+  --valki-panel-frame-shadow: var(--valki-panel-frame-shadow-soft);
 
   --font: system-ui,-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
 
@@ -67,6 +73,16 @@ export const sharedCss = `/* ===================================================
 }
 
 #valki-root, #valki-root *{ box-sizing:border-box; }
+
+#valki-root [data-panel-frame="none"]{
+  --valki-panel-frame-border: var(--valki-panel-frame-border-none);
+  --valki-panel-frame-shadow: var(--valki-panel-frame-shadow-none);
+}
+
+#valki-root [data-panel-frame="soft"]{
+  --valki-panel-frame-border: var(--valki-panel-frame-border-soft);
+  --valki-panel-frame-shadow: var(--valki-panel-frame-shadow-soft);
+}
 
 #valki-root button,
 #valki-root input,
@@ -919,11 +935,10 @@ html.valki-chat-open #valki-root .valki-bubble{
     min-width: 0;
   }
 
-  #valki-root #valki-overlay[data-layout="desktop"] .valki-sidebar .valki-agent-hub,
-  #valki-root #valki-overlay[data-layout="desktop"] .valki-modal{
+  #valki-root #valki-overlay[data-layout="desktop"] .valki-panel-frame{
     background: var(--valki-panel-bg);
-    border: 1px solid var(--valki-panel-border);
-    box-shadow: var(--valki-panel-shadow);
+    border: 1px solid var(--valki-panel-frame-border);
+    box-shadow: var(--valki-panel-frame-shadow);
   }
 
   #valki-root #valki-overlay[data-layout="desktop"] .valki-modal{
