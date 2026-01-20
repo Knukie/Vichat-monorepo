@@ -392,7 +392,10 @@ class ViChatWidget {
     });
     on(el['valki-chat-input'], 'input', clampComposer);
     on(el['valki-chat-input'], 'paste', () => setTimeout(clampComposer, 0));
-    on(el['valki-chat-input'], 'focus', scheduleLayoutMetrics);
+    on(el['valki-chat-input'], 'focus', () => {
+      clampComposer();
+      scheduleLayoutMetrics();
+    });
 
     on(el['valki-chat-attach'], 'click', () => {
       if (el['valki-chat-input'].disabled || this.isSending) return;

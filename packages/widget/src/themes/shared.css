@@ -1384,15 +1384,16 @@ html.valki-chat-open #valki-root .valki-bubble{
     background: rgba(10,10,10,.48);
     backdrop-filter: blur(28px) saturate(130%);
     -webkit-backdrop-filter: blur(28px) saturate(130%);
-    align-items: center;
+    align-items: flex-end;
   }
 
   /* Mobile: ChatGPT-like caret baseline + prevent iOS caret misalignment */
   #valki-root .valki-chat-input{
-    all: revert;
     flex: 1 1 auto;
     min-width: 0;
     padding: 8px 2px;
+    box-sizing: border-box;
+    font: inherit;
     border: none;
     background: transparent;
     color: rgba(255,255,255,.92);
@@ -1403,6 +1404,8 @@ html.valki-chat-open #valki-root .valki-bubble{
     white-space: pre-wrap;
     word-break: break-word;
     caret-color: rgba(255,255,255,.86);
+    -webkit-appearance: none;
+    appearance: none;
   }
 }
 
