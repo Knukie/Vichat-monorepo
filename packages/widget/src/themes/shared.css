@@ -28,6 +28,12 @@
 
   --shadow-1: 0 12px 40px rgba(0,0,0,.55);
   --shadow-2: 0 20px 70px rgba(0,0,0,.70);
+  --valki-backdrop: rgba(0,0,0,.35);
+  --valki-backdrop-fallback: rgba(0,0,0,.55);
+  --valki-backdrop-blur: 10px;
+  --valki-panel-bg: rgba(12,12,12,.92);
+  --valki-panel-border: rgba(255,255,255,.06);
+  --valki-panel-shadow: 0 30px 70px rgba(0,0,0,.55);
 
   --font: system-ui,-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
 
@@ -258,6 +264,22 @@ html.valki-chat-open #valki-root .valki-bubble{
 #valki-root .valki-logout-overlay{
   align-items: center;
   justify-content: center;
+}
+
+@media (min-width: 1024px){
+  #valki-root #valki-overlay[data-layout="desktop"]{
+    background: var(--valki-backdrop);
+    backdrop-filter: blur(var(--valki-backdrop-blur));
+    -webkit-backdrop-filter: blur(var(--valki-backdrop-blur));
+  }
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))){
+  @media (min-width: 1024px){
+    #valki-root #valki-overlay[data-layout="desktop"]{
+      background: var(--valki-backdrop-fallback);
+    }
+  }
 }
 
 /* Fullscreen modal follows the same vh logic */
@@ -824,6 +846,23 @@ html.valki-chat-open #valki-root .valki-bubble{
   #valki-root #valki-overlay[data-layout="desktop"] .valki-modal{
     flex: 1 1 auto;
     min-width: 0;
+  }
+
+  #valki-root #valki-overlay[data-layout="desktop"] .valki-sidebar .valki-agent-hub,
+  #valki-root #valki-overlay[data-layout="desktop"] .valki-modal{
+    background: var(--valki-panel-bg);
+    border: 1px solid var(--valki-panel-border);
+    box-shadow: var(--valki-panel-shadow);
+  }
+
+  #valki-root #valki-overlay[data-layout="desktop"] .valki-modal{
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  #valki-root #valki-overlay[data-layout="desktop"] .valki-modal::before,
+  #valki-root #valki-overlay[data-layout="desktop"] .valki-modal::after{
+    display: none;
   }
 }
 
