@@ -742,9 +742,9 @@ html.valki-chat-open #valki-root .valki-bubble{
   #valki-root .valki-agent-row:active,
   #valki-root .valki-agent-row.is-active,
   #valki-root .valki-agent-row[data-selected="true"]{
-    background: rgba(241,90,36,.28);
-    border-left: 3px solid var(--brand);
-    padding-left: calc(var(--gutter) - 3px);
+    background: transparent;
+    border-left: 2px solid var(--brand);
+    padding-left: calc(var(--gutter) - 2px);
     position: relative;
     z-index: 1;
   }
