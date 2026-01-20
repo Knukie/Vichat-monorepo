@@ -25,7 +25,7 @@
 
   <!-- Chat overlay -->
   <div id="valki-overlay" class="valki-overlay" aria-hidden="true">
-    <div class="valki-chat-shell">
+    <div class="valki-chat-shell" id="valki-chat-shell" role="dialog" aria-modal="true" aria-labelledby="valki-title">
       <aside class="valki-sidebar" id="valki-sidebar" aria-label="Agents">
         <!-- Agent Hub -->
         <div class="valki-agent-hub" id="valki-agent-hub" role="region" aria-label="Agent Hub">
@@ -34,14 +34,14 @@
               <div class="valki-agent-hub-title" id="valki-agent-title">Agents</div>
               <div class="valki-agent-hub-subtitle" id="valki-agent-subtitle">Choose an agent to start chatting.</div>
             </div>
-            <button id="valki-agent-close" class="valki-close-btn" type="button" aria-label="Close agent hub">✕</button>
+            <button id="valki-agent-close" class="valki-close-btn" type="button" aria-label="Sluiten">✕</button>
           </div>
           <div class="valki-agent-list" id="valki-agent-list"></div>
-          <div class="valki-agent-empty" id="valki-agent-empty">No agents configured.</div>
+          <div class="valki-agent-empty" id="valki-agent-empty">Geen agents beschikbaar.</div>
         </div>
       </aside>
 
-      <div class="valki-modal" role="dialog" aria-modal="true" aria-labelledby="valki-title">
+      <div class="valki-modal">
         <!-- Header -->
         <div class="valki-modal-header">
           <div class="valki-modal-header-inner">
@@ -64,7 +64,7 @@
           <div class="valki-header-actions">
             <button class="valki-pill primary" id="valki-loginout-btn" type="button" title="Login">Login</button>
             <button class="valki-pill" id="valki-deleteall-btn" type="button" title="Delete all messages">Delete</button>
-            <button id="valki-close" class="valki-close-btn" type="button" aria-label="Close chat">✕</button>
+            <button id="valki-close" class="valki-close-btn" type="button" aria-label="Sluiten">✕</button>
           </div>
 
         </div>

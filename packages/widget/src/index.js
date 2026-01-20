@@ -43,6 +43,7 @@ const REQUIRED_IDS = [
   'valki-bubble-badge',
   'valki-bubble-ping',
   'valki-overlay',
+  'valki-chat-shell',
   'valki-sidebar',
   'valki-agent-hub',
   'valki-agent-title',
@@ -282,14 +283,25 @@ class ViChatWidget {
       updateComposerHeight
     });
 
+    const getInitialFocus = () => {
+      if (!isDesktopLayout() && this.view === 'agent-hub') {
+        const list = el['valki-agent-list'];
+        const active = list?.querySelector('.valki-agent-row.is-active');
+        return active || list?.querySelector('.valki-agent-row') || el['valki-agent-close'];
+      }
+      return el['valki-chat-input'];
+    };
+
     this.overlayController = createOverlayController({
       overlay: el['valki-overlay'],
+      dialogEl: el['valki-chat-shell'],
       chatInput: el['valki-chat-input'],
       updateValkiVh: () => this.updateValkiVh(),
       updateComposerHeight,
       updateViewportLayout,
       clampComposer,
       scrollToBottom: (force) => this.messageController?.scrollToBottom(force),
+      getInitialFocus,
       onOpen: () => this.setWidgetState('open'),
       onClose: () => this.setWidgetState('closed')
     });
