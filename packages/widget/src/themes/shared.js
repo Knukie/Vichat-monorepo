@@ -868,6 +868,15 @@ html.valki-chat-open #valki-root .valki-bubble{
   display: flex;
 }
 
+#valki-root #valki-overlay[data-layout="mobile"] .valki-modal{
+  box-shadow: none;
+}
+
+#valki-root #valki-overlay[data-layout="mobile"] .valki-agent-hub{
+  border: none;
+  border-radius: 0;
+}
+
 #valki-root #valki-overlay[data-layout="mobile"] .valki-sidebar,
 #valki-root #valki-overlay[data-layout="mobile"] .valki-modal{
   position: absolute;
@@ -994,6 +1003,44 @@ html.valki-chat-open #valki-root .valki-bubble{
   left:0; right:0; top:0;
   height:1px;
   background: rgba(255,255,255,.06);
+  pointer-events:none;
+}
+
+#valki-root #valki-overlay[data-layout="mobile"] .valki-modal > .valki-modal-header{
+  border-top-color: transparent;
+}
+
+#valki-root #valki-overlay[data-layout="mobile"] .valki-modal > .valki-chat-form{
+  border-bottom-color: transparent;
+}
+
+#valki-root #valki-overlay[data-layout="mobile"] .valki-modal > .valki-modal-header::before{
+  content:"";
+  position:absolute;
+  left:0; right:0; top:0;
+  height:1px;
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,0),
+    rgba(255,255,255,.12) 18%,
+    rgba(255,255,255,.12) 82%,
+    rgba(255,255,255,0)
+  );
+  pointer-events:none;
+}
+
+#valki-root #valki-overlay[data-layout="mobile"] .valki-modal > .valki-chat-form::after{
+  content:"";
+  position:absolute;
+  left:0; right:0; bottom:0;
+  height:1px;
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,0),
+    rgba(255,255,255,.12) 18%,
+    rgba(255,255,255,.12) 82%,
+    rgba(255,255,255,0)
+  );
   pointer-events:none;
 }
 
