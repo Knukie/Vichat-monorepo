@@ -26,24 +26,26 @@ export const templateHtml = `<div class="valki-root" id="valki-root">
 
   <!-- Chat overlay -->
   <div id="valki-overlay" class="valki-overlay" aria-hidden="true">
-    <div class="valki-modal" role="dialog" aria-modal="true" aria-labelledby="valki-title">
-
-      <!-- Agent Hub -->
-      <div class="valki-agent-hub" id="valki-agent-hub" role="region" aria-label="Agent Hub">
-        <div class="valki-agent-hub-header">
-          <div class="valki-agent-hub-titles">
-            <div class="valki-agent-hub-title" id="valki-agent-title">Agents</div>
-            <div class="valki-agent-hub-subtitle" id="valki-agent-subtitle">Choose an agent to start chatting.</div>
+    <div class="valki-chat-shell">
+      <aside class="valki-sidebar" id="valki-sidebar" aria-label="Agents">
+        <!-- Agent Hub -->
+        <div class="valki-agent-hub" id="valki-agent-hub" role="region" aria-label="Agent Hub">
+          <div class="valki-agent-hub-header">
+            <div class="valki-agent-hub-titles">
+              <div class="valki-agent-hub-title" id="valki-agent-title">Agents</div>
+              <div class="valki-agent-hub-subtitle" id="valki-agent-subtitle">Choose an agent to start chatting.</div>
+            </div>
+            <button id="valki-agent-close" class="valki-close-btn" type="button" aria-label="Close agent hub">✕</button>
           </div>
-          <button id="valki-agent-close" class="valki-close-btn" type="button" aria-label="Close agent hub">✕</button>
+          <div class="valki-agent-list" id="valki-agent-list"></div>
+          <div class="valki-agent-empty" id="valki-agent-empty">No agents configured.</div>
         </div>
-        <div class="valki-agent-list" id="valki-agent-list"></div>
-        <div class="valki-agent-empty" id="valki-agent-empty">No agents configured.</div>
-      </div>
+      </aside>
 
-      <!-- Header -->
-      <div class="valki-modal-header">
-        <div class="valki-modal-header-inner">
+      <div class="valki-modal" role="dialog" aria-modal="true" aria-labelledby="valki-title">
+        <!-- Header -->
+        <div class="valki-modal-header">
+          <div class="valki-modal-header-inner">
 
           <div class="valki-header-left">
             <button id="valki-agent-back" class="valki-agent-back" type="button" aria-label="Back to agents">
@@ -69,14 +71,14 @@ export const templateHtml = `<div class="valki-root" id="valki-root">
         </div>
       </div>
 
-      <!-- Messages -->
-      <div id="valki-messages" class="valki-messages" role="log" aria-live="polite">
-        <div class="valki-messages-inner" id="valki-messages-inner"></div>
-      </div>
+        <!-- Messages -->
+        <div id="valki-messages" class="valki-messages" role="log" aria-live="polite">
+          <div class="valki-messages-inner" id="valki-messages-inner"></div>
+        </div>
 
-      <!-- Composer -->
-      <form id="valki-chat-form" class="valki-chat-form" autocomplete="off">
-        <div class="valki-chat-form-inner">
+        <!-- Composer -->
+        <form id="valki-chat-form" class="valki-chat-form" autocomplete="off">
+          <div class="valki-chat-form-inner">
 
           <div class="valki-chat-inner">
             <button class="valki-chat-attach" id="valki-chat-attach" type="button" aria-label="Upload image">
@@ -110,9 +112,10 @@ export const templateHtml = `<div class="valki-root" id="valki-root">
             </button>
           </div>
 
-        </div>
-      </form>
+          </div>
+        </form>
 
+      </div>
     </div>
   </div>
 

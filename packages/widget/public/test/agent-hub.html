@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Valki Agent Hub Test</title>
+    <link rel="stylesheet" href="/dist/vichat-widget.css" />
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        margin: 0;
+        padding: 24px;
+        background: #0b0b0b;
+        color: #fff;
+      }
+    </style>
+    <script>
+      window.__VICHAT_TEST_HOOKS__ = true;
+    </script>
+  </head>
+
+  <body>
+    <h1>Agent Hub Test</h1>
+    <p>Use the Valki badge to open chat and select agents.</p>
+
+    <script src="/dist/vichat-widget.min.js"></script>
+
+    <script>
+      window.addEventListener('DOMContentLoaded', () => {
+        const widget = window.ViChat?.mount?.({
+          theme: 'valki',
+          baseUrl: 'https://auth.valki.wiki',
+          agents: [
+            {
+              id: 'agent-a',
+              name: 'Agent Alpha',
+              description: 'Account support',
+              status: 'online',
+              avatarUrl: 'https://auth.valki.wiki/assets/valki-avatar.png'
+            },
+            {
+              id: 'agent-b',
+              name: 'Agent Beta',
+              description: 'Billing specialist',
+              status: 'away',
+              avatarUrl: 'https://auth.valki.wiki/assets/valki-avatar.png'
+            }
+          ]
+        });
+        if (widget?.messageController) {
+          document.body.setAttribute('data-valki-ready', 'true');
+        }
+      });
+    </script>
+  </body>
+</html>

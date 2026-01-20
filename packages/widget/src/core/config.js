@@ -10,6 +10,7 @@ export const DEFAULT_CONSTANTS = {
   bubbleSeenKey: 'valki_bubble_seen_v1',
   authKey: 'valki_auth_token_v1',
   historyKey: 'valki_history_v20',
+  selectedAgentKey: 'valki_selected_agent_v1',
   guestMeterKey: 'valki_guest_meter_v1',
   clientIdKey: 'valki_client_id_v20',
   mode: 'default',

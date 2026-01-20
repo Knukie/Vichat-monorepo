@@ -6,12 +6,16 @@ function createStatusDot(status) {
   return dot;
 }
 
-function createAgentRow(agent, onSelect) {
+function createAgentRow(agent, onSelect, selectedAgentId) {
   const button = document.createElement('button');
   button.type = 'button';
   button.className = 'valki-agent-row';
   button.dataset.agentId = agent.id;
   button.setAttribute('aria-label', `Chat with ${agent.name}`);
+  if (selectedAgentId && agent.id === selectedAgentId) {
+    button.classList.add('is-active');
+    button.setAttribute('aria-current', 'true');
+  }
 
   const avatarWrap = document.createElement('div');
   avatarWrap.className = 'valki-agent-avatar-wrap';
@@ -53,7 +57,7 @@ function createAgentRow(agent, onSelect) {
 }
 
 export function createAgentHubController({ hubEl, listEl, emptyEl, onSelect }) {
-  function renderAgents(agents = []) {
+  function renderAgents(agents = [], selectedAgentId = '') {
     if (!listEl) return;
     listEl.innerHTML = '';
     const safeAgents = Array.isArray(agents) ? agents : [];
@@ -63,7 +67,7 @@ export function createAgentHubController({ hubEl, listEl, emptyEl, onSelect }) {
     }
     if (emptyEl) emptyEl.style.display = 'none';
     safeAgents.forEach((agent) => {
-      listEl.appendChild(createAgentRow(agent, onSelect));
+      listEl.appendChild(createAgentRow(agent, onSelect, selectedAgentId));
     });
   }
 

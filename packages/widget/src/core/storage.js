@@ -62,6 +62,17 @@ function resolveHistoryKey(config, agentId) {
   return `${config.historyKey}:${agentId}`;
 }
 
+export function loadSelectedAgentId(config = DEFAULT_CONSTANTS) {
+  const raw = readLocalStorage(config.selectedAgentKey);
+  return typeof raw === 'string' ? raw : '';
+}
+
+export function saveSelectedAgentId(agentId, config = DEFAULT_CONSTANTS) {
+  const safeId = String(agentId || '').trim();
+  if (!safeId) return;
+  writeLocalStorage(config.selectedAgentKey, safeId);
+}
+
 function normalizeGuestHistoryEntry(item) {
   if (!item) return null;
   const rawRole =

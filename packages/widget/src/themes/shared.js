@@ -270,6 +270,21 @@ html.valki-chat-open #valki-root .valki-bubble{
   min-height: 0;
 }
 
+#valki-root .valki-chat-shell{
+  height: min(var(--vvh), 100dvh);
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+#valki-root .valki-sidebar{
+  display: none;
+  flex-direction: column;
+  min-height: 0;
+  width: 100%;
+}
+
 /* Visible state */
 #valki-root .valki-overlay.is-visible,
 #valki-root .valki-auth-overlay.is-visible,
@@ -679,6 +694,12 @@ html.valki-chat-open #valki-root .valki-bubble{
   background: rgba(255,255,255,.04);
 }
 
+#valki-root .valki-agent-row.is-active{
+  background: rgba(241,90,36,.16);
+  border-left: 3px solid var(--brand);
+  padding-left: calc(var(--gutter) - 3px);
+}
+
 #valki-root .valki-agent-avatar-wrap{
   position:relative;
   width:48px;
@@ -752,12 +773,44 @@ html.valki-chat-open #valki-root .valki-bubble{
   display:none !important;
 }
 
+#valki-root #valki-overlay[data-view="agent-hub"]:not([data-layout="desktop"]) .valki-modal{
+  display:none;
+}
+
+#valki-root #valki-overlay[data-view="agent-hub"]:not([data-layout="desktop"]) .valki-sidebar{
+  display:flex;
+}
+
 #valki-root #valki-overlay[data-view="agent-hub"] .valki-agent-hub{
   display:flex;
 }
 
 #valki-root #valki-overlay[data-view="chat"] .valki-agent-hub{
   display:none;
+}
+
+@media (min-width: 1024px){
+  #valki-root #valki-overlay[data-layout="desktop"] .valki-chat-shell{
+    flex-direction: row;
+    width: min(1200px, 100%);
+  }
+
+  #valki-root #valki-overlay[data-layout="desktop"] .valki-sidebar{
+    display: flex;
+    flex: 0 0 clamp(320px, 28vw, 380px);
+    max-width: clamp(320px, 28vw, 380px);
+    padding-right: 16px;
+  }
+
+  #valki-root #valki-overlay[data-layout="desktop"] .valki-sidebar .valki-agent-hub{
+    display: flex;
+    border-radius: 16px;
+  }
+
+  #valki-root #valki-overlay[data-layout="desktop"] .valki-modal{
+    flex: 1 1 auto;
+    min-width: 0;
+  }
 }
 
 /* =========================================================
