@@ -713,6 +713,16 @@ class ViChatWidget {
 
   openConfirm() {
     setVisible(this.elements['valki-confirm-overlay'], true);
+    const cancelButton = this.elements['valki-confirm-no'];
+    if (cancelButton) {
+      requestAnimationFrame(() => {
+        try {
+          cancelButton.focus({ preventScroll: true });
+        } catch {
+          cancelButton.focus();
+        }
+      });
+    }
   }
 
   closeConfirm() {
