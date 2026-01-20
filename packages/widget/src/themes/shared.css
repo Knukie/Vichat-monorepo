@@ -810,7 +810,7 @@ html.valki-chat-open #valki-root .valki-bubble{
 }
 
 #valki-root #valki-overlay[data-view="agent-hub"]:not([data-layout="desktop"]) .valki-modal{
-  display:none;
+  display:flex;
 }
 
 #valki-root #valki-overlay[data-view="agent-hub"]:not([data-layout="desktop"]) .valki-sidebar{
@@ -823,6 +823,56 @@ html.valki-chat-open #valki-root .valki-bubble{
 
 #valki-root #valki-overlay[data-view="chat"] .valki-agent-hub{
   display:none;
+}
+
+#valki-root #valki-overlay[data-layout="mobile"] .valki-chat-shell{
+  position: relative;
+  overflow: hidden;
+}
+
+#valki-root #valki-overlay[data-layout="mobile"] .valki-sidebar{
+  display: flex;
+}
+
+#valki-root #valki-overlay[data-layout="mobile"] .valki-modal{
+  display: flex;
+}
+
+#valki-root #valki-overlay[data-layout="mobile"] .valki-sidebar,
+#valki-root #valki-overlay[data-layout="mobile"] .valki-modal{
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.28s ease;
+  will-change: transform;
+}
+
+#valki-root #valki-overlay[data-layout="mobile"][data-view="agent-hub"] .valki-sidebar{
+  transform: translateX(0%);
+  pointer-events: auto;
+}
+
+#valki-root #valki-overlay[data-layout="mobile"][data-view="agent-hub"] .valki-modal{
+  transform: translateX(100%);
+  pointer-events: none;
+}
+
+#valki-root #valki-overlay[data-layout="mobile"][data-view="chat"] .valki-sidebar{
+  transform: translateX(-100%);
+  pointer-events: none;
+}
+
+#valki-root #valki-overlay[data-layout="mobile"][data-view="chat"] .valki-modal{
+  transform: translateX(0%);
+  pointer-events: auto;
+}
+
+@media (prefers-reduced-motion: reduce){
+  #valki-root #valki-overlay[data-layout="mobile"] .valki-sidebar,
+  #valki-root #valki-overlay[data-layout="mobile"] .valki-modal{
+    transition: none;
+  }
 }
 
 @media (min-width: 1024px){

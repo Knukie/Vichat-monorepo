@@ -121,3 +121,31 @@ test('desktop hub selects agent and shows chat header', async ({ page }) => {
   await expect(page.locator('#valki-title')).toHaveText(name);
   await expect(page.locator('#valki-chat-input')).toBeVisible();
 });
+
+test('mobile hub highlights agent and slides into chat', async ({ page }) => {
+  const agentHubHtmlPath = path.join(__dirname, '..', 'public', 'test', 'agent-hub.html');
+  await routeHtml(page, '/test/agent-hub.html', agentHubHtmlPath);
+  await maybeRouteBuildAssets(page);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(`${ORIGIN}/test/agent-hub.html`, { waitUntil: 'domcontentloaded' });
+
+  await expect(page.locator('body[data-valki-ready="true"]')).toHaveCount(1);
+
+  const badge = page.locator('#valki-bubble');
+  await expect(badge).toBeVisible();
+  await badge.click();
+
+  const agentHub = page.locator('#valki-agent-hub');
+  await expect(agentHub).toBeVisible();
+
+  const firstAgent = page.locator('#valki-agent-list .valki-agent-row').first();
+  await expect(firstAgent).toBeVisible();
+  await firstAgent.click();
+
+  await expect(firstAgent).toHaveClass(/is-active/);
+  await expect(page.locator('#valki-overlay')).toHaveAttribute('data-view', 'chat');
+  await expect(page.locator('#valki-overlay')).toHaveAttribute('data-layout', 'mobile');
+  await expect(page.locator('#valki-overlay')).toHaveAttribute('data-transition', 'slide');
+  await expect(page.locator('#valki-chat-input')).toBeVisible();
+});
