@@ -914,7 +914,7 @@ html.valki-chat-open #valki-root .valki-bubble{
 }
 
 #valki-root #valki-overlay[data-layout="mobile"][data-view="chat"] .valki-modal{
-  transform: translateX(0%);
+  transform: none;
   pointer-events: auto;
 }
 
