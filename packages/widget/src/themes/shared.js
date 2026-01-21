@@ -1295,7 +1295,7 @@ html.valki-chat-open #valki-root .valki-bubble{
 #valki-root .valki-chat-input{
   flex: 1 1 auto;
   min-width: 0;
-  padding: 10px 2px;
+  padding: 12px 2px 8px;
   border:none;
   background: transparent;
   color: rgba(255,255,255,.92);
