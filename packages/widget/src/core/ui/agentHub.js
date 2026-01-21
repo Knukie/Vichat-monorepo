@@ -1,3 +1,5 @@
+import { t } from '../../i18n/index.js';
+
 function createStatusDot(status) {
   if (!status) return null;
   const dot = document.createElement('span');
@@ -11,7 +13,7 @@ function createAgentRow(agent, onSelect, selectedAgentId) {
   button.type = 'button';
   button.className = 'valki-agent-row';
   button.dataset.agentId = agent.id;
-  button.setAttribute('aria-label', `Chat with ${agent.name}`);
+  button.setAttribute('aria-label', t('agent.chatWith', { name: agent.name }));
   if (selectedAgentId && agent.id === selectedAgentId) {
     button.classList.add('is-active');
     button.dataset.selected = 'true';
@@ -24,7 +26,7 @@ function createAgentRow(agent, onSelect, selectedAgentId) {
   const avatar = document.createElement('img');
   avatar.className = 'valki-agent-avatar';
   avatar.src = agent.avatarUrl;
-  avatar.alt = `${agent.name} avatar`;
+  avatar.alt = t('avatar.assistantWithName', { name: agent.name });
   avatarWrap.appendChild(avatar);
 
   const statusDot = createStatusDot(agent.status);
@@ -46,7 +48,13 @@ function createAgentRow(agent, onSelect, selectedAgentId) {
 
   const meta = document.createElement('div');
   meta.className = 'valki-agent-meta';
-  meta.textContent = agent.status ? agent.status : '';
+  if (agent.status) {
+    const statusKey = `agent.status.${agent.status}`;
+    const translated = t(statusKey);
+    meta.textContent = translated === statusKey ? agent.status : translated;
+  } else {
+    meta.textContent = '';
+  }
 
   button.appendChild(avatarWrap);
   button.appendChild(content);
