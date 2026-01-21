@@ -1239,7 +1239,7 @@ html.valki-chat-open #valki-root .valki-bubble{
    Composer — HARD column lock
 ========================================================= */
 #valki-root .valki-chat-form{
-  border-top: 1px solid rgba(255,255,255,.06);
+  border-top: none;
   background: transparent;
   backdrop-filter: none;
   padding: 10px 0 calc(var(--valki-chat-pad-bottom) + var(--keyboard-bottom)) !important;
