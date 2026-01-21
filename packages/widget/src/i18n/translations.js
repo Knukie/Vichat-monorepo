@@ -10,7 +10,7 @@ export const translations = {
     agentHub: {
       sidebarLabel: 'Agents',
       ariaLabel: 'Agent Hub',
-      title: 'Agents',
+      title: 'ViChat',
       subtitle: 'Choose an agent to start chatting.',
       empty: 'No agents available.'
     },
@@ -119,7 +119,7 @@ export const translations = {
     agentHub: {
       sidebarLabel: 'Agents',
       ariaLabel: 'Agent Hub',
-      title: 'Agents',
+      title: 'ViChat',
       subtitle: 'Kies een agent om te chatten.',
       empty: 'Geen agents beschikbaar.'
     },
