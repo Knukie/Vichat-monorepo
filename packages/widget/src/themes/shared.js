@@ -46,6 +46,7 @@ export const sharedCss = `/* ===================================================
 
   --valki-vh: 1dvh;
   --vvh: calc(var(--valki-vh, 1vh) * 100);
+  -webkit-text-size-adjust: 100%;
 
   /* (Fallback) composer height – als je later JS toevoegt kan dit dynamisch */
   --composer-h: 110px;
@@ -85,13 +86,25 @@ export const sharedCss = `/* ===================================================
   --valki-panel-frame-shadow: var(--valki-panel-frame-shadow-soft);
 }
 
-#valki-root button,
-#valki-root input,
-#valki-root textarea{
+#valki-root button{
   all: unset;
   box-sizing:border-box;
   font: inherit;
   color: inherit;
+}
+
+/* Avoid all: unset on input/textarea; it breaks iOS/Safari caret metrics on first focus. */
+#valki-root input,
+#valki-root textarea{
+  -webkit-appearance: none;
+  appearance: none;
+  box-sizing:border-box;
+  font: inherit;
+  color: inherit;
+  border: 0;
+  background: transparent;
+  margin: 0;
+  display: block;
 }
 
 #valki-root button{ cursor:pointer; }
@@ -1301,6 +1314,7 @@ html.valki-chat-open #valki-root .valki-bubble{
   color: rgba(255,255,255,.92);
   font-size: 16px;
   line-height: 1.5;
+  text-rendering: auto;
   resize:none;
   overflow-y:hidden;
   white-space: pre-wrap;

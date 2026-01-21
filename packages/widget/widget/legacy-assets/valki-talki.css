@@ -37,6 +37,7 @@
 
   --valki-vh: 1vh;
   --vvh: calc(var(--valki-vh, 1vh) * 100);
+  -webkit-text-size-adjust: 100%;
 
   /* Safe bottom reserve for last message */
   --composer-safe: 140px;
@@ -46,13 +47,25 @@
 #valki-root,
 #valki-root *{ box-sizing:border-box; }
 
-#valki-root button,
-#valki-root input,
-#valki-root textarea{
+#valki-root button{
   all: unset;
   box-sizing:border-box;
   font: inherit;
   color: inherit;
+}
+
+/* Avoid all: unset on input/textarea; it breaks iOS/Safari caret metrics on first focus. */
+#valki-root input,
+#valki-root textarea{
+  -webkit-appearance: none;
+  appearance: none;
+  box-sizing:border-box;
+  font: inherit;
+  color: inherit;
+  border: 0;
+  background: transparent;
+  margin: 0;
+  display: block;
 }
 
 #valki-root button{ cursor:pointer; }
@@ -604,6 +617,7 @@ html.valki-chat-open #valki-root .valki-hero-actions{
   color: rgba(255,255,255,.92);
   font-size: 16px;
   line-height: 1.5;
+  text-rendering: auto;
   resize:none;
   overflow-y:hidden;
   white-space: pre-wrap;
