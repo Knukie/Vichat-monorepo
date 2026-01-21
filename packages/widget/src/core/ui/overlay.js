@@ -1,16 +1,30 @@
 let lockState = null;
 let closeTimerId = null;
+const hideTimers = new WeakMap();
 
 export function setVisible(el, on) {
   if (!el) return;
   const show = !!on;
-  el.style.display = show ? 'flex' : 'none';
-  el.setAttribute('aria-hidden', show ? 'false' : 'true');
-  if (show) {
-    requestAnimationFrame(() => el.classList.add('is-visible'));
-  } else {
-    el.classList.remove('is-visible');
+  const existingTimer = hideTimers.get(el);
+  if (existingTimer) {
+    clearTimeout(existingTimer);
+    hideTimers.delete(el);
   }
+  if (show) {
+    el.style.display = 'flex';
+    el.style.pointerEvents = 'auto';
+    el.setAttribute('aria-hidden', 'false');
+    requestAnimationFrame(() => el.classList.add('is-visible'));
+    return;
+  }
+  el.classList.remove('is-visible');
+  el.setAttribute('aria-hidden', 'true');
+  el.style.pointerEvents = 'none';
+  const hideTimer = window.setTimeout(() => {
+    el.style.display = 'none';
+    hideTimers.delete(el);
+  }, 180);
+  hideTimers.set(el, hideTimer);
 }
 
 function lockBodyScroll() {
