@@ -372,6 +372,29 @@ class ViChatWidget {
     });
 
     on(el['valki-bubble'], 'click', (e) => this.openFromBubble(e));
+    const stopChatShellPropagation = (event) => {
+      event.stopPropagation();
+    };
+    const focusComposerOnTouch = (event) => {
+      if (!el['valki-chat-input'] || el['valki-chat-input'].disabled) return;
+      if (event.type !== 'touchstart' && event.pointerType !== 'touch') return;
+      const target = event.target instanceof HTMLElement ? event.target : null;
+      if (target?.closest('button, a, input[type="file"], #valki-file-input')) return;
+      if (document.activeElement === el['valki-chat-input']) return;
+      try {
+        el['valki-chat-input'].focus({ preventScroll: true });
+      } catch {
+        el['valki-chat-input'].focus();
+      }
+    };
+    const modal = el['valki-overlay']?.querySelector('.valki-modal');
+    const composerContainer =
+      el['valki-chat-form']?.querySelector('.valki-chat-composer') || el['valki-chat-form'];
+    on(modal, 'pointerdown', stopChatShellPropagation);
+    on(modal, 'click', stopChatShellPropagation);
+    on(modal, 'touchstart', stopChatShellPropagation, { passive: true });
+    on(composerContainer, 'pointerdown', focusComposerOnTouch);
+    on(composerContainer, 'touchstart', focusComposerOnTouch, { passive: true });
     on(el['valki-chat-form'], 'submit', (e) => {
       e.preventDefault();
       const q = cleanText(el['valki-chat-input'].value);
