@@ -94,7 +94,7 @@ export const sharedCss = `/* ===================================================
   cursor:pointer;
 }
 
-/* iOS caret fix: avoid all: unset on inputs/textareas. */
+/* iOS caret metrics: avoid all: unset on inputs/textareas. */
 #valki-root input,
 #valki-root textarea{
   -webkit-appearance: none;
@@ -1337,6 +1337,7 @@ html.valki-chat-open #valki-root .valki-bubble{
   color: rgba(255,255,255,.92);
   font-size: 16px;
   line-height: 24px;
+  text-rendering: auto;
   display: block;
   width: 100%;
   min-height: 24px;
