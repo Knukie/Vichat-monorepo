@@ -178,14 +178,23 @@
     </div>
   </div>
 
-  <!-- Confirm logout (✅ class made consistent) -->
-  <div id="valki-logout-overlay" class="valki-logout-overlay" aria-hidden="true" style="display:none;">
-    <div class="valki-confirm-modal" role="dialog" aria-modal="true" aria-label="Confirm logout">
-      <h3 class="valki-confirm-title">Log out?</h3>
-      <p class="valki-confirm-sub">You will switch back to guest mode on this device.</p>
-      <div class="valki-confirm-actions">
-        <button type="button" class="valki-confirm-btn" id="valki-logout-no"><span>Cancel</span></button>
-        <button type="button" class="valki-confirm-btn danger" id="valki-logout-yes"><span>Yes, log out</span></button>
+  <!-- Confirm logout -->
+  <div id="valki-logout-overlay" class="valki-auth-overlay valki-logout-overlay" aria-hidden="true" style="display:none;">
+    <div
+      class="valki-auth-modal valki-confirm-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="valki-logout-title"
+      aria-describedby="valki-logout-subtitle"
+    >
+      <div class="valki-auth-header">
+        <img src="https://valki.wiki/blogmedia/Valki%20Talki.jpg" class="valki-auth-avatar" alt="Valki avatar" />
+      </div>
+      <h2 class="valki-auth-title" id="valki-logout-title">Log out?</h2>
+      <p class="valki-auth-subtitle" id="valki-logout-subtitle">You will switch back to guest mode on this device.</p>
+      <div class="valki-auth-buttons">
+        <button type="button" class="valki-auth-btn" id="valki-logout-no">Cancel</button>
+        <button type="button" class="valki-auth-btn danger" id="valki-logout-yes">Yes, log out</button>
       </div>
     </div>
   </div>

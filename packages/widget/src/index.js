@@ -303,16 +303,12 @@ class ViChatWidget {
     el['valki-confirm-yes'].textContent = t('buttons.confirmDelete');
 
     const logoutOverlay = el['valki-logout-overlay'];
-    const logoutModal = logoutOverlay.querySelector('.valki-confirm-modal');
-    if (logoutModal) logoutModal.setAttribute('aria-label', t('logout.ariaLabel'));
-    const logoutTitle = logoutOverlay.querySelector('.valki-confirm-title');
+    const logoutTitle = logoutOverlay.querySelector('#valki-logout-title');
     if (logoutTitle) logoutTitle.textContent = t('logout.title');
-    const logoutSubtitle = logoutOverlay.querySelector('.valki-confirm-sub');
+    const logoutSubtitle = logoutOverlay.querySelector('#valki-logout-subtitle');
     if (logoutSubtitle) logoutSubtitle.textContent = t('logout.subtitle');
-    const logoutNoLabel = el['valki-logout-no']?.querySelector('span');
-    if (logoutNoLabel) logoutNoLabel.textContent = t('buttons.cancel');
-    const logoutYesLabel = el['valki-logout-yes']?.querySelector('span');
-    if (logoutYesLabel) logoutYesLabel.textContent = t('buttons.logoutConfirm');
+    el['valki-logout-no'].textContent = t('buttons.cancel');
+    el['valki-logout-yes'].textContent = t('buttons.logoutConfirm');
   }
 
   dispatchWidgetEvent(name, detail = {}) {
