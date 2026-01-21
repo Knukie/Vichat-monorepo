@@ -51,6 +51,7 @@ export const sharedCss = `/* ===================================================
   --composer-h: 110px;
 
   --valki-chat-pad-bottom: calc(env(safe-area-inset-bottom) + 10px);
+  --keyboard-bottom: 0px;
 
   /* Background + vignette + blur */
   --chat-bg-image: url("https://valki.wiki/onewebmedia/Valki%20Talki%20background___serialized1.jpg");
@@ -1228,7 +1229,7 @@ html.valki-chat-open #valki-root .valki-bubble{
   border-top: 1px solid rgba(255,255,255,.08);
   background: transparent;
   backdrop-filter: none;
-  padding: 12px 0 var(--valki-chat-pad-bottom) !important;
+  padding: 12px 0 calc(var(--valki-chat-pad-bottom) + var(--keyboard-bottom)) !important;
 }
 
 #valki-root .valki-chat-form-inner{
