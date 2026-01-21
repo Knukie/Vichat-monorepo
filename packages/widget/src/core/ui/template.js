@@ -103,7 +103,6 @@ export const templateHtml = `<div class="valki-root" id="valki-root">
               </button>
             </div>
 
-            <div class="valki-chat-hint" aria-hidden="true">Enter to send • Shift+Enter for new line</div>
           </div>
 
           <div class="valki-attachments" id="valki-attachments" aria-label="Attachments" style="display:none;"></div>
