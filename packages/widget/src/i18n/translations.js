@@ -149,7 +149,7 @@ export const translations = {
       attachmentAlt: 'bijlage'
     },
     disclaimer: {
-      text: 'Valki-signalen kunnen vervormen. Controleer informatie.',
+      text: 'Valki kan ruis op de lijn hebben. Controleer informatie.',
       cookie: 'Zie cookievoorkeuren.'
     },
     auth: {
