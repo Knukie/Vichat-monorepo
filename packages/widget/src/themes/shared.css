@@ -1238,29 +1238,33 @@ html.valki-chat-open #valki-root .valki-bubble{
   padding-right: var(--gutter) !important;
 }
 
+#valki-root .valki-chat-composer{
+  display:flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
 #valki-root .valki-chat-inner{
   display:flex;
   align-items:flex-end;
-  gap: 10px;
-  padding: 10px 12px;
-  border-radius: 26px;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 28px;
   background: rgba(255,255,255,.045);
   border: 1px solid rgba(255,255,255,.12);
   box-shadow: 0 18px 60px rgba(0,0,0,.55);
-  transition: border-color .15s ease, background .15s ease, box-shadow .15s ease;
+  transition: border-color .18s ease, background .18s ease, box-shadow .18s ease, transform .18s ease;
 }
 
-@media (hover: hover) and (pointer: fine){
-  #valki-root .valki-chat-inner:focus-within{
-    background: rgba(255,255,255,.055);
-    border-color: rgba(255,255,255,.20);
-    box-shadow: 0 20px 70px rgba(0,0,0,.62), 0 0 0 3px var(--ring);
-  }
+#valki-root .valki-chat-inner:focus-within{
+  background: rgba(255,255,255,.055);
+  border-color: rgba(255,255,255,.24);
+  box-shadow: 0 20px 70px rgba(0,0,0,.62), 0 0 0 3px var(--ring);
 }
 
 #valki-root .valki-chat-attach{
-  width: 40px;
-  height: 40px;
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
   background: rgba(255,255,255,.05);
   border: 1px solid rgba(255,255,255,.12);
@@ -1268,14 +1272,23 @@ html.valki-chat-open #valki-root .valki-bubble{
   align-items:center;
   justify-content:center;
   color: rgba(255,255,255,.86);
-  transition: transform .12s ease, background .12s ease, border-color .12s ease, opacity .12s ease;
+  transition: transform .12s ease, background .12s ease, border-color .12s ease, opacity .12s ease, box-shadow .12s ease;
 }
 #valki-root .valki-chat-attach:hover{
   transform: translateY(-1px);
   background: rgba(255,255,255,.08);
   border-color: rgba(255,255,255,.18);
+  box-shadow: 0 10px 24px rgba(0,0,0,.28);
+}
+#valki-root .valki-chat-attach:active{
+  transform: translateY(0);
+  opacity: .9;
 }
 #valki-root .valki-chat-attach[disabled]{ opacity:.55; pointer-events:none; }
+#valki-root .valki-chat-attach:focus-visible{
+  outline: none;
+  box-shadow: 0 0 0 3px var(--ring), 0 8px 20px rgba(0,0,0,.3);
+}
 
 #valki-root .valki-chat-input{
   flex: 1 1 auto;
@@ -1292,11 +1305,11 @@ html.valki-chat-open #valki-root .valki-bubble{
   word-break: break-word;
   caret-color: rgba(255,255,255,.86);
 }
-#valki-root .valki-chat-input::placeholder{ color: rgba(255,255,255,.30); }
+#valki-root .valki-chat-input::placeholder{ color: rgba(255,255,255,.36); }
 
 #valki-root .valki-chat-send{
-  width: 42px;
-  height: 42px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   background: var(--btn-fill);
   color: var(--btn-text);
@@ -1305,13 +1318,37 @@ html.valki-chat-open #valki-root .valki-bubble{
   align-items:center;
   justify-content:center;
   box-shadow: 0 10px 26px rgba(0,0,0,.35);
-  transition: transform .12s ease, box-shadow .12s ease, opacity .12s ease;
+  transition: transform .12s ease, box-shadow .12s ease, opacity .12s ease, filter .12s ease;
 }
 #valki-root .valki-chat-send:hover{
   transform: translateY(-1px);
   box-shadow: 0 14px 34px rgba(0,0,0,.42);
 }
+#valki-root .valki-chat-send:active{
+  transform: translateY(0);
+  filter: brightness(.96);
+}
 #valki-root .valki-chat-send[disabled]{ opacity:.55; pointer-events:none; }
+#valki-root .valki-chat-send:focus-visible{
+  outline: none;
+  box-shadow: 0 0 0 3px var(--ring), 0 12px 28px rgba(0,0,0,.4);
+}
+
+#valki-root .valki-chat-hint{
+  font-size: 11px;
+  line-height: 1.4;
+  color: rgba(255,255,255,.48);
+  padding-left: 12px;
+  padding-right: 12px;
+  opacity: 0;
+  transform: translateY(-2px);
+  transition: opacity .18s ease, transform .18s ease;
+}
+
+#valki-root .valki-chat-composer:focus-within .valki-chat-hint{
+  opacity: 1;
+  transform: translateY(0);
+}
 
 /* Attachments tray */
 #valki-root .valki-attachments{
