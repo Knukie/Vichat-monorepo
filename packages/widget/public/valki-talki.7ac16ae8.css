@@ -50,7 +50,7 @@
 
 #valki-root button{ cursor:pointer; }
 #valki-root input,
-#valki-root textarea{ cursor:text; }
+#valki-root textarea{ cursor:auto; }
 
 #valki-root button:focus-visible,
 #valki-root input:focus-visible,
