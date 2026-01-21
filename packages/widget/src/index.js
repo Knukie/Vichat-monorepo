@@ -263,8 +263,23 @@ class ViChatWidget {
       }
     };
 
+    const updateKeyboardInset = () => {
+      const root = el['valki-root'];
+      if (!root) return;
+      const vv = window.visualViewport;
+      if (!vv) {
+        root.style.setProperty('--keyboard-bottom', '0px');
+        return;
+      }
+      const layoutHeight = document.documentElement?.clientHeight || window.innerHeight || 0;
+      const rawInset = layoutHeight - vv.height - vv.offsetTop;
+      const inset = Math.max(0, Math.round(rawInset));
+      root.style.setProperty('--keyboard-bottom', `${inset}px`);
+    };
+
     const updateViewportLayout = () => {
       updateComposerHeight();
+      updateKeyboardInset();
       this.updateValkiVh();
       if (el['valki-overlay']) {
         const isDesktop = isDesktopLayout();
@@ -380,12 +395,15 @@ class ViChatWidget {
       if (event.type !== 'touchstart' && event.pointerType !== 'touch') return;
       const target = event.target instanceof HTMLElement ? event.target : null;
       if (target?.closest('button, a, input[type="file"], #valki-file-input')) return;
+      if (target?.closest('textarea, [contenteditable="true"]')) return;
       if (document.activeElement === el['valki-chat-input']) return;
-      try {
-        el['valki-chat-input'].focus({ preventScroll: true });
-      } catch {
-        el['valki-chat-input'].focus();
-      }
+      requestAnimationFrame(() => {
+        try {
+          el['valki-chat-input'].focus({ preventScroll: true });
+        } catch {
+          el['valki-chat-input'].focus();
+        }
+      });
     };
     const modal = el['valki-overlay']?.querySelector('.valki-modal');
     const composerContainer =
@@ -496,10 +514,12 @@ class ViChatWidget {
     );
 
     if (window.visualViewport) {
-      on(window.visualViewport, 'resize', () => {
+      const onViewport = () => {
         updateViewportLayout();
         this.messageController.scrollToBottom(false);
-      });
+      };
+      on(window.visualViewport, 'resize', onViewport);
+      on(window.visualViewport, 'scroll', onViewport, { passive: true });
     }
 
     if (document.fonts && document.fonts.ready) {
