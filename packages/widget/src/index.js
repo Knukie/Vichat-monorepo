@@ -342,6 +342,20 @@ class ViChatWidget {
         computedVisibility: style.visibility
       };
     };
+    let bubbleHit = null;
+    const bubbleRect = el['valki-bubble']?.getBoundingClientRect();
+    if (bubbleRect && typeof document.elementFromPoint === 'function') {
+      const x = bubbleRect.left + bubbleRect.width / 2;
+      const y = bubbleRect.top + bubbleRect.height / 2;
+      const hit = document.elementFromPoint(x, y);
+      bubbleHit = hit
+        ? {
+            tagName: hit.tagName,
+            id: hit.id || undefined,
+            className: hit.className || undefined
+          }
+        : null;
+    }
     console.debug('[ViChat debug] overlay state', {
       context,
       loggedIn: this.isLoggedIn(),
@@ -349,6 +363,7 @@ class ViChatWidget {
       isOpen: this.isOpen,
       authHard: this.authHard,
       htmlClass: document.documentElement.className,
+      bubbleHit,
       bubble: describe(el['valki-bubble']),
       overlay: describe(el['valki-overlay']),
       authOverlay: describe(el['valki-auth-overlay']),
@@ -958,13 +973,8 @@ class ViChatWidget {
 
   closeAuthOverlay(force = false) {
     if (this.authHard && !force) return;
-    const el = this.elements['valki-auth-overlay'];
-    el.classList.remove('is-visible');
-    el.setAttribute('aria-hidden', 'true');
-    setTimeout(() => {
-      el.style.display = 'none';
-      this.debugLogOverlayState('auth overlay closed');
-    }, 180);
+    setVisible(this.elements['valki-auth-overlay'], false);
+    this.debugLogOverlayState('auth overlay closed');
   }
 
   openConfirm() {
@@ -982,13 +992,8 @@ class ViChatWidget {
   }
 
   closeConfirm() {
-    const el = this.elements['valki-confirm-overlay'];
-    el.classList.remove('is-visible');
-    el.setAttribute('aria-hidden', 'true');
-    setTimeout(() => {
-      el.style.display = 'none';
-      this.debugLogOverlayState('confirm overlay closed');
-    }, 180);
+    setVisible(this.elements['valki-confirm-overlay'], false);
+    this.debugLogOverlayState('confirm overlay closed');
   }
 
   openLogoutPrompt() {
@@ -996,13 +1001,8 @@ class ViChatWidget {
   }
 
   closeLogoutPrompt() {
-    const el = this.elements['valki-logout-overlay'];
-    el.classList.remove('is-visible');
-    el.setAttribute('aria-hidden', 'true');
-    setTimeout(() => {
-      el.style.display = 'none';
-      this.debugLogOverlayState('logout overlay closed');
-    }, 180);
+    setVisible(this.elements['valki-logout-overlay'], false);
+    this.debugLogOverlayState('logout overlay closed');
   }
 
   async handleAuthToken(token) {
