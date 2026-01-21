@@ -915,7 +915,7 @@ html.valki-chat-open #valki-root .valki-bubble{
 }
 
 #valki-root #valki-overlay[data-layout="mobile"][data-view="chat"] .valki-modal{
-  transform: translateX(0%);
+  transform: none;
   pointer-events: auto;
 }
 
@@ -1333,22 +1333,6 @@ html.valki-chat-open #valki-root .valki-bubble{
 #valki-root .valki-chat-send:focus-visible{
   outline: none;
   box-shadow: 0 0 0 3px var(--ring), 0 12px 28px rgba(0,0,0,.4);
-}
-
-#valki-root .valki-chat-hint{
-  font-size: 11px;
-  line-height: 1.4;
-  color: rgba(255,255,255,.48);
-  padding-left: 12px;
-  padding-right: 12px;
-  opacity: 0;
-  transform: translateY(-2px);
-  transition: opacity .18s ease, transform .18s ease;
-}
-
-#valki-root .valki-chat-composer:focus-within .valki-chat-hint{
-  opacity: 1;
-  transform: translateY(0);
 }
 
 /* Attachments tray */
