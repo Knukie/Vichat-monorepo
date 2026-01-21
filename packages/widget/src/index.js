@@ -441,7 +441,7 @@ class ViChatWidget {
       });
     };
 
-    const clampComposer = () => this.composerController?.clampComposer();
+    const clampComposer = (options) => this.composerController?.clampComposer(options);
 
     this.composerController = createComposerController({
       chatInput: el['valki-chat-input'],
@@ -576,7 +576,7 @@ class ViChatWidget {
         .some((attachment) => attachment?.dataUrl || attachment?.file);
       if (!q && !hasAttachments) return;
       el['valki-chat-input'].value = '';
-      clampComposer();
+      clampComposer({ immediate: true });
       this.ask(q);
     });
 
@@ -587,9 +587,10 @@ class ViChatWidget {
       }
     });
     on(el['valki-chat-input'], 'input', clampComposer);
+    on(el['valki-chat-input'], 'change', clampComposer);
     on(el['valki-chat-input'], 'paste', () => setTimeout(clampComposer, 0));
     on(el['valki-chat-input'], 'focus', () => {
-      clampComposer();
+      clampComposer({ immediate: true });
       scheduleLayoutMetrics();
     });
 
