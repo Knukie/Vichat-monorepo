@@ -1320,6 +1320,7 @@ const deleteAllBtn = $("valki-deleteall-btn");
 
 const messagesEl = $("valki-messages");
 const messagesInner = $("valki-messages-inner");
+const chatShell = overlay ? overlay.querySelector(".valki-modal") : null;
 
 const chatForm = $("valki-chat-form");
 const chatInput = $("valki-chat-input");
@@ -2359,6 +2360,30 @@ async function openFromBubble(e){
 
 // IMPORTANT: button already supports keyboard -> avoid double-fire bug
 bubble.addEventListener("click", openFromBubble);
+
+function stopChatShellPropagation(e){
+  e.stopPropagation();
+}
+
+function focusComposerOnTouch(event){
+  if (!chatInput || chatInput.disabled) return;
+  if (event.type !== "touchstart" && event.pointerType !== "touch") return;
+  const target = event.target instanceof HTMLElement ? event.target : null;
+  if (target && target.closest("button, a, input[type=\"file\"]")) return;
+  if (document.activeElement === chatInput) return;
+  try{ chatInput.focus({ preventScroll:true }); }
+  catch { chatInput.focus(); }
+}
+
+if (chatShell){
+  chatShell.addEventListener("pointerdown", stopChatShellPropagation);
+  chatShell.addEventListener("click", stopChatShellPropagation);
+  chatShell.addEventListener("touchstart", stopChatShellPropagation, { passive:true });
+}
+if (chatForm){
+  chatForm.addEventListener("pointerdown", focusComposerOnTouch);
+  chatForm.addEventListener("touchstart", focusComposerOnTouch, { passive:true });
+}
 
 /* Composer submit */
 chatForm.addEventListener("submit", (e)=>{

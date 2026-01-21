@@ -372,6 +372,26 @@ class ViChatWidget {
     });
 
     on(el['valki-bubble'], 'click', (e) => this.openFromBubble(e));
+    const stopChatShellPropagation = (event) => {
+      event.stopPropagation();
+    };
+    const focusComposerOnTouch = (event) => {
+      if (!el['valki-chat-input'] || el['valki-chat-input'].disabled) return;
+      if (event.type !== 'touchstart' && event.pointerType !== 'touch') return;
+      const target = event.target instanceof HTMLElement ? event.target : null;
+      if (target?.closest('button, a, input[type="file"]')) return;
+      if (document.activeElement === el['valki-chat-input']) return;
+      try {
+        el['valki-chat-input'].focus({ preventScroll: true });
+      } catch {
+        el['valki-chat-input'].focus();
+      }
+    };
+    on(el['valki-chat-shell'], 'pointerdown', stopChatShellPropagation);
+    on(el['valki-chat-shell'], 'click', stopChatShellPropagation);
+    on(el['valki-chat-shell'], 'touchstart', stopChatShellPropagation, { passive: true });
+    on(el['valki-chat-form'], 'pointerdown', focusComposerOnTouch);
+    on(el['valki-chat-form'], 'touchstart', focusComposerOnTouch, { passive: true });
     on(el['valki-chat-form'], 'submit', (e) => {
       e.preventDefault();
       const q = cleanText(el['valki-chat-input'].value);
