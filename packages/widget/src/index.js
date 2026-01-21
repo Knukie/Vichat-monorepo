@@ -320,6 +320,43 @@ class ViChatWidget {
     window.dispatchEvent(new CustomEvent(name, { detail }));
   }
 
+  debugLogOverlayState(context) {
+    if (typeof window === 'undefined') return;
+    const el = this.elements;
+    if (!el) return;
+    const describe = (node) => {
+      if (!node) return null;
+      const style = window.getComputedStyle(node);
+      return {
+        id: node.id || undefined,
+        className: node.className || undefined,
+        classList: Array.from(node.classList || []),
+        ariaHidden: node.getAttribute('aria-hidden'),
+        inlineDisplay: node.style.display || '',
+        inlinePointerEvents: node.style.pointerEvents || '',
+        inlineOpacity: node.style.opacity || '',
+        computedDisplay: style.display,
+        computedOpacity: style.opacity,
+        computedPointerEvents: style.pointerEvents,
+        computedZIndex: style.zIndex,
+        computedVisibility: style.visibility
+      };
+    };
+    console.debug('[ViChat debug] overlay state', {
+      context,
+      loggedIn: this.isLoggedIn(),
+      widgetState: el['valki-root']?.dataset?.state,
+      isOpen: this.isOpen,
+      authHard: this.authHard,
+      htmlClass: document.documentElement.className,
+      bubble: describe(el['valki-bubble']),
+      overlay: describe(el['valki-overlay']),
+      authOverlay: describe(el['valki-auth-overlay']),
+      confirmOverlay: describe(el['valki-confirm-overlay']),
+      logoutOverlay: describe(el['valki-logout-overlay'])
+    });
+  }
+
   setWidgetState(state, { emit = true } = {}) {
     const root = this.elements?.['valki-root'];
     const host = this.widgetHost;
@@ -421,8 +458,14 @@ class ViChatWidget {
       clampComposer,
       scrollToBottom: (force) => this.messageController?.scrollToBottom(force),
       getInitialFocus,
-      onOpen: () => this.setWidgetState('open'),
-      onClose: () => this.setWidgetState('closed')
+      onOpen: () => {
+        this.setWidgetState('open');
+        this.debugLogOverlayState('overlay opened');
+      },
+      onClose: () => {
+        this.setWidgetState('closed');
+        this.debugLogOverlayState('overlay closed');
+      }
     });
 
     this.guestMeter = createGuestMeter({
@@ -551,8 +594,14 @@ class ViChatWidget {
       scheduleLayoutMetrics();
     });
 
-    on(el['valki-close'], 'click', () => this.overlayController.closeOverlay());
-    on(el['valki-agent-close'], 'click', () => this.overlayController.closeOverlay());
+    on(el['valki-close'], 'click', () => {
+      this.debugLogOverlayState('close button click');
+      this.overlayController.closeOverlay();
+    });
+    on(el['valki-agent-close'], 'click', () => {
+      this.debugLogOverlayState('agent close button click');
+      this.overlayController.closeOverlay();
+    });
     on(el['valki-agent-back'], 'click', () => this.showAgentHub());
 
     on(document, 'keydown', (e) => {
@@ -593,6 +642,16 @@ class ViChatWidget {
     on(el['valki-auth-dismiss'], 'click', () => this.closeAuthOverlay());
     on(el['valki-auth-overlay'], 'click', (event) => {
       if (event.target === el['valki-auth-overlay']) this.closeAuthOverlay();
+    });
+
+    on(document, 'click', (event) => {
+      const target = event.target instanceof HTMLElement ? event.target : null;
+      console.debug('[ViChat debug] document click', {
+        tag: target?.tagName,
+        id: target?.id,
+        className: target?.className,
+        dataState: target?.getAttribute?.('data-state')
+      });
     });
 
     on(
@@ -887,6 +946,7 @@ class ViChatWidget {
     el['valki-auth-note'].textContent = this.authHard ? t('auth.noteHard') : t('auth.noteSoft');
     el['valki-auth-dismiss'].style.display = this.authHard ? 'none' : 'inline-block';
     setVisible(el['valki-auth-overlay'], true);
+    this.debugLogOverlayState('auth overlay opened');
 
     if (this.authHard) {
       el['valki-chat-input'].disabled = true;
@@ -903,6 +963,7 @@ class ViChatWidget {
     el.setAttribute('aria-hidden', 'true');
     setTimeout(() => {
       el.style.display = 'none';
+      this.debugLogOverlayState('auth overlay closed');
     }, 180);
   }
 
@@ -926,6 +987,7 @@ class ViChatWidget {
     el.setAttribute('aria-hidden', 'true');
     setTimeout(() => {
       el.style.display = 'none';
+      this.debugLogOverlayState('confirm overlay closed');
     }, 180);
   }
 
@@ -939,6 +1001,7 @@ class ViChatWidget {
     el.setAttribute('aria-hidden', 'true');
     setTimeout(() => {
       el.style.display = 'none';
+      this.debugLogOverlayState('logout overlay closed');
     }, 180);
   }
 
@@ -1141,6 +1204,7 @@ class ViChatWidget {
       e.preventDefault();
       e.stopPropagation();
     }
+    this.debugLogOverlayState('bubble open click');
     markBubbleSeen(this.config);
     this.hideBubbleBadge();
     this.setView(this.view);
