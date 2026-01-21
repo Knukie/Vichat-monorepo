@@ -1429,7 +1429,7 @@ html.valki-chat-open #valki-root .valki-bubble{
   #valki-root .valki-chat-input{
     flex: 1 1 auto;
     min-width: 0;
-    padding: 8px 2px;
+    padding: 12px 2px 4px;
     box-sizing: border-box;
     font: inherit;
     border: none;
