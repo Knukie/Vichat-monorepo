@@ -1025,12 +1025,7 @@ html.valki-chat-open #valki-root .valki-bubble{
   pointer-events:none;
 }
 #valki-root .valki-modal > .valki-chat-form::before{
-  content:"";
-  position:absolute;
-  left:0; right:0; top:0;
-  height:1px;
-  background: rgba(255,255,255,.06);
-  pointer-events:none;
+  display: none;
 }
 
 #valki-root #valki-overlay[data-layout="mobile"] .valki-modal > .valki-modal-header{

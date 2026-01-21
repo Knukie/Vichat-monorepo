@@ -25,8 +25,9 @@ export function createComposerController({ chatInput, chatForm, config, updateCo
     const lineHeight = Number.isFinite(lh) && lh > 0 ? lh : 22;
     const maxLines = Number.isFinite(config.chatMaxLines) ? config.chatMaxLines : 4;
     const maxH = Math.ceil(lineHeight * maxLines + padTop + padBot);
+    const minH = Math.ceil(lineHeight + padTop + padBot);
     const scrollH = chatInput.scrollHeight;
-    const next = Math.min(scrollH, maxH);
+    const next = Math.min(Math.max(scrollH, minH), maxH);
     chatInput.style.height = `${next}px`;
     chatInput.style.overflowY = scrollH > maxH ? 'auto' : 'hidden';
     updateComposerHeight?.();
