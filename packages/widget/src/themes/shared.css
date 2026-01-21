@@ -1466,8 +1466,7 @@ html.valki-chat-open #valki-root .valki-bubble{
   padding: 6px 12px 0;
   color: rgba(255,255,255,.62);
 
-  /* subtiele scheiding maar geen “los blok” gevoel */
-  border-top: 1px solid rgba(255,255,255,.08);
+  border-top: none;
 
   /* zelf geen blur nodig — valt visueel binnen de parent */
   background: transparent;
@@ -1492,7 +1491,7 @@ html.valki-chat-open #valki-root .valki-bubble{
   #valki-root .valki-disclaimer{
     margin-top: 10px;
     padding-top: 10px;
-    border-top: 1px solid rgba(255,255,255,.10);
+    border-top: none;
     color: rgba(255,255,255,.70);
   }
 }
