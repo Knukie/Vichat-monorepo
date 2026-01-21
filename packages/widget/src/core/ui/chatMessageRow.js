@@ -1,3 +1,5 @@
+import { t } from '../../i18n/index.js';
+
 /** @typedef {Partial<import('@valki/contracts').ImageMeta> & { dataUrl?: string }} UiMessageImage */
 
 const AVATAR_COLUMN_WIDTH_PX = 28;
@@ -9,7 +11,7 @@ function createAvatarWrap({ avatarUrl, avatarAlt }) {
   const avatar = document.createElement('img');
   avatar.className = 'valki-bot-avatar';
   if (avatarUrl) avatar.src = avatarUrl;
-  avatar.alt = avatarAlt || 'Assistant avatar';
+  avatar.alt = avatarAlt || t('avatar.assistantDefault');
   avatarWrap.appendChild(avatar);
   return avatarWrap;
 }
@@ -90,7 +92,7 @@ export function createChatMessageRow({
       wrap.className = 'valki-msg-attachment';
       const img = document.createElement('img');
       img.src = src;
-      img.alt = image?.name || 'attachment';
+      img.alt = image?.name || t('attachments.attachmentAlt');
       img.loading = 'lazy';
       wrap.appendChild(img);
       attachmentTray.appendChild(wrap);
@@ -107,7 +109,7 @@ export function createChatMessageRow({
 /**
  * @param {{ avatarUrl?: string, avatarAlt?: string, label?: string }} args
  */
-export function createTypingRow({ avatarUrl, avatarAlt, label = 'Analyzing the signal…' } = {}) {
+export function createTypingRow({ avatarUrl, avatarAlt, label = t('messages.typing') } = {}) {
   const row = document.createElement('div');
   row.className = 'valki-msg-row bot';
   row.appendChild(createAvatarWrap({ avatarUrl, avatarAlt }));

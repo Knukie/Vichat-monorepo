@@ -1,5 +1,6 @@
 import { ensureMarkdownLibs, hardenLinks, renderMarkdown } from '../markdown.js';
 import { isCustomerRole } from '../roles.js';
+import { t } from '../../i18n/index.js';
 import { createChatMessageRow, createTypingRow } from './chatMessageRow.js';
 
 /** @typedef {import('@valki/contracts').ImageMeta} ImageMeta */
@@ -21,8 +22,8 @@ export function createMessageController({
   updateDeleteButtonVisibility
 }) {
   let botAvatarUrl = avatarUrl;
-  let botAvatarAlt = 'Valki icon';
-  let userLabel = 'You';
+  let botAvatarAlt = t('avatar.assistantIconDefault');
+  let userLabel = t('labels.user');
 
   function scrollToBottom(force = false) {
     if (!messagesEl) return;
@@ -85,11 +86,13 @@ export function createMessageController({
 
   function setAgentMeta({ avatarUrl: nextAvatar, name }) {
     if (nextAvatar) botAvatarUrl = nextAvatar;
-    botAvatarAlt = name ? `${name} icon` : 'Valki icon';
+    botAvatarAlt = name
+      ? t('avatar.assistantIconWithName', { name })
+      : t('avatar.assistantIconDefault');
   }
 
   function setUserLabel(nextLabel) {
-    userLabel = nextLabel || 'You';
+    userLabel = nextLabel || t('labels.user');
   }
 
   return {

@@ -14,7 +14,7 @@ import {
   setAuthToken,
   shouldShowBubbleBadge
 } from './core/storage.js';
-import { DEFAULT_AGENTS, findAgentById, normalizeAgents } from './core/agents.js';
+import { findAgentById, getDefaultAgents, normalizeAgents } from './core/agents.js';
 import { createAttachmentController } from './core/attachments.js';
 import { createGuestMeter } from './core/guestMeter.js';
 import { createAgentHubController } from './core/ui/agentHub.js';
@@ -24,6 +24,7 @@ import { createOverlayController, setVisible } from './core/ui/overlay.js';
 import { createWidgetHost } from './core/ui/widgetHost.js';
 import { createAuthController } from './core/auth.js';
 import { askValki, clearMessages, fetchMe, fetchMessages, importGuestMessages } from './core/api.js';
+import { detectLocale, setLocale, t } from './i18n/index.js';
 import { resolveTheme } from './themes/index.js';
 
 /** @typedef {import('@valki/contracts').ImageMeta} ImageMeta */
@@ -156,6 +157,10 @@ function mountTemplate(theme, target, hostConfig) {
 class ViChatWidget {
   constructor(options = {}) {
     this.config = buildConfig(options);
+    this.localeOverride = options.locale;
+    this.copyOverrides = options.copy || {};
+    this.locale = setLocale(this.localeOverride || detectLocale());
+    this.updateLocalizedCopy();
     this.theme = resolveTheme(this.config.theme);
     this.token = getAuthToken(this.config);
     this.clientId = getOrCreateClientId(this.config);
@@ -165,12 +170,14 @@ class ViChatWidget {
     this.isSending = false;
     /** @type {UiGuestMessage[]} */
     this.guestHistory = [];
+    this.usesDefaultAgents = false;
     this.agents = normalizeAgents(this.config.agents).map((agent) => ({
       ...agent,
       avatarUrl: agent.avatarUrl || this.config.avatarUrl
     }));
     if (!this.agents.length && this.config.mode === 'agent-hub') {
-      this.agents = normalizeAgents(DEFAULT_AGENTS).map((agent) => ({
+      this.usesDefaultAgents = true;
+      this.agents = normalizeAgents(getDefaultAgents(t)).map((agent) => ({
         ...agent,
         avatarUrl: agent.avatarUrl || this.config.avatarUrl
       }));
@@ -198,6 +205,15 @@ class ViChatWidget {
     this.teardownUi = null;
   }
 
+  updateLocalizedCopy() {
+    if (!this.copyOverrides?.genericError) {
+      this.config.copy.genericError = t('errors.generic');
+    }
+    if (!this.copyOverrides?.noResponse) {
+      this.config.copy.noResponse = t('errors.noResponse');
+    }
+  }
+
   mount(mountTarget) {
     ensureStyle(this.theme);
     this.teardownUi?.();
@@ -211,10 +227,92 @@ class ViChatWidget {
     const { elements, host } = mountTemplate(this.theme, mountTarget, hostConfig);
     this.elements = elements;
     this.widgetHost = host;
+    this.applyTranslations();
     this.setWidgetState('closed', { emit: false });
     this.bindUi();
     this.scheduleLayoutNudge('mount');
     void this.boot();
+  }
+
+  updateLocale(locale) {
+    this.locale = setLocale(locale);
+    this.updateLocalizedCopy();
+    if (this.usesDefaultAgents) {
+      this.agents = normalizeAgents(getDefaultAgents(t)).map((agent) => ({
+        ...agent,
+        avatarUrl: agent.avatarUrl || this.config.avatarUrl
+      }));
+    }
+    this.applyTranslations();
+    this.renderAgentHub();
+    this.applyAgentToHeader(findAgentById(this.agents, this.currentAgentId));
+    this.updateSessionLabel();
+    this.updateLoginOutButtonLabel();
+    this.composerController?.applyPlaceholders();
+  }
+
+  applyTranslations() {
+    const el = this.elements;
+    if (!el) return;
+    const brand = t('branding.assistantName');
+    const bubbleLabel = t('bubble.openChat', { brand });
+    const composerLabel = t('composer.ariaLabel', { brand });
+
+    el['valki-bubble'].setAttribute('aria-label', bubbleLabel);
+    el['valki-sidebar'].setAttribute('aria-label', t('agentHub.sidebarLabel'));
+    el['valki-agent-hub'].setAttribute('aria-label', t('agentHub.ariaLabel'));
+    el['valki-agent-title'].textContent = t('agentHub.title');
+    el['valki-agent-subtitle'].textContent = t('agentHub.subtitle');
+    el['valki-agent-empty'].textContent = t('agentHub.empty');
+    el['valki-agent-close'].setAttribute('aria-label', t('buttons.close'));
+    el['valki-agent-back'].setAttribute('aria-label', t('buttons.backToAgents'));
+    el['valki-close'].setAttribute('aria-label', t('buttons.close'));
+
+    el['valki-loginout-btn'].textContent = t('buttons.login');
+    el['valki-loginout-btn'].setAttribute('title', t('buttons.login'));
+    el['valki-deleteall-btn'].textContent = t('buttons.delete');
+    el['valki-deleteall-btn'].setAttribute('title', t('buttons.deleteAllTitle'));
+
+    el['valki-chat-attach'].setAttribute('aria-label', t('buttons.addAttachment'));
+    el['valki-chat-send'].setAttribute('aria-label', t('buttons.send'));
+    el['valki-chat-input'].setAttribute('aria-label', composerLabel);
+    el['valki-attachments'].setAttribute('aria-label', t('attachments.label'));
+
+    const disclaimerText = el['valki-root'].querySelector('.valki-disclaimer > div');
+    if (disclaimerText) disclaimerText.textContent = t('disclaimer.text');
+    const disclaimerButton = el['valki-root'].querySelector('.valki-disclaimer-button');
+    if (disclaimerButton) disclaimerButton.textContent = t('disclaimer.cookie');
+
+    const authModal = el['valki-auth-overlay'].querySelector('.valki-auth-modal');
+    if (authModal) authModal.setAttribute('aria-label', t('auth.loginRequiredTitle'));
+    el['valki-auth-title'].textContent = t('auth.loginContinueTitle');
+    el['valki-auth-subtitle'].textContent = t('auth.subtitleSoft');
+    el['valki-auth-note'].textContent = t('auth.guestLimits');
+    const discordLabel = el['valki-login-discord-btn']?.lastElementChild;
+    if (discordLabel) discordLabel.textContent = t('buttons.continueDiscord');
+    const googleLabel = el['valki-login-google-btn']?.lastElementChild;
+    if (googleLabel) googleLabel.textContent = t('buttons.continueGoogle');
+    el['valki-join-discord-btn'].textContent = t('buttons.joinDiscord');
+    el['valki-auth-dismiss'].textContent = t('buttons.notNow');
+
+    const confirmTitle = el['valki-confirm-overlay'].querySelector('#valki-confirm-title');
+    if (confirmTitle) confirmTitle.textContent = t('confirmDelete.title');
+    const confirmSubtitle = el['valki-confirm-overlay'].querySelector('#valki-confirm-subtitle');
+    if (confirmSubtitle) confirmSubtitle.textContent = t('confirmDelete.subtitle');
+    el['valki-confirm-no'].textContent = t('buttons.cancel');
+    el['valki-confirm-yes'].textContent = t('buttons.confirmDelete');
+
+    const logoutOverlay = el['valki-logout-overlay'];
+    const logoutModal = logoutOverlay.querySelector('.valki-confirm-modal');
+    if (logoutModal) logoutModal.setAttribute('aria-label', t('logout.ariaLabel'));
+    const logoutTitle = logoutOverlay.querySelector('.valki-confirm-title');
+    if (logoutTitle) logoutTitle.textContent = t('logout.title');
+    const logoutSubtitle = logoutOverlay.querySelector('.valki-confirm-sub');
+    if (logoutSubtitle) logoutSubtitle.textContent = t('logout.subtitle');
+    const logoutNoLabel = el['valki-logout-no']?.querySelector('span');
+    if (logoutNoLabel) logoutNoLabel.textContent = t('buttons.cancel');
+    const logoutYesLabel = el['valki-logout-yes']?.querySelector('span');
+    if (logoutYesLabel) logoutYesLabel.textContent = t('buttons.logoutConfirm');
   }
 
   dispatchWidgetEvent(name, detail = {}) {
@@ -362,7 +460,10 @@ class ViChatWidget {
     });
 
     this.composerController.applyPlaceholders();
-    const onLanguageChange = () => this.composerController?.applyPlaceholders();
+    const onLanguageChange = () => {
+      if (this.localeOverride) return;
+      this.updateLocale(detectLocale());
+    };
     on(window, 'languagechange', onLanguageChange);
 
     on(el['valki-loginout-btn'], 'click', () => this.openAuthOverlay(false));
@@ -628,13 +729,16 @@ class ViChatWidget {
       if (agent.avatarUrl) {
         el['valki-header-avatar'].src = agent.avatarUrl;
       }
-      el['valki-header-avatar'].alt = `${agent.name} avatar`;
+      el['valki-header-avatar'].alt = t('avatar.assistantWithName', { name: agent.name });
       this.messageController?.setAgentMeta({ avatarUrl: agent.avatarUrl || this.config.avatarUrl, name: agent.name });
     } else {
-      el['valki-title'].textContent = this.theme.overlayTitle || this.theme.title || 'ViChat';
+      el['valki-title'].textContent = this.theme.overlayTitle || this.theme.title || t('branding.defaultTitle');
       el['valki-header-avatar'].src = this.theme.avatarUrl || this.config.avatarUrl;
-      el['valki-header-avatar'].alt = 'Valki avatar';
-      this.messageController?.setAgentMeta({ avatarUrl: this.config.avatarUrl, name: 'Valki' });
+      el['valki-header-avatar'].alt = t('avatar.assistantDefault');
+      this.messageController?.setAgentMeta({
+        avatarUrl: this.config.avatarUrl,
+        name: t('branding.assistantName')
+      });
     }
   }
 
@@ -728,12 +832,12 @@ class ViChatWidget {
       return;
     }
     if (this.isLoggedIn()) {
-      sessionLabel.textContent = 'You 🟢';
-      this.messageController?.setUserLabel('You');
+      sessionLabel.textContent = t('labels.sessionYou');
+      this.messageController?.setUserLabel(t('labels.user'));
       return;
     }
-    sessionLabel.textContent = 'Guest 🟠';
-    this.messageController?.setUserLabel('You');
+    sessionLabel.textContent = t('labels.sessionGuest');
+    this.messageController?.setUserLabel(t('labels.user'));
   }
 
   updateLoginOutButtonLabel() {
@@ -742,7 +846,8 @@ class ViChatWidget {
       btn.style.display = 'none';
     } else {
       btn.style.display = 'inline-flex';
-      btn.textContent = 'Login';
+      btn.textContent = t('buttons.login');
+      btn.setAttribute('title', t('buttons.login'));
     }
   }
 
@@ -773,11 +878,13 @@ class ViChatWidget {
   openAuthOverlay(hard) {
     this.authHard = !!hard;
     const el = this.elements;
-    el['valki-auth-title'].textContent = this.authHard ? 'Login required' : 'Log in to continue';
+    el['valki-auth-title'].textContent = this.authHard
+      ? t('auth.loginRequiredTitle')
+      : t('auth.loginContinueTitle');
     el['valki-auth-subtitle'].textContent = this.authHard
-      ? 'You’ve reached the guest limit. Log in to keep chatting.'
-      : 'Sign in to keep your chat history and manage messages.';
-    el['valki-auth-note'].textContent = this.authHard ? 'Guest limit reached.' : 'Tip: you can continue as guest, but limits apply.';
+      ? t('auth.subtitleHard')
+      : t('auth.subtitleSoft');
+    el['valki-auth-note'].textContent = this.authHard ? t('auth.noteHard') : t('auth.noteSoft');
     el['valki-auth-dismiss'].style.display = this.authHard ? 'none' : 'inline-block';
     setVisible(el['valki-auth-overlay'], true);
 

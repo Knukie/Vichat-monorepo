@@ -8,6 +8,7 @@
 /** @typedef {Partial<ImageMeta> & { name?: string, dataUrl?: string, file?: File, mime?: string }} UiImagePayload */
 /** @typedef {{ ok: boolean, messages: UiMessage[] }} FetchMessagesResult */
 
+import { t } from '../i18n/index.js';
 import { normalizeRole } from './roles.js';
 
 const IMAGE_META_TYPES = new Set(['user-upload', 'assistant-generated', 'external']);
@@ -161,7 +162,7 @@ export async function askValki({ message, clientId, images, token, config, agent
         if (ct.includes('application/json')) {
           const json = await res.json().catch(() => null);
           if (json && typeof json.error === 'string') {
-            errMsg = `ksshh… ${json.error}`;
+            errMsg = `${t('errors.prefix')}${json.error}`;
           }
         }
         return { ok: false, message: errMsg };
@@ -198,7 +199,7 @@ export async function askValki({ message, clientId, images, token, config, agent
       if (ct.includes('application/json')) {
         const json = await res.json().catch(() => null);
         if (json && typeof json.error === 'string') {
-          errMsg = `ksshh… ${json.error}`;
+          errMsg = `${t('errors.prefix')}${json.error}`;
         }
       }
       return { ok: false, message: errMsg };

@@ -1,3 +1,4 @@
+import { t } from '../i18n/index.js';
 import { generateId } from './storage.js';
 
 /** @typedef {import('@valki/contracts').ImageMeta} ImageMeta */
@@ -32,14 +33,14 @@ export function createAttachmentController({
 
       const img = document.createElement('img');
       img.src = attachment.dataUrl;
-      img.alt = attachment.name || 'attachment';
+      img.alt = attachment.name || t('attachments.attachmentAlt');
       img.loading = 'lazy';
 
       const remove = document.createElement('button');
       remove.type = 'button';
       remove.className = 'valki-attachment-remove';
       remove.textContent = '×';
-      remove.setAttribute('aria-label', 'Remove attachment');
+      remove.setAttribute('aria-label', t('attachments.remove'));
 
       remove.addEventListener('click', () => {
         attachments = attachments.filter((item) => item.id !== attachment.id);
