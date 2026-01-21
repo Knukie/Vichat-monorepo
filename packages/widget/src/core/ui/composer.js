@@ -15,24 +15,30 @@ function computeLineHeightPx(el) {
 export function createComposerController({ chatInput, chatForm, config, updateComposerHeight }) {
   let clampRaf = 0;
 
-  function clampComposer() {
+  function applyClamp() {
+    if (!chatInput) return;
+    chatInput.style.height = 'auto';
+    const cs = getComputedStyle(chatInput);
+    const lh = computeLineHeightPx(chatInput);
+    const padTop = parsePx(cs.paddingTop);
+    const padBot = parsePx(cs.paddingBottom);
+    const lineHeight = Number.isFinite(lh) && lh > 0 ? lh : 22;
+    const maxLines = Number.isFinite(config.chatMaxLines) ? config.chatMaxLines : 4;
+    const maxH = Math.ceil(lineHeight * maxLines + padTop + padBot);
+    const scrollH = chatInput.scrollHeight;
+    const next = Math.min(scrollH, maxH);
+    chatInput.style.height = `${next}px`;
+    chatInput.style.overflowY = scrollH > maxH ? 'auto' : 'hidden';
+    updateComposerHeight?.();
+  }
+
+  function clampComposer({ immediate = false } = {}) {
     if (!chatInput) return;
     if (clampRaf) cancelAnimationFrame(clampRaf);
+    if (immediate) applyClamp();
     clampRaf = requestAnimationFrame(() => {
       clampRaf = 0;
-      chatInput.style.height = 'auto';
-      const cs = getComputedStyle(chatInput);
-      const lh = computeLineHeightPx(chatInput);
-      const padTop = parsePx(cs.paddingTop);
-      const padBot = parsePx(cs.paddingBottom);
-      const lineHeight = Number.isFinite(lh) && lh > 0 ? lh : 22;
-      const maxLines = Number.isFinite(config.chatMaxLines) ? config.chatMaxLines : 4;
-      const maxH = Math.ceil(lineHeight * maxLines + padTop + padBot);
-      const scrollH = chatInput.scrollHeight;
-      const next = Math.min(scrollH, maxH);
-      chatInput.style.height = `${next}px`;
-      chatInput.style.overflowY = scrollH > maxH ? 'auto' : 'hidden';
-      updateComposerHeight?.();
+      applyClamp();
     });
   }
 
