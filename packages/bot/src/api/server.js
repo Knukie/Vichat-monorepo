@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import crypto from "crypto";
+import http from "http";
 import { PrismaClient } from "@prisma/client";
 import { cleanText, newConversationId, nowISO, pickPrimaryLocale } from "../core/utils.js";
 import {
@@ -25,6 +26,7 @@ import { simpleRateLimit } from "../core/rateLimit.js";
 import { config, corsOrigins, ensureApiEnv } from "../core/config.js";
 import { ALLOWED_IMAGE_TYPES, sanitizeImages } from "../core/images.js";
 import { MAX_IMAGE_BYTES, storeUploadedFile, uploadDir } from "../core/uploads.js";
+import { attachWebSocketServer } from "../ws/index.js";
 
 ensureApiEnv();
 
@@ -705,7 +707,9 @@ app.post("/api/valki", optionalAuth, async (req, res) => {
 });
 
 const port = Number(config.PORT) || 3000;
-const server = app.listen(port, () => {
+const server = http.createServer(app);
+attachWebSocketServer(server, { path: process.env.WS_PATH || "/ws" });
+server.listen(port, () => {
   console.log(`🌐 HTTP API running on port ${port} (${config.NODE_ENV})`);
 });
 
