@@ -226,7 +226,7 @@ html.valki-chat-open #valki-root .valki-hero-actions{
   background:transparent;
   font-size: 16px;
   color: rgba(255,255,255,.92);
-  caret-color: rgba(255,255,255,.85);
+  caret-color: #ff8a00;
 }
 #valki-root .valki-search-input::placeholder{ color: rgba(255,255,255,.30); }
 #valki-root .valki-search-button{
@@ -616,7 +616,7 @@ html.valki-chat-open #valki-root .valki-hero-actions{
   overflow-y:hidden;
   white-space: pre-wrap;
   word-break: break-word;
-  caret-color: rgba(255,255,255,.86);
+  caret-color: #ff8a00;
 }
 #valki-root .valki-chat-input::placeholder{ color: rgba(255,255,255,.30); }
 
