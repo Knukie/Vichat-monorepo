@@ -368,6 +368,27 @@ class ViChatWidget {
     });
   }
 
+  ensureOverlayOpen(reason) {
+    if (!this.overlayController) return;
+    const wasOpen = this.overlayController.isChatOpen();
+    if (!wasOpen) this.overlayController.openOverlay();
+    console.debug('[ViChat debug] ensure overlay open', { reason, wasOpen });
+  }
+
+  handleInvalidToken(reason, { promptLogin = false } = {}) {
+    if (!this.token) return;
+    clearAuthToken(this.config);
+    this.token = '';
+    this.me = null;
+    this.updateSessionLabel();
+    this.updateLoginOutButtonLabel();
+    console.warn('[ViChat] auth token invalid', { reason });
+    if (promptLogin) {
+      this.authHard = false;
+      this.openAuthOverlay(false);
+    }
+  }
+
   setWidgetState(state, { emit = true } = {}) {
     const root = this.elements?.['valki-root'];
     const host = this.widgetHost;
@@ -1005,7 +1026,11 @@ class ViChatWidget {
   async handleAuthToken(token) {
     this.token = token;
     setAuthToken(token, this.config);
-    await this.loadMe();
+    const meResult = await this.loadMe();
+    if (meResult && (meResult.status === 401 || meResult.status === 403)) {
+      this.handleInvalidToken('fetchMe', { promptLogin: true });
+      return;
+    }
     this.updateSessionLabel();
     this.updateLoginOutButtonLabel();
     this.guestMeter.reset();
@@ -1030,17 +1055,32 @@ class ViChatWidget {
   }
 
   async loadMe() {
-    this.me = await fetchMe({ token: this.token, config: this.config });
+    const result = await fetchMe({ token: this.token, config: this.config });
+    this.me = result.user || null;
+    return result;
   }
 
   async loadLoggedInMessagesToUI({ forceOpen = false } = {}) {
+    if (forceOpen) this.ensureOverlayOpen('load logged-in messages');
     if (!this.token) return false;
-    const { ok, messages } = await fetchMessages({
+    const { ok, status, messages } = await fetchMessages({
       token: this.token,
       config: this.config,
       agentId: this.currentAgentId
     });
-    if (!ok && !messages.length) return false;
+    if (!ok) {
+      if (status === 401 || status === 403) {
+        this.handleInvalidToken('fetchMessages', { promptLogin: true });
+        return false;
+      }
+      if (!this.messageController.hasAnyRealMessages()) {
+        await this.messageController.addMessage({ type: 'assistant', text: this.config.copy.genericError });
+      }
+      console.warn('[ViChat] failed to load messages', { status: status ?? 0 });
+      this.updateDeleteButtonVisibility();
+      this.scheduleLayoutMetrics?.();
+      return false;
+    }
     this.messageController.clearMessagesUI();
     for (const m of messages || []) {
       await this.messageController.addMessage({ type: m.role, text: m.text, images: m.images });
@@ -1048,18 +1088,22 @@ class ViChatWidget {
     this.messageController.scrollToBottom(true);
     this.updateDeleteButtonVisibility();
     this.scheduleLayoutMetrics?.();
-    if (forceOpen && !this.overlayController.isChatOpen()) this.overlayController.openOverlay();
     return true;
   }
 
   async loadMessagesForCurrentAgent({ forceOpen = false } = {}) {
+    if (forceOpen) this.ensureOverlayOpen('load messages');
     if (this.isLoggedIn()) {
-      await this.loadLoggedInMessagesToUI({ forceOpen });
+      const ok = await this.loadLoggedInMessagesToUI({ forceOpen });
+      if (!ok && !this.isLoggedIn()) {
+        this.guestHistory = loadGuestHistory(this.config, this.currentAgentId);
+        await this.renderGuestHistoryToUI();
+        if (this.guestMeter.guestHardBlocked()) this.openAuthOverlay(true);
+      }
       return;
     }
     this.guestHistory = loadGuestHistory(this.config, this.currentAgentId);
     await this.renderGuestHistoryToUI();
-    if (forceOpen && !this.overlayController.isChatOpen()) this.overlayController.openOverlay();
     if (this.guestMeter.guestHardBlocked()) this.openAuthOverlay(true);
   }
 
@@ -1202,6 +1246,7 @@ class ViChatWidget {
       e.stopPropagation();
     }
     this.debugLogOverlayState('bubble open click');
+    this.ensureOverlayOpen('bubble click');
     markBubbleSeen(this.config);
     this.hideBubbleBadge();
     this.setView(this.view);
@@ -1210,12 +1255,11 @@ class ViChatWidget {
     if (handled) return;
 
     if (this.view === 'agent-hub') {
-      this.overlayController.openOverlay();
       this.selectedAgentId = this.currentAgentId;
       this.renderAgentHub();
       return;
     }
-    await this.loadMessagesForCurrentAgent({ forceOpen: true });
+    await this.loadMessagesForCurrentAgent({ forceOpen: false });
   }
 
   onDeleteAll() {
@@ -1225,7 +1269,15 @@ class ViChatWidget {
   }
 
   async boot() {
-    await this.loadMe();
+    let meResult = null;
+    try {
+      meResult = await this.loadMe();
+    } catch {
+      meResult = null;
+    }
+    if (meResult && (meResult.status === 401 || meResult.status === 403)) {
+      this.handleInvalidToken('fetchMe', { promptLogin: false });
+    }
     this.updateSessionLabel();
     this.updateLoginOutButtonLabel();
     this.attachmentController.setDisabled(false);
