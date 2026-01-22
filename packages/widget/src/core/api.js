@@ -6,7 +6,8 @@
 /** @typedef {Pick<Message, 'role'> & { role: UiRole, text: string, images?: ImageMeta[] }} UiMessage */
 /** @typedef {User & { name?: string | null }} UiUser */
 /** @typedef {Partial<ImageMeta> & { name?: string, dataUrl?: string, file?: File, mime?: string }} UiImagePayload */
-/** @typedef {{ ok: boolean, messages: UiMessage[] }} FetchMessagesResult */
+/** @typedef {{ ok: boolean, status?: number, messages: UiMessage[] }} FetchMessagesResult */
+/** @typedef {{ ok: boolean, status: number, user: UiUser | null, loggedIn?: boolean }} FetchMeResult */
 
 import { t } from '../i18n/index.js';
 import { normalizeRole } from './roles.js';
@@ -19,17 +20,22 @@ function normalizeImageType(rawType) {
   return 'user-upload';
 }
 
-/** @returns {Promise<UiUser | null>} */
+/** @returns {Promise<FetchMeResult>} */
 export async function fetchMe({ token, config }) {
-  if (!token) return null;
+  if (!token) return { ok: false, status: 0, user: null, loggedIn: false };
   try {
     const res = await fetch(config.apiMe, { headers: { Authorization: `Bearer ${token}` } });
     const data = await res.json().catch(() => null);
-    if (data && data.loggedIn && data.user) return data.user;
+    if (!res.ok) {
+      return { ok: false, status: res.status, user: null, loggedIn: false };
+    }
+    if (data && data.loggedIn && data.user) {
+      return { ok: true, status: res.status, user: data.user, loggedIn: true };
+    }
+    return { ok: true, status: res.status, user: null, loggedIn: false };
   } catch {
-    /* ignore */
+    return { ok: false, status: 0, user: null, loggedIn: false };
   }
-  return null;
 }
 
 function withAgentParam(url, agentId) {
@@ -41,16 +47,17 @@ function withAgentParam(url, agentId) {
 
 /** @returns {Promise<FetchMessagesResult>} */
 export async function fetchMessages({ token, config, agentId }) {
-  if (!token) return { ok: false, messages: [] };
+  if (!token) return { ok: false, status: 0, messages: [] };
   try {
     const res = await fetch(withAgentParam(config.apiMessages, agentId), {
       headers: { Authorization: `Bearer ${token}` }
     });
-    if (!res.ok) return { ok: false, messages: [] };
+    if (!res.ok) return { ok: false, status: res.status, messages: [] };
     const data = await res.json().catch(() => null);
-    if (!data || !Array.isArray(data.messages)) return { ok: true, messages: [] };
+    if (!data || !Array.isArray(data.messages)) return { ok: true, status: res.status, messages: [] };
     return {
       ok: true,
+      status: res.status,
       messages: data.messages.map((m) => ({
         role: normalizeRole(String(m.role || '')),
         text: String(m.content || ''),
@@ -58,7 +65,7 @@ export async function fetchMessages({ token, config, agentId }) {
       }))
     };
   } catch {
-    return { ok: false, messages: [] };
+    return { ok: false, status: 0, messages: [] };
   }
 }
 
