@@ -82,11 +82,22 @@ export function createMessageController({
   }
 
   function createTypingMessageRow() {
+    const existingRows = messagesInner.querySelectorAll('.valki-typing-bar');
+    existingRows.forEach((bar) => {
+      bar.closest('.valki-msg-row')?.remove();
+    });
     const typingRow = createTypingRow({ avatarUrl: botAvatarUrl, avatarAlt: botAvatarAlt });
     messagesInner.appendChild(typingRow);
     scrollToBottom(true);
 
     return typingRow;
+  }
+
+  function removeTypingRows() {
+    const existingRows = messagesInner.querySelectorAll('.valki-typing-bar');
+    existingRows.forEach((bar) => {
+      bar.closest('.valki-msg-row')?.remove();
+    });
   }
 
   function hasAnyRealMessages() {
@@ -126,6 +137,7 @@ export function createMessageController({
     hasAnyRealMessages,
     setAgentMeta,
     setUserLabel,
+    removeTypingRows,
     updateMessageText,
     scrollToBottom,
     scrollToBottomHard
