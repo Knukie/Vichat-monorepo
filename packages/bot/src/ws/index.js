@@ -11,6 +11,10 @@ const MAX_MESSAGE_BYTES = 64 * 1024;
 const MESSAGE_DEDUPE_TTL_MS = 2 * 60 * 1000;
 const messageCache = new Map();
 
+function nowTs() {
+  return Date.now();
+}
+
 function pruneMessageCache(now = Date.now()) {
   for (const [key, entry] of messageCache.entries()) {
     if (!entry || now - entry.ts > MESSAGE_DEDUPE_TTL_MS) {
@@ -34,15 +38,73 @@ function buildError(code, message, meta = {}) {
   return { v: 1, type: "error", code, message, ...meta };
 }
 
+function buildAssistantStart({ messageId, conversationId, requestId }) {
+  return {
+    type: "assistant.message.start",
+    messageId,
+    conversationId: conversationId || null,
+    requestId,
+    ts: nowTs()
+  };
+}
+
+function buildAssistantDelta({ messageId, requestId, seq, delta }) {
+  return {
+    type: "assistant.message.delta",
+    messageId,
+    requestId,
+    seq,
+    delta,
+    ts: nowTs()
+  };
+}
+
+function buildAssistantEnd({ messageId, requestId, seq, finishReason, usage }) {
+  return {
+    type: "assistant.message.end",
+    messageId,
+    requestId,
+    seq,
+    finishReason,
+    usage,
+    ts: nowTs()
+  };
+}
+
+function buildAssistantError({ requestId, messageId, code, message }) {
+  return {
+    type: "assistant.message.error",
+    requestId,
+    messageId: messageId || null,
+    code,
+    message,
+    ts: nowTs()
+  };
+}
+
+function splitIntoChunks(text, minSize = 20, maxSize = 80) {
+  if (!text) return [];
+  const size = Math.min(maxSize, Math.max(minSize, 60));
+  const chunks = [];
+  for (let i = 0; i < text.length; i += size) {
+    chunks.push(text.slice(i, i + size));
+  }
+  return chunks;
+}
+
 function verifyTokenDefault(token) {
   const cleaned = cleanText(token);
   if (!cleaned) return false;
   return verifyAuthToken(cleaned);
 }
 
-export function attachWebSocketServer(server, { path = DEFAULT_PATH, verifyToken } = {}) {
+export function attachWebSocketServer(
+  server,
+  { path = DEFAULT_PATH, verifyToken, runAssistant } = {}
+) {
   const resolvedPath = cleanText(path) || DEFAULT_PATH;
   const verifyTokenFn = typeof verifyToken === "function" ? verifyToken : verifyTokenDefault;
+  const runAssistantFn = typeof runAssistant === "function" ? runAssistant : runValki;
 
   const wss = new WebSocketServer({
     server,
@@ -54,6 +116,7 @@ export function attachWebSocketServer(server, { path = DEFAULT_PATH, verifyToken
     const sessionId = crypto.randomUUID();
     let authenticated = false;
     let userId = null;
+    const requestStatus = new Map();
 
     console.log(`[ws] connected ${sessionId} (${req?.socket?.remoteAddress || "unknown"})`);
     sendJson(ws, { v: 1, type: "ready", sessionId, authenticated });
@@ -102,6 +165,13 @@ export function attachWebSocketServer(server, { path = DEFAULT_PATH, verifyToken
         if (!payload?.uid) {
           authenticated = false;
           userId = null;
+          const errorPayload = buildAssistantError({
+            requestId: crypto.randomUUID(),
+            messageId: null,
+            code: "UNAUTHORIZED",
+            message: "Token is invalid."
+          });
+          sendJson(ws, errorPayload);
           sendJson(ws, buildError("UNAUTHORIZED", "Token is invalid."));
           return;
         }
@@ -114,6 +184,7 @@ export function attachWebSocketServer(server, { path = DEFAULT_PATH, verifyToken
 
       if (type === "message") {
         const messageId = cleanText(message?.messageId);
+        const requestId = cleanText(message?.requestId) || messageId || crypto.randomUUID();
         const clientId = cleanText(message?.clientId);
         const incomingText = cleanText(message?.message || message?.text);
         const preferredLocale = cleanText(message?.locale) || pickPrimaryLocale(req?.headers?.["accept-language"]);
@@ -121,11 +192,29 @@ export function attachWebSocketServer(server, { path = DEFAULT_PATH, verifyToken
         const incomingImages = Array.isArray(message?.images) ? message.images : [];
 
         if (!messageId) {
+          sendJson(
+            ws,
+            buildAssistantError({
+              requestId,
+              messageId: null,
+              code: "BAD_REQUEST",
+              message: "messageId is required."
+            })
+          );
           sendJson(ws, buildError("INVALID_MESSAGE_ID", "messageId is required."));
           return;
         }
 
         if (!clientId) {
+          sendJson(
+            ws,
+            buildAssistantError({
+              requestId,
+              messageId,
+              code: "BAD_REQUEST",
+              message: "clientId is required."
+            })
+          );
           sendJson(ws, buildError("INVALID_CLIENT_ID", "clientId is required.", { messageId }));
           return;
         }
@@ -133,22 +222,92 @@ export function attachWebSocketServer(server, { path = DEFAULT_PATH, verifyToken
         if (!incomingText && !incomingImages.length) {
           sendJson(
             ws,
+            buildAssistantError({
+              requestId,
+              messageId,
+              code: "BAD_REQUEST",
+              message: "Message text or images are required."
+            })
+          );
+          sendJson(
+            ws,
             buildError("INVALID_MESSAGE", "Message text or images are required.", { messageId })
           );
           return;
         }
 
+        const priorStatus = requestStatus.get(requestId);
+        if (priorStatus?.status === "in_progress" || priorStatus?.status === "done") {
+          sendJson(
+            ws,
+            buildAssistantError({
+              requestId,
+              messageId: null,
+              code: "BAD_REQUEST",
+              message: "Duplicate requestId"
+            })
+          );
+          sendJson(ws, buildError("DUPLICATE_REQUEST", "Duplicate requestId", { messageId }));
+          return;
+        }
+
+        requestStatus.set(requestId, { status: "in_progress", ts: nowTs() });
+        const assistantMessageId = crypto.randomUUID();
+        let seq = 0;
+        let started = false;
+
+        const sendStart = (conversationId) => {
+          started = true;
+          sendJson(
+            ws,
+            buildAssistantStart({
+              messageId: assistantMessageId,
+              conversationId,
+              requestId
+            })
+          );
+        };
+
+        const sendDelta = (delta) => {
+          seq += 1;
+          sendJson(
+            ws,
+            buildAssistantDelta({ messageId: assistantMessageId, requestId, seq, delta })
+          );
+        };
+
+        const sendEnd = (finishReason) => {
+          sendJson(
+            ws,
+            buildAssistantEnd({
+              messageId: assistantMessageId,
+              requestId,
+              seq,
+              finishReason,
+              usage: { inputTokens: 0, outputTokens: 0 }
+            })
+          );
+        };
+
         try {
           pruneMessageCache();
           const cached = messageCache.get(messageId);
           if (cached && Date.now() - cached.ts <= MESSAGE_DEDUPE_TTL_MS) {
+            sendStart(cached.conversationId);
+            const chunks = splitIntoChunks(cached.reply);
+            for (const chunk of chunks) {
+              sendDelta(chunk);
+            }
+            sendEnd("stop");
             sendJson(ws, {
               v: 1,
               type: "message",
               messageId,
               conversationId: cached.conversationId,
-              reply: cached.reply
+              reply: cached.reply,
+              streamed: true
             });
+            requestStatus.set(requestId, { status: "done", ts: nowTs() });
             return;
           }
 
@@ -161,31 +320,72 @@ export function attachWebSocketServer(server, { path = DEFAULT_PATH, verifyToken
             cid = providedCid || newConversationId();
           }
 
+          sendStart(cid);
+
           const { images: sanitizedImages } = sanitizeImages(incomingImages);
           const userTextForRun = incomingText || "[image]";
 
-          const { reply } = await runValki({
+          const { reply } = await runAssistantFn({
             userText: userTextForRun,
             conversationId: cid,
             preferredLocale,
             images: sanitizedImages,
-            requestId: messageId
+            requestId
           });
 
           messageCache.set(messageId, { ts: Date.now(), conversationId: cid, reply });
 
-          sendJson(ws, { v: 1, type: "message", messageId, conversationId: cid, reply });
+          const chunks = splitIntoChunks(reply);
+          for (const chunk of chunks) {
+            sendDelta(chunk);
+          }
+          sendEnd("stop");
+          sendJson(ws, {
+            v: 1,
+            type: "message",
+            messageId,
+            conversationId: cid,
+            reply,
+            streamed: true
+          });
+          requestStatus.set(requestId, { status: "done", ts: nowTs() });
           return;
         } catch (err) {
           if (err instanceof ValkiModelError) {
             sendJson(
               ws,
+              buildAssistantError({
+                requestId,
+                messageId: assistantMessageId,
+                code: "INTERNAL",
+                message: "Temporary error analyzing image."
+              })
+            );
+            if (started) {
+              sendEnd("error");
+            }
+            sendJson(
+              ws,
               buildError("MODEL_ERROR", "Temporary error analyzing image.", { messageId })
             );
+            requestStatus.set(requestId, { status: "done", ts: nowTs() });
             return;
           }
           console.error("[ws] message error:", err);
+          sendJson(
+            ws,
+            buildAssistantError({
+              requestId,
+              messageId: assistantMessageId,
+              code: "INTERNAL",
+              message: "Internal backend error."
+            })
+          );
+          if (started) {
+            sendEnd("error");
+          }
           sendJson(ws, buildError("INTERNAL_ERROR", "Internal backend error.", { messageId }));
+          requestStatus.set(requestId, { status: "done", ts: nowTs() });
           return;
         }
       }
