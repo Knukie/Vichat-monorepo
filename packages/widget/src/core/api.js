@@ -82,44 +82,8 @@ export async function clearMessages({ token, config, agentId }) {
   }
 }
 
-/** @param {{ token: string, guestHistory: Array<{ type: UiRole, text: string, images?: ImageMeta[] }>, config: object, agentId: string }} args */
-export async function importGuestMessages({ token, guestHistory, config, agentId }) {
-  if (!token || !Array.isArray(guestHistory) || !guestHistory.length) return;
-  const payload = {
-    agentId,
-    messages: guestHistory.slice(-80).map((m) => {
-      const entry = {
-        role: normalizeRole(String(m.type || '')),
-        content: String(m.text || '')
-      };
-      const images = Array.isArray(m.images)
-        ? m.images
-            .map((image) => ({
-              url: image?.url || image?.dataUrl,
-              type: normalizeImageType(image?.type),
-              name: image?.name,
-              size: image?.size
-            }))
-            .filter((image) => typeof image.url === 'string' && image.url)
-        : [];
-      if (images.length) entry.images = images;
-      return entry;
-    })
-  };
-
-  try {
-    await fetch(config.apiImportGuest, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify(payload)
-    });
-  } catch {
-    /* non-fatal */
-  }
-}
-
-/** @param {{ message: string, clientId: string, images: UiImagePayload[], token: string, config: object, agentId: string }} args */
-export async function askValki({ message, clientId, images, token, config, agentId }) {
+/** @param {{ images: UiImagePayload[], token: string, config: object }} args */
+export async function uploadImages({ images, token, config }) {
   const uploadHeaders = {};
   if (token) uploadHeaders.Authorization = `Bearer ${token}`;
 
@@ -188,6 +152,51 @@ export async function askValki({ message, clientId, images, token, config, agent
       return { ok: false, message: config.copy.genericError };
     }
   }
+
+  return { ok: true, images: uploadedImages };
+}
+
+/** @param {{ token: string, guestHistory: Array<{ type: UiRole, text: string, images?: ImageMeta[] }>, config: object, agentId: string }} args */
+export async function importGuestMessages({ token, guestHistory, config, agentId }) {
+  if (!token || !Array.isArray(guestHistory) || !guestHistory.length) return;
+  const payload = {
+    agentId,
+    messages: guestHistory.slice(-80).map((m) => {
+      const entry = {
+        role: normalizeRole(String(m.type || '')),
+        content: String(m.text || '')
+      };
+      const images = Array.isArray(m.images)
+        ? m.images
+            .map((image) => ({
+              url: image?.url || image?.dataUrl,
+              type: normalizeImageType(image?.type),
+              name: image?.name,
+              size: image?.size
+            }))
+            .filter((image) => typeof image.url === 'string' && image.url)
+        : [];
+      if (images.length) entry.images = images;
+      return entry;
+    })
+  };
+
+  try {
+    await fetch(config.apiImportGuest, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify(payload)
+    });
+  } catch {
+    /* non-fatal */
+  }
+}
+
+/** @param {{ message: string, clientId: string, images: UiImagePayload[], token: string, config: object, agentId: string }} args */
+export async function askValki({ message, clientId, images, token, config, agentId }) {
+  const uploadResult = await uploadImages({ images, token, config });
+  if (!uploadResult.ok) return { ok: false, message: uploadResult.message };
+  const uploadedImages = uploadResult.images || [];
 
   const payload = { message, clientId, images: uploadedImages, agentId };
   const headers = { 'Content-Type': 'application/json' };
