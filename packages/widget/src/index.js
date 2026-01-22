@@ -1074,6 +1074,7 @@ class ViChatWidget {
       if (event.type !== 'touchstart' && event.pointerType !== 'touch') return;
       if (eventHasTarget(event, 'button, a, input[type="file"], #valki-file-input')) return;
       if (eventHasTarget(event, 'textarea, [contenteditable="true"]')) return;
+      if (eventHasTarget(event, '.valki-chat-inner, #valki-chat-input')) return;
       if (document.activeElement === el['valki-chat-input']) return;
       requestAnimationFrame(() => {
         try {
