@@ -71,6 +71,38 @@ readme: |
 
   ---
 
+  ## 🔌 WebSocket (protocol v1)
+
+  - URL: `ws(s)://HOST/ws` (configurable via `WS_PATH`).
+  - De WebSocket draait op dezelfde HTTP server/poort (Railway-friendly).
+
+  **Client → Server**
+  ```json
+  { "v": 1, "type": "auth", "token": "optional" }
+  { "v": 1, "type": "ping", "ts": 123 }
+  { "v": 1, "type": "message", "messageId": "abc", "agentId": "optional", "text": "Hallo!" }
+  ```
+
+  **Server → Client**
+  ```json
+  { "v": 1, "type": "ready", "sessionId": "uuid", "authenticated": false }
+  { "v": 1, "type": "pong", "ts": 123 }
+  { "v": 1, "type": "error", "code": "UNAUTHORIZED", "message": "Token is invalid." }
+  ```
+
+  **Lokale test**
+  ```bash
+  npx wscat -c ws://localhost:3000/ws
+  # send: {"v":1,"type":"ping","ts":123}
+  ```
+
+  Of via script:
+  ```bash
+  node scripts/ws-smoke-test.js
+  ```
+
+  ---
+
   ## 📦 Shared Contracts
 
   De backend importeert domeintypes uit bijhorende repository:
@@ -116,6 +148,7 @@ readme: |
   GOOGLE_REDIRECT_URI="..."
   NODE_ENV=development
   PORT=8080
+  WS_PATH=/ws
 
   Prisma initialiseren
   npx prisma generate
@@ -135,6 +168,7 @@ readme: |
   ## 🚄 Railway notes
 
   - Set `PORT` via Railway (the API listens on `process.env.PORT`).
+  - WebSocket upgrades use the same host/port (no extra Railway ports required).
   - Recommended healthchecks:
     - Liveness: `/health`
     - Readiness: `/ready`
