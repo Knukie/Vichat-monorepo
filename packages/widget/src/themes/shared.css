@@ -910,16 +910,19 @@ html.valki-chat-open #valki-root .valki-bubble{
   inset: 0;
   width: 100%;
   height: 100%;
-  transition: transform 0.28s ease;
+  transition: none;
   will-change: auto;
 }
 
 #valki-root #valki-overlay[data-layout="mobile"][data-view="agent-hub"] .valki-sidebar,
 #valki-root #valki-overlay[data-layout="mobile"][data-view="agent-hub"] .valki-modal{
+  transition: transform 0.28s ease;
   will-change: transform;
 }
 
+#valki-root #valki-overlay[data-layout="mobile"][data-view="chat"] .valki-sidebar,
 #valki-root #valki-overlay[data-layout="mobile"][data-view="chat"] .valki-modal{
+  transition: none;
   will-change: auto;
 }
 
