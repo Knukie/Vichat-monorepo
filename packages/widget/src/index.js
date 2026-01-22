@@ -1063,12 +1063,17 @@ class ViChatWidget {
     const stopChatShellPropagation = (event) => {
       event.stopPropagation();
     };
+    const eventHasTarget = (event, selector) => {
+      if (!selector) return false;
+      if (event?.target instanceof HTMLElement && event.target.closest(selector)) return true;
+      if (typeof event?.composedPath !== 'function') return false;
+      return event.composedPath().some((node) => node instanceof HTMLElement && node.matches(selector));
+    };
     const focusComposerOnTouch = (event) => {
       if (!el['valki-chat-input'] || el['valki-chat-input'].disabled) return;
       if (event.type !== 'touchstart' && event.pointerType !== 'touch') return;
-      const target = event.target instanceof HTMLElement ? event.target : null;
-      if (target?.closest('button, a, input[type="file"], #valki-file-input')) return;
-      if (target?.closest('textarea, [contenteditable="true"]')) return;
+      if (eventHasTarget(event, 'button, a, input[type="file"], #valki-file-input')) return;
+      if (eventHasTarget(event, 'textarea, [contenteditable="true"]')) return;
       if (document.activeElement === el['valki-chat-input']) return;
       requestAnimationFrame(() => {
         try {
