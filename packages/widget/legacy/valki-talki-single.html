@@ -2386,6 +2386,7 @@ function focusComposerOnTouch(event){
   if (event.type !== "touchstart" && event.pointerType !== "touch") return;
   const target = event.target instanceof HTMLElement ? event.target : null;
   if (target && target.closest("button, a, input[type=\"file\"], #valki-file-input")) return;
+  if (target && target.closest("textarea, [contenteditable=\"true\"], .valki-chat-inner, #valki-chat-input")) return;
   if (document.activeElement === chatInput) return;
   try{ chatInput.focus({ preventScroll:true }); }
   catch { chatInput.focus(); }
