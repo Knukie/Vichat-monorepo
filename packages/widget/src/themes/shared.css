@@ -911,7 +911,16 @@ html.valki-chat-open #valki-root .valki-bubble{
   width: 100%;
   height: 100%;
   transition: transform 0.28s ease;
+  will-change: auto;
+}
+
+#valki-root #valki-overlay[data-layout="mobile"][data-view="agent-hub"] .valki-sidebar,
+#valki-root #valki-overlay[data-layout="mobile"][data-view="agent-hub"] .valki-modal{
   will-change: transform;
+}
+
+#valki-root #valki-overlay[data-layout="mobile"][data-view="chat"] .valki-modal{
+  will-change: auto;
 }
 
 #valki-root #valki-overlay[data-layout="mobile"][data-view="agent-hub"] .valki-sidebar{
