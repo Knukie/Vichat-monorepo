@@ -52,13 +52,18 @@ export function createMessageController({
     return row;
   }
 
-  async function updateMessageText(row, text) {
+  async function updateMessageText(row, text, opts = {}) {
     if (!row) return;
     const bubble = row.querySelector('.valki-msg-bubble');
     if (!bubble) return;
     const contentTarget = row.querySelector('.valki-msg-content') || bubble;
     const nextText = text || '';
     if (row.classList.contains('bot')) {
+      if (opts.streaming) {
+        contentTarget.textContent = nextText;
+        scrollToBottom(false);
+        return;
+      }
       await ensureMarkdownLibs();
       const rendered = renderMarkdown(nextText);
       if (typeof rendered === 'string') {
