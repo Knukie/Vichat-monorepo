@@ -36,20 +36,44 @@ export function createMessageController({
   async function addMessage({ type, text, images }) {
     if (type !== 'customer') await ensureMarkdownLibs();
     const isCustomer = isCustomerRole(type);
-    messagesInner.appendChild(
-      createChatMessageRow({
-        role: isCustomer ? 'user' : 'bot',
-        text,
-        images,
-        avatarUrl: botAvatarUrl,
-        avatarAlt: botAvatarAlt,
-        renderMarkdown: isCustomer ? undefined : renderMarkdown,
-        hardenLinks: isCustomer ? undefined : hardenLinks,
-        authorLabel: isCustomer ? userLabel : undefined
-      })
-    );
+    const row = createChatMessageRow({
+      role: isCustomer ? 'user' : 'bot',
+      text,
+      images,
+      avatarUrl: botAvatarUrl,
+      avatarAlt: botAvatarAlt,
+      renderMarkdown: isCustomer ? undefined : renderMarkdown,
+      hardenLinks: isCustomer ? undefined : hardenLinks,
+      authorLabel: isCustomer ? userLabel : undefined
+    });
+    messagesInner.appendChild(row);
     scrollToBottom(true);
     updateDeleteButtonVisibility?.();
+    return row;
+  }
+
+  async function updateMessageText(row, text) {
+    if (!row) return;
+    const bubble = row.querySelector('.valki-msg-bubble');
+    if (!bubble) return;
+    const contentTarget = row.querySelector('.valki-msg-content') || bubble;
+    const nextText = text || '';
+    if (row.classList.contains('bot')) {
+      await ensureMarkdownLibs();
+      const rendered = renderMarkdown(nextText);
+      if (typeof rendered === 'string') {
+        contentTarget.innerHTML = rendered;
+      } else if (rendered && typeof rendered === 'object') {
+        contentTarget.innerHTML = '';
+        contentTarget.appendChild(rendered);
+      } else {
+        contentTarget.textContent = nextText;
+      }
+      if (typeof hardenLinks === 'function') hardenLinks(contentTarget);
+    } else {
+      contentTarget.textContent = nextText;
+    }
+    scrollToBottom(false);
   }
 
   function clearMessagesUI() {
@@ -102,6 +126,7 @@ export function createMessageController({
     hasAnyRealMessages,
     setAgentMeta,
     setUserLabel,
+    updateMessageText,
     scrollToBottom,
     scrollToBottomHard
   };

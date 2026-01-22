@@ -217,6 +217,8 @@ class ViChatWidget {
     this.wsBackoffMs = 500;
     this.wsReconnectTimer = 0;
     this.wsPendingMessage = null;
+    this.wsStreaming = null;
+    this.wsInFlightByRequestId = new Map();
   }
 
   updateLocalizedCopy() {
@@ -287,6 +289,22 @@ class ViChatWidget {
           return;
         }
         if (message.type === 'pong') return;
+        if (message.type === 'assistant.message.start') {
+          void this.handleWsAssistantStart(message);
+          return;
+        }
+        if (message.type === 'assistant.message.delta') {
+          void this.handleWsAssistantDelta(message);
+          return;
+        }
+        if (message.type === 'assistant.message.end') {
+          void this.handleWsAssistantEnd(message);
+          return;
+        }
+        if (message.type === 'assistant.message.error') {
+          void this.handleWsAssistantError(message);
+          return;
+        }
         if (message.type === 'message') {
           this.handleWsReply(message);
           return;
@@ -323,7 +341,72 @@ class ViChatWidget {
     this.ws.send(JSON.stringify(payload));
   }
 
+  initStreamingState(requestId) {
+    const cleanRequestId = cleanText(requestId || '');
+    if (!cleanRequestId) return null;
+    let state = this.wsInFlightByRequestId.get(cleanRequestId);
+    if (!state) {
+      state = {
+        requestId: cleanRequestId,
+        assistantMessageId: '',
+        started: false,
+        ended: false,
+        text: '',
+        lastSeq: 0,
+        messageRow: null
+      };
+      this.wsInFlightByRequestId.set(cleanRequestId, state);
+    }
+    this.wsStreaming = state;
+    return state;
+  }
+
+  clearStreamingState(requestId) {
+    const cleanRequestId = cleanText(requestId || '');
+    if (!cleanRequestId) {
+      if (this.wsStreaming) {
+        this.wsInFlightByRequestId.delete(this.wsStreaming.requestId);
+        this.wsStreaming = null;
+      }
+      return;
+    }
+    const existing = this.wsInFlightByRequestId.get(cleanRequestId);
+    if (existing && this.wsStreaming === existing) {
+      this.wsStreaming = null;
+    }
+    this.wsInFlightByRequestId.delete(cleanRequestId);
+  }
+
+  getStreamingDisplayText(state) {
+    if (!state) return '';
+    return state.ended ? state.text : `${state.text}▍`;
+  }
+
+  removePendingTypingRow(requestId) {
+    const pending = this.wsPendingMessage;
+    if (!pending) return;
+    if (requestId && pending.requestId && pending.requestId !== requestId) return;
+    if (pending.typingRow) {
+      try {
+        pending.typingRow.remove();
+      } catch {
+        /* ignore */
+      }
+    }
+  }
+
+  resetSendState() {
+    this.wsPendingMessage = null;
+    this.isSending = false;
+    this.setSendingState(false);
+    this.attachmentController.clearAttachments();
+    this.updateDeleteButtonVisibility();
+    this.composerController.clampComposer();
+    this.scheduleLayoutMetrics?.();
+  }
+
   handleWsReply(message) {
+    if (message?.streamed === true) return;
     const reply = typeof message.reply === 'string' && message.reply.trim() ? message.reply : this.config.copy.noResponse;
     const messageId = cleanText(message.messageId || '');
     if (messageId && this.wsPendingMessage?.messageId && messageId !== this.wsPendingMessage.messageId) {
@@ -352,13 +435,7 @@ class ViChatWidget {
       this.guestMeter.maybePromptLoginAfterSend((opts) => this.openAuthOverlay(opts.hard));
     }
 
-    this.wsPendingMessage = null;
-    this.isSending = false;
-    this.setSendingState(false);
-    this.attachmentController.clearAttachments();
-    this.updateDeleteButtonVisibility();
-    this.composerController.clampComposer();
-    this.scheduleLayoutMetrics?.();
+    this.resetSendState();
   }
 
   handleWsError(message) {
@@ -405,13 +482,120 @@ class ViChatWidget {
       saveGuestHistory(this.guestHistory, this.config, this.currentAgentId);
     }
 
-    this.wsPendingMessage = null;
-    this.isSending = false;
-    this.setSendingState(false);
-    this.attachmentController.clearAttachments();
-    this.updateDeleteButtonVisibility();
-    this.composerController.clampComposer();
-    this.scheduleLayoutMetrics?.();
+    this.resetSendState();
+  }
+
+  async handleWsAssistantStart(message) {
+    const requestId = cleanText(message?.requestId || '');
+    const state = this.initStreamingState(requestId);
+    if (!state) return;
+    state.assistantMessageId = cleanText(message?.messageId || '');
+    state.started = true;
+    this.removePendingTypingRow(requestId);
+    if (!state.messageRow) {
+      state.messageRow = await this.messageController?.addMessage({ type: 'assistant', text: '' });
+    }
+    if (state.messageRow) {
+      await this.messageController?.updateMessageText?.(
+        state.messageRow,
+        this.getStreamingDisplayText(state)
+      );
+    }
+  }
+
+  async handleWsAssistantDelta(message) {
+    const requestId = cleanText(message?.requestId || '');
+    const state = this.initStreamingState(requestId);
+    if (!state) return;
+    const seq = Number(message?.seq || 0);
+    if (!Number.isFinite(seq) || seq <= state.lastSeq) return;
+    state.lastSeq = seq;
+    const delta = typeof message?.delta === 'string' ? message.delta : '';
+    state.text += delta;
+    if (!state.started) {
+      state.started = true;
+      this.removePendingTypingRow(requestId);
+      if (!state.messageRow) {
+        state.messageRow = await this.messageController?.addMessage({ type: 'assistant', text: '' });
+      }
+    }
+    if (state.messageRow) {
+      await this.messageController?.updateMessageText?.(
+        state.messageRow,
+        this.getStreamingDisplayText(state)
+      );
+    }
+  }
+
+  async handleWsAssistantEnd(message) {
+    const requestId = cleanText(message?.requestId || '');
+    const state = requestId
+      ? this.wsInFlightByRequestId.get(requestId)
+      : this.wsStreaming;
+    if (!state) {
+      this.resetSendState();
+      return;
+    }
+    state.ended = true;
+    this.removePendingTypingRow(requestId);
+    const finishReason = cleanText(message?.finishReason || '');
+    let finalText = state.text;
+    if (!finalText) {
+      finalText = finishReason === 'error' ? this.config.copy.genericError : this.config.copy.noResponse;
+      state.text = finalText;
+    }
+
+    if (!state.messageRow) {
+      state.messageRow = await this.messageController?.addMessage({ type: 'assistant', text: finalText });
+    } else {
+      await this.messageController?.updateMessageText?.(state.messageRow, finalText);
+    }
+
+    if (!this.isLoggedIn()) {
+      this.guestHistory.push({
+        type: 'assistant',
+        text: finalText,
+        images: this.wsPendingMessage?.guestImages
+      });
+      saveGuestHistory(this.guestHistory, this.config, this.currentAgentId);
+      this.guestMeter.maybePromptLoginAfterSend((opts) => this.openAuthOverlay(opts.hard));
+    }
+
+    if (this.wsPendingMessage?.requestId === state.requestId) {
+      this.wsPendingMessage = null;
+    }
+    this.resetSendState();
+    this.clearStreamingState(state.requestId);
+  }
+
+  async handleWsAssistantError(message) {
+    const code = cleanText(message?.code || '');
+    const requestId = cleanText(message?.requestId || '');
+    const errorMessage = cleanText(message?.message || '') || this.config.copy.genericError;
+
+    if (code === 'UNAUTHORIZED') {
+      this.handleWsError({ code, messageId: this.wsPendingMessage?.messageId || '' });
+      this.clearStreamingState(requestId);
+      return;
+    }
+
+    const state = requestId ? this.wsInFlightByRequestId.get(requestId) : this.wsStreaming;
+    if (state?.messageRow) {
+      state.text = errorMessage;
+      state.ended = true;
+      await this.messageController?.updateMessageText?.(state.messageRow, errorMessage);
+      if (!this.isLoggedIn()) {
+        this.guestHistory.push({ type: 'assistant', text: errorMessage });
+        saveGuestHistory(this.guestHistory, this.config, this.currentAgentId);
+      }
+    } else if (this.wsPendingMessage?.failSend) {
+      await this.wsPendingMessage.failSend(errorMessage);
+    } else {
+      await this.messageController?.addMessage({ type: 'assistant', text: errorMessage });
+    }
+
+    this.resetSendState();
+    this.clearStreamingState(requestId);
   }
 
   mount(mountTarget) {
@@ -1402,6 +1586,7 @@ class ViChatWidget {
       }
     };
 
+    let requestId = '';
     const failSend = async (message) => {
       const resolvedMessage = message || this.config.copy.genericError;
       removeTyping();
@@ -1410,12 +1595,10 @@ class ViChatWidget {
         this.guestHistory.push({ type: 'assistant', text: resolvedMessage });
         saveGuestHistory(this.guestHistory, this.config, this.currentAgentId);
       }
-      this.isSending = false;
-      this.setSendingState(false);
-      this.attachmentController.clearAttachments();
-      this.updateDeleteButtonVisibility();
-      this.composerController.clampComposer();
-      this.scheduleLayoutMetrics?.();
+      this.resetSendState();
+      if (requestId) {
+        this.clearStreamingState(requestId);
+      }
     };
 
     const uploadResult = await uploadImages({
@@ -1430,10 +1613,12 @@ class ViChatWidget {
     }
 
     const messageId = createMessageId();
+    requestId = createMessageId();
     const payload = {
       v: 1,
       type: 'message',
       messageId,
+      requestId,
       clientId: this.clientId,
       conversationId: this.conversationId || undefined,
       agentId: this.currentAgentId || undefined,
@@ -1442,11 +1627,14 @@ class ViChatWidget {
       images: uploadResult.images || []
     };
 
+    this.initStreamingState(requestId);
     this.wsPendingMessage = {
       messageId,
+      requestId,
       payload,
       typingRow,
       guestImages,
+      failSend,
       sent: false,
       unauthorizedRetry: false
     };
