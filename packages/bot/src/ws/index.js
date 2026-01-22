@@ -40,6 +40,7 @@ function buildError(code, message, meta = {}) {
 
 function buildAssistantStart({ messageId, conversationId, requestId }) {
   return {
+    v: 1,
     type: "assistant.message.start",
     messageId,
     conversationId: conversationId || null,
@@ -50,6 +51,7 @@ function buildAssistantStart({ messageId, conversationId, requestId }) {
 
 function buildAssistantDelta({ messageId, requestId, seq, delta }) {
   return {
+    v: 1,
     type: "assistant.message.delta",
     messageId,
     requestId,
@@ -61,6 +63,7 @@ function buildAssistantDelta({ messageId, requestId, seq, delta }) {
 
 function buildAssistantEnd({ messageId, requestId, seq, finishReason, usage }) {
   return {
+    v: 1,
     type: "assistant.message.end",
     messageId,
     requestId,
@@ -73,6 +76,7 @@ function buildAssistantEnd({ messageId, requestId, seq, finishReason, usage }) {
 
 function buildAssistantError({ requestId, messageId, code, message }) {
   return {
+    v: 1,
     type: "assistant.message.error",
     requestId,
     messageId: messageId || null,
