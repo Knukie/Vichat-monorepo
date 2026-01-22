@@ -271,9 +271,7 @@ class ViChatWidget {
 
       ws.addEventListener('open', () => {
         this.resetWsBackoff();
-        if (this.token) {
-          ws.send(JSON.stringify({ v: 1, type: 'auth', token: this.token }));
-        }
+        this.sendWebSocketAuth();
       });
 
       ws.addEventListener('message', (event) => {
@@ -333,6 +331,20 @@ class ViChatWidget {
       });
     } catch (err) {
       console.warn('[ViChat] WebSocket connect failed', err);
+    }
+  }
+
+  sendWebSocketAuth() {
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return;
+    if (!this.token) {
+      this.wsAuthenticated = false;
+      return;
+    }
+    this.wsAuthenticated = false;
+    try {
+      this.ws.send(JSON.stringify({ v: 1, type: 'auth', token: this.token }));
+    } catch {
+      /* ignore */
     }
   }
 
@@ -1511,6 +1523,8 @@ class ViChatWidget {
   async handleAuthToken(token) {
     this.token = token;
     setAuthToken(token, this.config);
+    this.ensureWebSocket();
+    this.sendWebSocketAuth();
     const meResult = await this.loadMe();
     if (meResult && (meResult.status === 401 || meResult.status === 403)) {
       this.handleInvalidToken('fetchMe', { promptLogin: true });
