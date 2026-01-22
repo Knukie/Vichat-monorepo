@@ -58,17 +58,18 @@ export function createChatMessageRow({
   const bubble = document.createElement('div');
   bubble.className = 'valki-msg-bubble';
 
-  let contentTarget = bubble;
   if (role === 'user' && authorLabel) {
     const label = document.createElement('div');
     label.className = 'valki-msg-author';
     label.textContent = authorLabel;
     bubble.appendChild(label);
-    const content = document.createElement('div');
-    content.className = 'valki-msg-content';
-    bubble.appendChild(content);
-    contentTarget = content;
   }
+
+  const content = document.createElement('div');
+  content.className = 'valki-msg-content';
+  bubble.appendChild(content);
+
+  const contentTarget = content;
 
   if (role === 'bot' && typeof renderMarkdown === 'function') {
     const rendered = renderMarkdown(text || '');
