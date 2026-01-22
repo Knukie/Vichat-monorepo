@@ -9,6 +9,15 @@ import { cleanText, newConversationId, pickPrimaryLocale } from "../core/utils.j
 const DEFAULT_PATH = "/ws";
 const MAX_MESSAGE_BYTES = 64 * 1024;
 const MESSAGE_DEDUPE_TTL_MS = 2 * 60 * 1000;
+// Streaming modes:
+// - NON_STREAM: send a single "message" event with the full reply.
+// - STREAM: send assistant.message.start/delta/end plus a final "message" event.
+const STREAM_INPUT_CHAR_THRESHOLD = 140;
+const STREAM_REPLY_CHAR_THRESHOLD = 160;
+const STREAM_LATENCY_MS_THRESHOLD = 900;
+const STREAM_CHUNK_MIN = 60;
+const STREAM_CHUNK_TARGET = 120;
+const STREAM_CHUNK_MAX = 220;
 const messageCache = new Map();
 
 function nowTs() {
@@ -86,14 +95,36 @@ function buildAssistantError({ requestId, messageId, code, message }) {
   };
 }
 
-function splitIntoChunks(text, minSize = 20, maxSize = 80) {
+function splitIntoChunks(text) {
   if (!text) return [];
-  const size = Math.min(maxSize, Math.max(minSize, 60));
+  const tokens = text.split(/(\s+)/);
   const chunks = [];
-  for (let i = 0; i < text.length; i += size) {
-    chunks.push(text.slice(i, i + size));
+  let current = "";
+  for (const token of tokens) {
+    if (!token) continue;
+    if (current.length + token.length > STREAM_CHUNK_MAX && current) {
+      chunks.push(current);
+      current = "";
+    }
+    current += token;
+    const trimmed = current.trimEnd();
+    const endsSentence = /[.!?]["')\]]?$/.test(trimmed);
+    if (
+      current.length >= STREAM_CHUNK_MIN &&
+      (current.length >= STREAM_CHUNK_TARGET || endsSentence)
+    ) {
+      chunks.push(current);
+      current = "";
+    }
   }
+  if (current) chunks.push(current);
   return chunks;
+}
+
+function estimateShouldStream({ incomingText, incomingImages }) {
+  const textLength = incomingText?.length || 0;
+  const hasImages = Array.isArray(incomingImages) && incomingImages.length > 0;
+  return textLength >= STREAM_INPUT_CHAR_THRESHOLD || hasImages;
 }
 
 function verifyTokenDefault(token) {
@@ -259,6 +290,7 @@ export function attachWebSocketServer(
         const assistantMessageId = crypto.randomUUID();
         let seq = 0;
         let started = false;
+        let shouldStreamEarly = false;
 
         const sendStart = (conversationId) => {
           started = true;
@@ -297,19 +329,22 @@ export function attachWebSocketServer(
           pruneMessageCache();
           const cached = messageCache.get(messageId);
           if (cached && Date.now() - cached.ts <= MESSAGE_DEDUPE_TTL_MS) {
-            sendStart(cached.conversationId);
-            const chunks = splitIntoChunks(cached.reply);
-            for (const chunk of chunks) {
-              sendDelta(chunk);
+            const cachedShouldStream = cached.reply.length >= STREAM_REPLY_CHAR_THRESHOLD;
+            if (cachedShouldStream) {
+              sendStart(cached.conversationId);
+              const chunks = splitIntoChunks(cached.reply);
+              for (const chunk of chunks) {
+                sendDelta(chunk);
+              }
+              sendEnd("stop");
             }
-            sendEnd("stop");
             sendJson(ws, {
               v: 1,
               type: "message",
               messageId,
               conversationId: cached.conversationId,
               reply: cached.reply,
-              streamed: true
+              streamed: cachedShouldStream
             });
             requestStatus.set(requestId, { status: "done", ts: nowTs() });
             return;
@@ -324,11 +359,18 @@ export function attachWebSocketServer(
             cid = providedCid || newConversationId();
           }
 
-          sendStart(cid);
+          shouldStreamEarly = estimateShouldStream({
+            incomingText,
+            incomingImages
+          });
+          if (shouldStreamEarly) {
+            sendStart(cid);
+          }
 
           const { images: sanitizedImages } = sanitizeImages(incomingImages);
           const userTextForRun = incomingText || "[image]";
 
+          const startedAt = Date.now();
           const { reply } = await runAssistantFn({
             userText: userTextForRun,
             conversationId: cid,
@@ -336,21 +378,31 @@ export function attachWebSocketServer(
             images: sanitizedImages,
             requestId
           });
+          const elapsedMs = Date.now() - startedAt;
 
           messageCache.set(messageId, { ts: Date.now(), conversationId: cid, reply });
 
-          const chunks = splitIntoChunks(reply);
-          for (const chunk of chunks) {
-            sendDelta(chunk);
+          const shouldStreamReply =
+            shouldStreamEarly ||
+            reply.length >= STREAM_REPLY_CHAR_THRESHOLD ||
+            elapsedMs >= STREAM_LATENCY_MS_THRESHOLD;
+          if (shouldStreamReply) {
+            if (!started) {
+              sendStart(cid);
+            }
+            const chunks = splitIntoChunks(reply);
+            for (const chunk of chunks) {
+              sendDelta(chunk);
+            }
+            sendEnd("stop");
           }
-          sendEnd("stop");
           sendJson(ws, {
             v: 1,
             type: "message",
             messageId,
             conversationId: cid,
             reply,
-            streamed: true
+            streamed: shouldStreamReply
           });
           requestStatus.set(requestId, { status: "done", ts: nowTs() });
           return;
