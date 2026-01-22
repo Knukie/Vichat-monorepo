@@ -22,6 +22,31 @@ export const DEFAULT_CONSTANTS = {
   }
 };
 
+function normalizeWsPath(path) {
+  const cleaned = String(path || '').trim();
+  if (!cleaned) return '/ws';
+  return cleaned.startsWith('/') ? cleaned : `/${cleaned}`;
+}
+
+function buildWebSocketUrl(baseUrl, wsPath) {
+  const path = normalizeWsPath(wsPath);
+  const fallbackProtocol =
+    typeof window !== 'undefined' && window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const fallbackHost = typeof window !== 'undefined' ? window.location.host : '';
+
+  try {
+    const url = new URL(String(baseUrl || DEFAULT_BASE_URL));
+    url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+    url.pathname = path;
+    url.search = '';
+    url.hash = '';
+    return url.toString();
+  } catch {
+    if (fallbackHost) return `${fallbackProtocol}//${fallbackHost}${path}`;
+    return `${fallbackProtocol}//localhost${path}`;
+  }
+}
+
 function buildEndpoints(baseUrl) {
   const trimmed = String(baseUrl || DEFAULT_BASE_URL).replace(/\/$/, '');
   return {
@@ -34,18 +59,24 @@ function buildEndpoints(baseUrl) {
     apiImportGuest: `${trimmed}/api/import-guest`,
     authDiscord: `${trimmed}/auth/discord`,
     authGoogle: `${trimmed}/auth/google`,
-    discordInvite: 'https://discord.com/invite/vqDJuGJN2u'
+    discordInvite: 'https://discord.com/invite/vqDJuGJN2u',
+    wsPath: normalizeWsPath('/ws'),
+    wsUrl: buildWebSocketUrl(trimmed, '/ws')
   };
 }
 
 export function buildConfig(overrides = {}) {
   const baseUrl = overrides.baseUrl || DEFAULT_BASE_URL;
   const endpoints = buildEndpoints(baseUrl);
+  const wsPath = normalizeWsPath(overrides.wsPath || endpoints.wsPath);
+  const wsUrl = overrides.wsUrl || buildWebSocketUrl(baseUrl, wsPath);
 
   return {
     ...DEFAULT_CONSTANTS,
     ...overrides,
     ...endpoints,
+    wsPath,
+    wsUrl,
     theme: overrides.theme || 'vichat'
   };
 }

@@ -37,9 +37,20 @@ Geen runtime code (alleen types)
 Express API + Prisma (PostgreSQL)
 
 Belangrijke endpoints (kan per versie verschillen):
-- /api/messages
+- **WebSocket (primary chat transport)**: `ws://<host>/ws` (configure via `WS_PATH`)
+- /api/messages (optioneel: history)
 - /api/upload
 - (aanrader) /health en /ready
+
+WebSocket is de primaire transportlaag voor chat. HTTP blijft voor healthchecks en (optioneel) history.
+
+**Local WS test (wscat)**
+```bash
+npx wscat -c ws://localhost:3000/ws
+# After "ready":
+> {"v":1,"type":"ping","ts":1710000000000}
+> {"v":1,"type":"message","messageId":"msg-1","clientId":"local","message":"Hello"}
+```
 
 Railway notes
 - Vereist DATABASE_URL
