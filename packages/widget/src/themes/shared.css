@@ -958,12 +958,12 @@ html.valki-chat-open #valki-root .valki-bubble{
     display: flex;
     flex: 0 0 clamp(320px, 28vw, 380px);
     max-width: clamp(320px, 28vw, 380px);
-    padding-right: 16px;
+    padding-right: 0;
   }
 
   #valki-root #valki-overlay[data-layout="desktop"] .valki-sidebar .valki-agent-hub{
     display: flex;
-    border-radius: 16px;
+    border-radius: 16px 0 0 16px;
   }
 
   #valki-root #valki-overlay[data-layout="desktop"] .valki-modal{
@@ -978,7 +978,7 @@ html.valki-chat-open #valki-root .valki-bubble{
   }
 
   #valki-root #valki-overlay[data-layout="desktop"] .valki-modal{
-    border-radius: 16px;
+    border-radius: 0 16px 16px 0;
     overflow: hidden;
   }
 
