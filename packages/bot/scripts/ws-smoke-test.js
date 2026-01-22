@@ -7,10 +7,10 @@ const url = process.env.WS_URL || `ws://localhost:${port}${path}`;
 const ws = new WebSocket(url);
 
 const timeout = setTimeout(() => {
-  console.error("Timed out waiting for pong.");
+  console.error("Timed out waiting for pong/message.");
   ws.close();
   process.exit(1);
-}, 5000);
+}, 8000);
 
 ws.on("open", () => {
   console.log(`Connected to ${url}`);
@@ -23,6 +23,18 @@ ws.on("message", (data) => {
   try {
     const message = JSON.parse(raw);
     if (message?.type === "pong") {
+      ws.send(
+        JSON.stringify({
+          v: 1,
+          type: "message",
+          messageId: `smoke-${Date.now()}`,
+          clientId: "ws-smoke",
+          message: "Hello from ws smoke test"
+        })
+      );
+      return;
+    }
+    if (message?.type === "message") {
       clearTimeout(timeout);
       ws.close();
     }

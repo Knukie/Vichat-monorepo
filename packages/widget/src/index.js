@@ -23,7 +23,7 @@ import { createComposerController } from './core/ui/composer.js';
 import { createOverlayController, setVisible } from './core/ui/overlay.js';
 import { createWidgetHost } from './core/ui/widgetHost.js';
 import { createAuthController } from './core/auth.js';
-import { askValki, clearMessages, fetchMe, fetchMessages, importGuestMessages } from './core/api.js';
+import { clearMessages, fetchMe, fetchMessages, importGuestMessages, uploadImages } from './core/api.js';
 import { detectLocale, setLocale, t } from './i18n/index.js';
 import { resolveTheme } from './themes/index.js';
 
@@ -154,6 +154,13 @@ function mountTemplate(theme, target, hostConfig) {
   return { elements, host: widgetHost };
 }
 
+function createMessageId() {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return `msg-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
 class ViChatWidget {
   constructor(options = {}) {
     this.config = buildConfig(options);
@@ -183,6 +190,7 @@ class ViChatWidget {
       }));
     }
     this.currentAgentId = null;
+    this.conversationId = '';
     this.view = 'chat';
     this.resolveInitialAgentState();
     this.selectedAgentId = this.currentAgentId;
@@ -203,6 +211,12 @@ class ViChatWidget {
     this._readyDispatched = false;
     this.isOpen = false;
     this.teardownUi = null;
+    this.ws = null;
+    this.wsReady = false;
+    this.wsAuthenticated = false;
+    this.wsBackoffMs = 500;
+    this.wsReconnectTimer = 0;
+    this.wsPendingMessage = null;
   }
 
   updateLocalizedCopy() {
@@ -212,6 +226,173 @@ class ViChatWidget {
     if (!this.copyOverrides?.noResponse) {
       this.config.copy.noResponse = t('errors.noResponse');
     }
+  }
+
+  resetWsBackoff() {
+    this.wsBackoffMs = 500;
+    if (this.wsReconnectTimer) {
+      clearTimeout(this.wsReconnectTimer);
+      this.wsReconnectTimer = 0;
+    }
+  }
+
+  scheduleWsReconnect(reason) {
+    if (this.wsReconnectTimer) return;
+    const delay = this.wsBackoffMs;
+    this.wsBackoffMs = Math.min(this.wsBackoffMs * 2, 8000);
+    this.wsReconnectTimer = window.setTimeout(() => {
+      this.wsReconnectTimer = 0;
+      this.connectWebSocket(`reconnect:${reason}`);
+    }, delay);
+  }
+
+  ensureWebSocket() {
+    if (this.ws && (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING)) {
+      return;
+    }
+    this.connectWebSocket('ensure');
+  }
+
+  connectWebSocket(reason) {
+    if (typeof WebSocket === 'undefined') return;
+    const wsUrl = this.config.wsUrl;
+    if (!wsUrl) return;
+
+    try {
+      const ws = new WebSocket(wsUrl);
+      this.ws = ws;
+      this.wsReady = false;
+
+      ws.addEventListener('open', () => {
+        this.resetWsBackoff();
+        if (this.token) {
+          ws.send(JSON.stringify({ v: 1, type: 'auth', token: this.token }));
+        }
+      });
+
+      ws.addEventListener('message', (event) => {
+        const raw = typeof event.data === 'string' ? event.data : '';
+        let message = null;
+        try {
+          message = JSON.parse(raw);
+        } catch {
+          return;
+        }
+
+        if (!message || message.v !== 1 || typeof message.type !== 'string') return;
+        if (message.type === 'ready') {
+          this.wsReady = true;
+          this.wsAuthenticated = Boolean(message.authenticated);
+          this.sendPendingWsMessage();
+          return;
+        }
+        if (message.type === 'pong') return;
+        if (message.type === 'message') {
+          this.handleWsReply(message);
+          return;
+        }
+        if (message.type === 'error') {
+          this.handleWsError(message);
+        }
+      });
+
+      ws.addEventListener('close', () => {
+        this.wsReady = false;
+        this.wsAuthenticated = false;
+        this.ws = null;
+        if (this.wsPendingMessage) {
+          this.wsPendingMessage.sent = false;
+        }
+        this.scheduleWsReconnect(reason);
+      });
+
+      ws.addEventListener('error', () => {
+        this.wsReady = false;
+      });
+    } catch (err) {
+      console.warn('[ViChat] WebSocket connect failed', err);
+    }
+  }
+
+  sendPendingWsMessage() {
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN || !this.wsReady) return;
+    if (this.token && !this.wsAuthenticated) return;
+    if (!this.wsPendingMessage || this.wsPendingMessage.sent) return;
+    const payload = this.wsPendingMessage.payload;
+    this.wsPendingMessage.sent = true;
+    this.ws.send(JSON.stringify(payload));
+  }
+
+  handleWsReply(message) {
+    const reply = typeof message.reply === 'string' && message.reply.trim() ? message.reply : this.config.copy.noResponse;
+    const messageId = cleanText(message.messageId || '');
+    if (messageId && this.wsPendingMessage?.messageId && messageId !== this.wsPendingMessage.messageId) {
+      return;
+    }
+    const nextConversationId = cleanText(message.conversationId || '');
+    if (nextConversationId) this.conversationId = nextConversationId;
+
+    const pending = this.wsPendingMessage;
+    if (pending?.typingRow) {
+      try {
+        pending.typingRow.remove();
+      } catch {
+        /* ignore */
+      }
+    }
+
+    this.messageController
+      ?.addMessage({ type: 'assistant', text: reply })
+      .then(() => this.messageController?.scrollToBottomHard?.())
+      .catch(() => {});
+
+    if (!this.isLoggedIn()) {
+      this.guestHistory.push({ type: 'assistant', text: reply, images: pending?.guestImages });
+      saveGuestHistory(this.guestHistory, this.config, this.currentAgentId);
+      this.guestMeter.maybePromptLoginAfterSend((opts) => this.openAuthOverlay(opts.hard));
+    }
+
+    this.wsPendingMessage = null;
+    this.isSending = false;
+    this.setSendingState(false);
+    this.attachmentController.clearAttachments();
+    this.updateDeleteButtonVisibility();
+    this.composerController.clampComposer();
+    this.scheduleLayoutMetrics?.();
+  }
+
+  handleWsError(message) {
+    const messageId = cleanText(message?.messageId || '');
+    if (messageId && this.wsPendingMessage?.messageId && messageId !== this.wsPendingMessage.messageId) {
+      return;
+    }
+
+    const pending = this.wsPendingMessage;
+    if (pending?.typingRow) {
+      try {
+        pending.typingRow.remove();
+      } catch {
+        /* ignore */
+      }
+    }
+
+    const errorReply = this.config.copy.genericError;
+    this.messageController
+      ?.addMessage({ type: 'assistant', text: errorReply })
+      .catch(() => {});
+
+    if (!this.isLoggedIn()) {
+      this.guestHistory.push({ type: 'assistant', text: errorReply });
+      saveGuestHistory(this.guestHistory, this.config, this.currentAgentId);
+    }
+
+    this.wsPendingMessage = null;
+    this.isSending = false;
+    this.setSendingState(false);
+    this.attachmentController.clearAttachments();
+    this.updateDeleteButtonVisibility();
+    this.composerController.clampComposer();
+    this.scheduleLayoutMetrics?.();
   }
 
   mount(mountTarget) {
@@ -1194,13 +1375,6 @@ class ViChatWidget {
     const typingRow = this.messageController.createTypingRow();
     const payloadImages = imagesSnapshot;
 
-    const persistGuestBot = (msg, images) => {
-      if (this.isLoggedIn()) return;
-      this.guestHistory.push({ type: 'assistant', text: msg, images });
-      saveGuestHistory(this.guestHistory, this.config, this.currentAgentId);
-      this.guestMeter.maybePromptLoginAfterSend((opts) => this.openAuthOverlay(opts.hard));
-    };
-
     const removeTyping = () => {
       try {
         typingRow.remove();
@@ -1209,35 +1383,55 @@ class ViChatWidget {
       }
     };
 
-    try {
-      const res = await askValki({
-        message: q || '',
-        clientId: this.clientId,
-        images: payloadImages,
-        token: this.token,
-        config: this.config,
-        agentId: this.currentAgentId
-      });
-
+    const failSend = async (message) => {
       removeTyping();
-      const reply = res.ok ? res.message : res.message || this.config.copy.genericError;
-      const botImages = Array.isArray(res.images) ? res.images : undefined;
-      await this.messageController.addMessage({ type: 'assistant', text: reply });
-      persistGuestBot(reply, botImages);
-      if (res.ok) this.messageController.scrollToBottomHard();
-    } catch (err) {
-      console.error(err);
-      removeTyping();
-      await this.messageController.addMessage({ type: 'assistant', text: this.config.copy.genericError });
-      persistGuestBot(this.config.copy.genericError);
-    } finally {
+      await this.messageController.addMessage({ type: 'assistant', text: message });
+      if (!this.isLoggedIn()) {
+        this.guestHistory.push({ type: 'assistant', text: message });
+        saveGuestHistory(this.guestHistory, this.config, this.currentAgentId);
+      }
       this.isSending = false;
       this.setSendingState(false);
       this.attachmentController.clearAttachments();
       this.updateDeleteButtonVisibility();
       this.composerController.clampComposer();
       this.scheduleLayoutMetrics?.();
+    };
+
+    const uploadResult = await uploadImages({
+      images: payloadImages,
+      token: this.token,
+      config: this.config
+    });
+
+    if (!uploadResult.ok) {
+      await failSend(uploadResult.message || this.config.copy.genericError);
+      return;
     }
+
+    const messageId = createMessageId();
+    const payload = {
+      v: 1,
+      type: 'message',
+      messageId,
+      clientId: this.clientId,
+      conversationId: this.conversationId || undefined,
+      agentId: this.currentAgentId || undefined,
+      locale: this.locale,
+      message: q || '',
+      images: uploadResult.images || []
+    };
+
+    this.wsPendingMessage = {
+      messageId,
+      payload,
+      typingRow,
+      guestImages,
+      sent: false
+    };
+
+    this.ensureWebSocket();
+    this.sendPendingWsMessage();
   }
 
   async openFromBubble(e) {
