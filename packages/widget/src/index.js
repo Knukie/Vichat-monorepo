@@ -379,7 +379,7 @@ class ViChatWidget {
 
   getStreamingDisplayText(state) {
     if (!state) return '';
-    return state.ended ? state.text : `${state.text}▍`;
+    return state.ended ? state.text : `${state.text} |`;
   }
 
   removePendingTypingRow(requestId) {
@@ -498,7 +498,8 @@ class ViChatWidget {
     if (state.messageRow) {
       await this.messageController?.updateMessageText?.(
         state.messageRow,
-        this.getStreamingDisplayText(state)
+        this.getStreamingDisplayText(state),
+        { streaming: true }
       );
     }
   }
@@ -522,7 +523,8 @@ class ViChatWidget {
     if (state.messageRow) {
       await this.messageController?.updateMessageText?.(
         state.messageRow,
-        this.getStreamingDisplayText(state)
+        this.getStreamingDisplayText(state),
+        { streaming: true }
       );
     }
   }
@@ -548,7 +550,7 @@ class ViChatWidget {
     if (!state.messageRow) {
       state.messageRow = await this.messageController?.addMessage({ type: 'assistant', text: finalText });
     } else {
-      await this.messageController?.updateMessageText?.(state.messageRow, finalText);
+      await this.messageController?.updateMessageText?.(state.messageRow, finalText, { streaming: false });
     }
 
     if (!this.isLoggedIn()) {
@@ -583,7 +585,9 @@ class ViChatWidget {
     if (state?.messageRow) {
       state.text = errorMessage;
       state.ended = true;
-      await this.messageController?.updateMessageText?.(state.messageRow, errorMessage);
+      await this.messageController?.updateMessageText?.(state.messageRow, errorMessage, {
+        streaming: false
+      });
       if (!this.isLoggedIn()) {
         this.guestHistory.push({ type: 'assistant', text: errorMessage });
         saveGuestHistory(this.guestHistory, this.config, this.currentAgentId);
