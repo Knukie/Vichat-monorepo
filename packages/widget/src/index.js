@@ -98,6 +98,14 @@ function isDesktopLayout() {
   return !!(window.matchMedia && window.matchMedia('(min-width: 1024px)').matches);
 }
 
+function isIOS() {
+  if (typeof navigator === 'undefined') return false;
+  return (
+    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+  );
+}
+
 function mountTemplate(theme, target, hostConfig) {
   const existing = document.getElementById('valki-root');
   if (existing) {
@@ -1116,6 +1124,20 @@ class ViChatWidget {
     on(el['valki-chat-input'], 'focus', () => {
       clampComposer({ immediate: true });
       scheduleLayoutMetrics();
+      if (isIOS()) {
+        requestAnimationFrame(() => {
+          const input = el['valki-chat-input'];
+          if (!input) return;
+          const len = input.value.length;
+          try {
+            input.setSelectionRange(len, len);
+          } catch {
+            /* ignore */
+          }
+          input.scrollTop = 0;
+          clampComposer({ immediate: true });
+        });
+      }
     });
 
     on(el['valki-chat-attach'], 'click', () => {
