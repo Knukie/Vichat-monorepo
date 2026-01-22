@@ -83,6 +83,8 @@ const REQUIRED_IDS = [
   'valki-logout-yes'
 ];
 const ANALYSIS_MIN_MS = 2000;
+const TYPING_TICK_MS = 40;
+const TYPING_CHARS_PER_SECOND = 45;
 
 function ensureStyle(theme) {
   const styleId = `vichat-theme-${theme.name}`;
@@ -347,20 +349,28 @@ class ViChatWidget {
     if (!cleanRequestId) return null;
     let state = this.wsInFlightByRequestId.get(cleanRequestId);
     if (!state) {
+      const charsPerTick = Math.ceil((TYPING_CHARS_PER_SECOND * TYPING_TICK_MS) / 1000);
       state = {
         requestId: cleanRequestId,
         assistantMessageId: '',
         started: false,
         ended: false,
+        finalized: false,
         text: '',
+        pendingBuffer: '',
         lastSeq: 0,
         analysisStartAt: 0,
         analysisMinMs: ANALYSIS_MIN_MS,
         analysisTimer: 0,
         showAnalysis: false,
-        pendingTextBuffer: '',
+        analysisPending: '',
         typingRow: null,
-        uiRow: null
+        uiRow: null,
+        typingTimer: null,
+        typingTickMs: TYPING_TICK_MS,
+        charsPerSecond: TYPING_CHARS_PER_SECOND,
+        charsPerTick,
+        finishReason: ''
       };
       this.wsInFlightByRequestId.set(cleanRequestId, state);
     }
@@ -372,6 +382,7 @@ class ViChatWidget {
     const cleanRequestId = cleanText(requestId || '');
     if (!cleanRequestId) {
       if (this.wsStreaming) {
+        this.stopTyping(this.wsStreaming);
         this.wsInFlightByRequestId.delete(this.wsStreaming.requestId);
         this.wsStreaming = null;
       }
@@ -381,12 +392,12 @@ class ViChatWidget {
     if (existing && this.wsStreaming === existing) {
       this.wsStreaming = null;
     }
+    this.stopTyping(existing);
     this.wsInFlightByRequestId.delete(cleanRequestId);
   }
 
-  getStreamingDisplayText(state) {
-    if (!state) return '';
-    return state.ended ? state.text : `${state.text} |`;
+  getStreamingCaretText(text) {
+    return `${text} |`;
   }
 
   getPendingTypingRow(requestId) {
@@ -412,10 +423,10 @@ class ViChatWidget {
     state.analysisTimer = 0;
   }
 
-  applyPendingBuffer(state) {
-    if (!state?.pendingTextBuffer) return;
-    state.text += state.pendingTextBuffer;
-    state.pendingTextBuffer = '';
+  moveAnalysisPendingToBuffer(state) {
+    if (!state?.analysisPending) return;
+    state.pendingBuffer += state.analysisPending;
+    state.analysisPending = '';
   }
 
   async ensureBotRow(state) {
@@ -447,18 +458,89 @@ class ViChatWidget {
   }
 
   async finishAnalysisWindow(state) {
-    if (!state || !state.showAnalysis || state.ended) return;
+    if (!state || !state.showAnalysis) return;
     state.showAnalysis = false;
     this.removeTypingRow(state);
     await this.ensureBotRow(state);
-    this.applyPendingBuffer(state);
+    this.moveAnalysisPendingToBuffer(state);
+    this.startTyping(state);
+  }
+
+  getTypingCharsPerTick(state) {
+    const baseCharsPerTick = state?.charsPerTick || 1;
+    const pendingLength = state?.pendingBuffer?.length || 0;
+    if (pendingLength > 2000) return baseCharsPerTick * 4;
+    if (pendingLength > 800) return baseCharsPerTick * 2;
+    return baseCharsPerTick;
+  }
+
+  startTyping(state) {
+    if (!state || state.typingTimer) return;
+    void this.ensureBotRow(state);
+    state.typingTimer = window.setInterval(() => {
+      this.tickTyping(state);
+    }, state.typingTickMs);
+  }
+
+  stopTyping(state) {
+    if (!state?.typingTimer) return;
+    clearInterval(state.typingTimer);
+    state.typingTimer = null;
+  }
+
+  tickTyping(state) {
+    if (!state) return;
+    if (!state.pendingBuffer) {
+      if (state.ended) {
+        this.stopTyping(state);
+        void this.finalizeStreaming(state);
+      }
+      return;
+    }
+    const charsPerTick = this.getTypingCharsPerTick(state);
+    const nextChunk = state.pendingBuffer.slice(0, charsPerTick);
+    state.pendingBuffer = state.pendingBuffer.slice(nextChunk.length);
+    state.text += nextChunk;
     if (state.uiRow) {
-      await this.messageController?.updateMessageText?.(
+      this.messageController?.updateMessageText?.(
         state.uiRow,
-        this.getStreamingDisplayText(state),
+        this.getStreamingCaretText(state.text),
         { streaming: true }
       );
     }
+  }
+
+  async finalizeStreaming(state) {
+    if (!state || state.finalized) return;
+    state.finalized = true;
+    const finishReason = cleanText(state.finishReason || '');
+    let finalText = state.text;
+    if (!finalText) {
+      finalText = finishReason === 'error' ? this.config.copy.genericError : this.config.copy.noResponse;
+      state.text = finalText;
+    }
+
+    if (!state.uiRow) {
+      state.uiRow = await this.messageController?.addMessage({ type: 'assistant', text: finalText });
+    } else {
+      await this.messageController?.updateMessageText?.(state.uiRow, finalText, { streaming: false });
+    }
+
+    if (!this.isLoggedIn()) {
+      this.guestHistory.push({
+        type: 'assistant',
+        text: finalText,
+        images: this.wsPendingMessage?.guestImages
+      });
+      saveGuestHistory(this.guestHistory, this.config, this.currentAgentId);
+      this.guestMeter.maybePromptLoginAfterSend((opts) => this.openAuthOverlay(opts.hard));
+    }
+
+    if (this.wsPendingMessage?.requestId === state.requestId) {
+      this.wsPendingMessage = null;
+    }
+    this.resetSendState();
+    this.clearStreamingState(state.requestId);
   }
 
   removePendingTypingRow(requestId) {
@@ -586,18 +668,11 @@ class ViChatWidget {
       this.startAnalysisWindow(state, requestId);
     }
     if (state.showAnalysis) {
-      state.pendingTextBuffer += delta;
+      state.analysisPending += delta;
       return;
     }
-    state.text += delta;
-    await this.ensureBotRow(state);
-    if (state.uiRow) {
-      await this.messageController?.updateMessageText?.(
-        state.uiRow,
-        this.getStreamingDisplayText(state),
-        { streaming: true }
-      );
-    }
+    state.pendingBuffer += delta;
+    this.startTyping(state);
   }
 
   async handleWsAssistantEnd(message) {
@@ -610,41 +685,14 @@ class ViChatWidget {
       return;
     }
     state.ended = true;
+    state.finishReason = cleanText(message?.finishReason || '');
     this.clearAnalysisTimer(state);
     if (state.showAnalysis) {
       state.showAnalysis = false;
       this.removeTypingRow(state);
-      await this.ensureBotRow(state);
-      this.applyPendingBuffer(state);
+      this.moveAnalysisPendingToBuffer(state);
     }
-    const finishReason = cleanText(message?.finishReason || '');
-    let finalText = state.text;
-    if (!finalText) {
-      finalText = finishReason === 'error' ? this.config.copy.genericError : this.config.copy.noResponse;
-      state.text = finalText;
-    }
-
-    if (!state.uiRow) {
-      state.uiRow = await this.messageController?.addMessage({ type: 'assistant', text: finalText });
-    } else {
-      await this.messageController?.updateMessageText?.(state.uiRow, finalText, { streaming: false });
-    }
-
-    if (!this.isLoggedIn()) {
-      this.guestHistory.push({
-        type: 'assistant',
-        text: finalText,
-        images: this.wsPendingMessage?.guestImages
-      });
-      saveGuestHistory(this.guestHistory, this.config, this.currentAgentId);
-      this.guestMeter.maybePromptLoginAfterSend((opts) => this.openAuthOverlay(opts.hard));
-    }
-
-    if (this.wsPendingMessage?.requestId === state.requestId) {
-      this.wsPendingMessage = null;
-    }
-    this.resetSendState();
-    this.clearStreamingState(state.requestId);
+    this.startTyping(state);
   }
 
   async handleWsAssistantError(message) {
@@ -661,13 +709,17 @@ class ViChatWidget {
     const state = requestId ? this.wsInFlightByRequestId.get(requestId) : this.wsStreaming;
     if (state) {
       this.clearAnalysisTimer(state);
+      this.stopTyping(state);
       if (state.showAnalysis) {
         state.showAnalysis = false;
         this.removeTypingRow(state);
         await this.ensureBotRow(state);
       }
       state.text = errorMessage;
+      state.pendingBuffer = '';
+      state.analysisPending = '';
       state.ended = true;
+      state.finishReason = 'error';
       if (state.uiRow) {
         await this.messageController?.updateMessageText?.(state.uiRow, errorMessage, {
           streaming: false
