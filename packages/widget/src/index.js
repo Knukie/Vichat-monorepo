@@ -1033,7 +1033,8 @@ class ViChatWidget {
       messagesInner: el['valki-messages-inner'],
       avatarUrl: this.config.avatarUrl,
       updateDeleteButtonVisibility: () => this.updateDeleteButtonVisibility(),
-      onScrollUpdate: (isNearBottom) => updateScrollIndicator(isNearBottom)
+      onScrollUpdate: (isNearBottom) => updateScrollIndicator(isNearBottom),
+      isLoggedIn: () => this.isLoggedIn()
     });
 
     on(el['valki-messages'], 'scroll', () => updateScrollIndicator(), { passive: true });
