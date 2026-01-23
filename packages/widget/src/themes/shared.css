@@ -1247,10 +1247,22 @@ html.valki-chat-open #valki-root .valki-bubble{
 ========================================================= */
 #valki-root .valki-chat-form{
   border-top: none;
+  position: relative;
   background: transparent;
   backdrop-filter: none;
+  overflow: hidden;
   padding: 10px 0 calc(var(--valki-chat-pad-bottom) + var(--keyboard-bottom)) !important;
 }
+  #valki-root .valki-chat-form::before{
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: rgba(8,8,8,.32);
+    backdrop-filter: blur(20px) saturate(125%);
+    -webkit-backdrop-filter: blur(20px) saturate(125%);
+    pointer-events: none;
+    z-index: 0;
+  }
 
 #valki-root .valki-chat-form-inner{
   max-width: var(--col) !important;
@@ -1268,6 +1280,8 @@ html.valki-chat-open #valki-root .valki-bubble{
 }
 
 #valki-root .valki-chat-inner{
+  position: relative;
+  isolation: isolate;
   display:flex;
   align-items:center;
   gap: 10px;
@@ -1280,12 +1294,26 @@ html.valki-chat-open #valki-root .valki-bubble{
   box-shadow: 0 14px 40px rgba(0,0,0,.45), 0 0 0 1px rgba(255,138,0,.08), 0 10px 22px rgba(255,138,0,.12);
   transition: border-color .18s ease, background .18s ease, box-shadow .18s ease, transform .18s ease;
 }
+  #valki-root .valki-chat-inner::before{
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: rgba(12,12,12,.40);
+    backdrop-filter: blur(22px) saturate(130%);
+    -webkit-backdrop-filter: blur(22px) saturate(130%);
+    pointer-events: none;
+    z-index: 0;
+  }
 
 #valki-root .valki-chat-inner:focus-within{
   background: rgba(255,255,255,.055);
   border-color: rgba(255,138,0,.5);
   box-shadow: 0 16px 46px rgba(0,0,0,.5), 0 0 0 3px rgba(255,138,0,.24), 0 10px 26px rgba(255,138,0,.2);
 }
+  #valki-root .valki-chat-inner:focus-within::before{
+    background: rgba(255,255,255,.055);
+  }
 
 #valki-root .valki-chat-attach{
   position: relative;
@@ -1298,6 +1326,7 @@ html.valki-chat-open #valki-root .valki-bubble{
   justify-content:center;
   color: rgba(255,255,255,.86);
   transition: transform .12s ease, filter .12s ease, opacity .12s ease;
+  z-index: 1;
 }
 #valki-root .valki-chat-attach::before{
   content: "";
@@ -1353,6 +1382,8 @@ html.valki-chat-open #valki-root .valki-bubble{
   white-space: pre-wrap;
   word-break: break-word;
   caret-color: #ff8a00;
+  position: relative;
+  z-index: 1;
 }
 #valki-root .valki-chat-input::placeholder{ color: rgba(255,255,255,.36); }
 
@@ -1369,6 +1400,8 @@ html.valki-chat-open #valki-root .valki-bubble{
   justify-content:center;
   box-shadow: 0 10px 24px rgba(0,0,0,.32);
   transition: transform .12s ease, box-shadow .12s ease, opacity .12s ease, filter .12s ease;
+  position: relative;
+  z-index: 1;
 }
 #valki-root .valki-chat-send:hover{
   transform: translateY(-1px);
@@ -1434,26 +1467,9 @@ html.valki-chat-open #valki-root .valki-bubble{
    Extra blur + “blok” feel voor composer (vooral mobiel)
 ========================================================= */
 
-/* Composer background (het hele onderste blok) */
-#valki-root .valki-chat-form{
-  background: rgba(8,8,8,.32); /* iets donkerder zodat blur beter leest */
-  backdrop-filter: blur(20px) saturate(125%);
-  -webkit-backdrop-filter: blur(20px) saturate(125%);
-}
-
-/* De pill zelf (verzendbalk / input container) */
-#valki-root .valki-chat-inner{
-  background: rgba(12,12,12,.40);
-  backdrop-filter: blur(22px) saturate(130%);
-  -webkit-backdrop-filter: blur(22px) saturate(130%);
-
-  border: 1px solid rgba(255,138,0,.22);
-  box-shadow: 0 14px 40px rgba(0,0,0,.45), 0 0 0 1px rgba(255,138,0,.08), 0 10px 22px rgba(255,138,0,.12);
-}
-
 /* Mobile: blur extra boosten + iets meer tint (werkt beter op iOS/Android) */
 @media (max-width: 640px){
-  #valki-root .valki-chat-form{
+  #valki-root .valki-chat-form::before{
     background: rgba(0,0,0,.38);
     backdrop-filter: blur(24px) saturate(130%);
     -webkit-backdrop-filter: blur(24px) saturate(130%);
@@ -1461,6 +1477,8 @@ html.valki-chat-open #valki-root .valki-bubble{
 
   #valki-root .valki-chat-inner{
     min-height: 50px;
+  }
+  #valki-root .valki-chat-inner::before{
     background: rgba(10,10,10,.46);
     backdrop-filter: blur(26px) saturate(135%);
     -webkit-backdrop-filter: blur(26px) saturate(135%);
@@ -1470,14 +1488,14 @@ html.valki-chat-open #valki-root .valki-bubble{
   #valki-root .valki-chat-input{
     flex: 1 1 auto;
     min-width: 0;
-    padding: 12px 8px 8px 0;
+    padding: 10px 8px 10px 0;
     box-sizing: border-box;
     font: inherit;
     border: none;
     background: transparent;
     color: rgba(255,255,255,.92);
     font-size: 16px;
-    line-height: 22px;
+    line-height: 24px;
     resize: none;
     overflow-y: hidden;
     white-space: pre-wrap;
@@ -1491,10 +1509,10 @@ html.valki-chat-open #valki-root .valki-bubble{
 
 /* Fallback als backdrop-filter niet supported is (B2B-proof) */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))){
-  #valki-root .valki-chat-form{
+  #valki-root .valki-chat-form::before{
     background: rgba(0,0,0,.62);
   }
-  #valki-root .valki-chat-inner{
+  #valki-root .valki-chat-inner::before{
     background: rgba(12,12,12,.72);
   }
 }
