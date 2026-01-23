@@ -1262,21 +1262,25 @@ html.valki-chat-open #valki-root .valki-bubble{
   border-radius: 6px;
 }
 
-#valki-root .valki-typing-bar{ display:inline-flex; align-items:center; gap: 8px; }
-#valki-root .valki-typing-dots{ display:inline-flex; gap: 4px; }
-#valki-root .valki-typing-dots span{
-  width:6px;height:6px;border-radius:50%;
-  background: rgba(255,255,255,.72);
-  animation: valkiBounce 1.2s infinite ease-in-out;
+#valki-root .valki-typing-indicator{
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: #ff9f1a;
+  box-shadow: 0 0 0 2px rgba(255,159,26,.2);
+  animation: valkiPulse 1.6s ease-in-out infinite;
+  margin-top: 6px;
 }
-#valki-root .valki-typing-dots span:nth-child(2){ animation-delay:.15s; }
-#valki-root .valki-typing-dots span:nth-child(3){ animation-delay:.30s; }
 
-@keyframes valkiBounce{
-  0%,60%,100%{ transform:translateY(0); opacity:.45; }
-  30%{ transform:translateY(-3px); opacity:1; }
+#valki-root .valki-typing-indicator[data-status='authed']{
+  background: #35d07f;
+  box-shadow: 0 0 0 2px rgba(53,208,127,.2);
 }
-#valki-root .valki-typing-label{ font-size:12px; color: var(--muted); }
+
+@keyframes valkiPulse{
+  0%,100%{ transform: scale(0.85); opacity:.65; }
+  50%{ transform: scale(1.1); opacity:1; }
+}
 
 /* =========================================================
    Composer — HARD column lock

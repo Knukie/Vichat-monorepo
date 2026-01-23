@@ -110,18 +110,21 @@ export function createChatMessageRow({
 /**
  * @param {{ avatarUrl?: string, avatarAlt?: string, label?: string }} args
  */
-export function createTypingRow({ avatarUrl, avatarAlt, label = t('messages.typing') } = {}) {
+export function createTypingRow({
+  avatarUrl,
+  avatarAlt,
+  label = t('messages.typing'),
+  status = 'guest'
+} = {}) {
   const row = document.createElement('div');
   row.className = 'valki-msg-row bot';
   row.appendChild(createAvatarWrap({ avatarUrl, avatarAlt }));
 
-  const bubble = document.createElement('div');
-  bubble.className = 'valki-msg-bubble';
-  bubble.innerHTML = `
-    <div class="valki-typing-bar">
-      <span class="valki-typing-dots"><span></span><span></span><span></span></span>
-      <span class="valki-typing-label">${label}</span>
-    </div>`;
-  row.appendChild(bubble);
+  const indicator = document.createElement('div');
+  indicator.className = 'valki-typing-indicator';
+  indicator.setAttribute('role', 'status');
+  indicator.setAttribute('aria-label', label);
+  indicator.dataset.status = status === 'authed' ? 'authed' : 'guest';
+  row.appendChild(indicator);
   return row;
 }

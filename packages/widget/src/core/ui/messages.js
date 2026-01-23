@@ -20,7 +20,8 @@ export function createMessageController({
   messagesInner,
   avatarUrl,
   updateDeleteButtonVisibility,
-  onScrollUpdate
+  onScrollUpdate,
+  isLoggedIn
 }) {
   let botAvatarUrl = avatarUrl;
   let botAvatarAlt = t('avatar.assistantIconDefault');
@@ -92,11 +93,15 @@ export function createMessageController({
   }
 
   function createTypingMessageRow() {
-    const existingRows = messagesInner.querySelectorAll('.valki-typing-bar');
-    existingRows.forEach((bar) => {
-      bar.closest('.valki-msg-row')?.remove();
+    const existingRows = messagesInner.querySelectorAll('.valki-typing-indicator');
+    existingRows.forEach((indicator) => {
+      indicator.closest('.valki-msg-row')?.remove();
     });
-    const typingRow = createTypingRow({ avatarUrl: botAvatarUrl, avatarAlt: botAvatarAlt });
+    const typingRow = createTypingRow({
+      avatarUrl: botAvatarUrl,
+      avatarAlt: botAvatarAlt,
+      status: typeof isLoggedIn === 'function' && isLoggedIn() ? 'authed' : 'guest'
+    });
     messagesInner.appendChild(typingRow);
     scrollToBottom(true);
     notifyScrollUpdate();
@@ -105,9 +110,9 @@ export function createMessageController({
   }
 
   function removeTypingRows() {
-    const existingRows = messagesInner.querySelectorAll('.valki-typing-bar');
-    existingRows.forEach((bar) => {
-      bar.closest('.valki-msg-row')?.remove();
+    const existingRows = messagesInner.querySelectorAll('.valki-typing-indicator');
+    existingRows.forEach((indicator) => {
+      indicator.closest('.valki-msg-row')?.remove();
     });
     notifyScrollUpdate();
   }
@@ -115,7 +120,7 @@ export function createMessageController({
   function hasAnyRealMessages() {
     const rows = messagesInner.querySelectorAll('.valki-msg-row');
     for (const row of rows) {
-      if (row.querySelector('.valki-typing-bar')) continue;
+      if (row.querySelector('.valki-typing-indicator')) continue;
       return true;
     }
     return false;
