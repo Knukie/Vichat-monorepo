@@ -1014,6 +1014,11 @@ html.valki-chat-open #valki-root .valki-bubble{
   border-right: 1px solid var(--chat-block-border);
 }
 
+#valki-root .valki-modal > .valki-modal-header,
+#valki-root .valki-modal > .valki-chat-form{
+  flex: 0 0 auto;
+}
+
 #valki-root .valki-modal > .valki-modal-header{
   border-top: 1px solid rgba(255,255,255,.12);
 }
