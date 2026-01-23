@@ -492,6 +492,7 @@ html.valki-chat-open #valki-root .valki-hero-actions{
 }
 #valki-root .valki-msg-row.user{ justify-content:flex-end; }
 #valki-root .valki-msg-row.bot{ justify-content:flex-start; }
+#valki-root .valki-msg-row.user + .valki-msg-row.bot{ margin-top: 0; }
 
 #valki-root .valki-bot-avatar-wrap{ flex:0 0 auto; padding-top: 2px; }
 #valki-root .valki-bot-avatar{
