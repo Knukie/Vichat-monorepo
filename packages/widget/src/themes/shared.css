@@ -1175,7 +1175,7 @@ html.valki-chat-open #valki-root .valki-bubble{
   justify-content: flex-start;
   flex-direction: column;
   align-items: flex-start;
-  gap: 6px;
+  gap: 0;
 }
 
 #valki-root .valki-bot-avatar-wrap{
