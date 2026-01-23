@@ -70,7 +70,7 @@ export const sharedCss = `/* ===================================================
 
 @supports (height: 100dvh){
   #valki-root{
-    --vvh: 100dvh;
+    --vvh: min(calc(var(--valki-vh, 1vh) * 100), 100dvh);
   }
 }
 
@@ -507,9 +507,8 @@ html.valki-chat-open #valki-root .valki-bubble{
    Modal + Background + Vignette + Side Blur  (FIX)
 ========================================================= */
 #valki-root .valki-modal{
-  width:100vw;
-  height:100vh;
-  height:100dvh;
+  width:100%;
+  height: min(var(--vvh), 100dvh);
 
   /* IMPORTANT: use your background image variable */
   background:
@@ -1116,6 +1115,42 @@ html.valki-chat-open #valki-root .valki-bubble{
 }
 
 #valki-root .valki-messages-inner:empty{ min-height: 220px; }
+
+#valki-root .valki-scroll-bottom{
+  position: absolute;
+  right: var(--gutter);
+  bottom: calc(var(--composer-h) + var(--keyboard-bottom) + 12px);
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(20,20,20,.86);
+  border: 1px solid rgba(255,255,255,.12);
+  color: rgba(255,255,255,.86);
+  box-shadow: 0 12px 30px rgba(0,0,0,.45);
+  opacity: 0;
+  transform: translateY(6px);
+  pointer-events: none;
+  transition: opacity .18s ease, transform .18s ease, box-shadow .18s ease;
+  z-index: 3;
+}
+
+#valki-root .valki-scroll-bottom.is-visible{
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+#valki-root .valki-scroll-bottom:hover{
+  box-shadow: 0 16px 34px rgba(0,0,0,.55);
+}
+
+#valki-root .valki-scroll-bottom:focus-visible{
+  outline: none;
+  box-shadow: 0 0 0 2px var(--ring), 0 16px 34px rgba(0,0,0,.5);
+}
 
 #valki-root .valki-msg-row{
   display:flex;

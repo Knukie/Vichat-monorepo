@@ -61,6 +61,7 @@ const REQUIRED_IDS = [
   'valki-deleteall-btn',
   'valki-messages',
   'valki-messages-inner',
+  'valki-scroll-bottom',
   'valki-chat-form',
   'valki-chat-input',
   'valki-chat-send',
@@ -953,6 +954,7 @@ class ViChatWidget {
       updateComposerHeight();
       updateKeyboardInset();
       this.updateValkiVh();
+      updateScrollIndicator();
       if (el['valki-overlay']) {
         const isDesktop = isDesktopLayout();
         el['valki-overlay'].dataset.layout = isDesktop ? 'desktop' : 'mobile';
@@ -968,6 +970,16 @@ class ViChatWidget {
     };
 
     const clampComposer = (options) => this.composerController?.clampComposer(options);
+    const scrollButton = el['valki-scroll-bottom'];
+    const updateScrollIndicator = (nearBottomOverride) => {
+      if (!scrollButton || !this.messageController) return;
+      const isNear = typeof nearBottomOverride === 'boolean'
+        ? nearBottomOverride
+        : this.messageController.isNearBottom?.();
+      const shouldShow = !isNear;
+      scrollButton.classList.toggle('is-visible', shouldShow);
+      scrollButton.setAttribute('aria-hidden', shouldShow ? 'false' : 'true');
+    };
 
     this.composerController = createComposerController({
       chatInput: el['valki-chat-input'],
@@ -1014,7 +1026,14 @@ class ViChatWidget {
       messagesEl: el['valki-messages'],
       messagesInner: el['valki-messages-inner'],
       avatarUrl: this.config.avatarUrl,
-      updateDeleteButtonVisibility: () => this.updateDeleteButtonVisibility()
+      updateDeleteButtonVisibility: () => this.updateDeleteButtonVisibility(),
+      onScrollUpdate: (isNearBottom) => updateScrollIndicator(isNearBottom)
+    });
+
+    on(el['valki-messages'], 'scroll', () => updateScrollIndicator(), { passive: true });
+    on(scrollButton, 'click', () => {
+      this.messageController?.scrollToBottom(true);
+      updateScrollIndicator(true);
     });
 
     this.attachmentController = createAttachmentController({
