@@ -1172,6 +1172,10 @@ html.valki-chat-open #valki-root .valki-bubble{
   padding-left: var(--valki-avatar-col, 28px);
 }
 
+#valki-root .valki-messages-inner .valki-msg-row.user:not(:first-child){
+  margin-top: 12px;
+}
+
 #valki-root .valki-msg-row.bot{
   justify-content: flex-start;
   flex-direction: column;
