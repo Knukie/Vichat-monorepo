@@ -971,12 +971,12 @@ html.valki-chat-open #valki-root .valki-bubble{
     display: flex;
     flex: 0 0 clamp(320px, 28vw, 380px);
     max-width: clamp(320px, 28vw, 380px);
-    padding-right: 16px;
+    padding-right: 0;
   }
 
   #valki-root #valki-overlay[data-layout="desktop"] .valki-sidebar .valki-agent-hub{
     display: flex;
-    border-radius: 16px;
+    border-radius: 16px 0 0 16px;
   }
 
   #valki-root #valki-overlay[data-layout="desktop"] .valki-modal{
@@ -991,7 +991,7 @@ html.valki-chat-open #valki-root .valki-bubble{
   }
 
   #valki-root #valki-overlay[data-layout="desktop"] .valki-modal{
-    border-radius: 16px;
+    border-radius: 0 16px 16px 0;
     overflow: hidden;
   }
 
@@ -1277,15 +1277,15 @@ html.valki-chat-open #valki-root .valki-bubble{
   padding: 6px 10px 6px 16px;
   border-radius: 26px;
   background: rgba(255,255,255,.04);
-  border: 1px solid rgba(255,255,255,.12);
-  box-shadow: 0 14px 40px rgba(0,0,0,.45);
+  border: 1px solid rgba(255,138,0,.24);
+  box-shadow: 0 14px 40px rgba(0,0,0,.45), 0 0 0 1px rgba(255,138,0,.08), 0 10px 22px rgba(255,138,0,.12);
   transition: border-color .18s ease, background .18s ease, box-shadow .18s ease, transform .18s ease;
 }
 
 #valki-root .valki-chat-inner:focus-within{
   background: rgba(255,255,255,.055);
-  border-color: rgba(255,255,255,.22);
-  box-shadow: 0 16px 46px rgba(0,0,0,.5), 0 0 0 3px var(--ring);
+  border-color: rgba(255,138,0,.5);
+  box-shadow: 0 16px 46px rgba(0,0,0,.5), 0 0 0 3px rgba(255,138,0,.24), 0 10px 26px rgba(255,138,0,.2);
 }
 
 #valki-root .valki-chat-attach{
@@ -1448,8 +1448,8 @@ html.valki-chat-open #valki-root .valki-bubble{
   backdrop-filter: blur(22px) saturate(130%);
   -webkit-backdrop-filter: blur(22px) saturate(130%);
 
-  border: 1px solid rgba(255,255,255,.14);
-  box-shadow: 0 14px 40px rgba(0,0,0,.45);
+  border: 1px solid rgba(255,138,0,.22);
+  box-shadow: 0 14px 40px rgba(0,0,0,.45), 0 0 0 1px rgba(255,138,0,.08), 0 10px 22px rgba(255,138,0,.12);
 }
 
 /* Mobile: blur extra boosten + iets meer tint (werkt beter op iOS/Android) */
@@ -1471,14 +1471,14 @@ html.valki-chat-open #valki-root .valki-bubble{
   #valki-root .valki-chat-input{
     flex: 1 1 auto;
     min-width: 0;
-    padding: 10px 8px 10px 0;
+    padding: 12px 8px 8px 0;
     box-sizing: border-box;
     font: inherit;
     border: none;
     background: transparent;
     color: rgba(255,255,255,.92);
     font-size: 16px;
-    line-height: 24px;
+    line-height: 22px;
     resize: none;
     overflow-y: hidden;
     white-space: pre-wrap;
@@ -1486,6 +1486,7 @@ html.valki-chat-open #valki-root .valki-bubble{
     caret-color: #ff8a00;
     -webkit-appearance: none;
     appearance: none;
+    -webkit-text-size-adjust: 100%;
   }
 }
 
