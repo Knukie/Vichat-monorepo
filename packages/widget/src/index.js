@@ -944,9 +944,15 @@ class ViChatWidget {
         root.style.setProperty('--keyboard-bottom', '0px');
         return;
       }
-      const layoutHeight = document.documentElement?.clientHeight || window.innerHeight || 0;
-      const rawInset = layoutHeight - vv.height - vv.offsetTop;
-      const inset = Math.max(0, Math.round(rawInset));
+      const layoutHeight = Math.max(
+        document.documentElement?.clientHeight || 0,
+        window.innerHeight || 0
+      );
+      const vvHeight = vv.height || 0;
+      const vvOffsetTop = vv.offsetTop || 0;
+      const rawInset = layoutHeight - vvHeight - vvOffsetTop;
+      const keyboardResizesViewport = vvHeight > 0 && layoutHeight > 0 && vvHeight < layoutHeight - 1;
+      const inset = keyboardResizesViewport ? 0 : Math.max(0, Math.round(rawInset));
       root.style.setProperty('--keyboard-bottom', `${inset}px`);
     };
 
@@ -1426,7 +1432,9 @@ class ViChatWidget {
   updateValkiVh() {
     try {
       const vv = window.visualViewport;
-      const height = vv?.height || document.documentElement?.clientHeight || window.innerHeight;
+      const height = vv
+        ? Math.max(vv.height + vv.offsetTop, vv.height)
+        : document.documentElement?.clientHeight || window.innerHeight;
       this.elements['valki-root'].style.setProperty('--valki-vh', `${height * 0.01}px`);
     } catch {
       /* ignore */
