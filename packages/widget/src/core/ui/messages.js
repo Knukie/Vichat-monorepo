@@ -19,17 +19,25 @@ export function createMessageController({
   messagesEl,
   messagesInner,
   avatarUrl,
-  updateDeleteButtonVisibility
+  updateDeleteButtonVisibility,
+  onScrollUpdate
 }) {
   let botAvatarUrl = avatarUrl;
   let botAvatarAlt = t('avatar.assistantIconDefault');
   let userLabel = t('labels.user');
+
+  function notifyScrollUpdate() {
+    if (typeof onScrollUpdate === 'function') {
+      onScrollUpdate(isNearBottom(messagesEl));
+    }
+  }
 
   function scrollToBottom(force = false) {
     if (!messagesEl) return;
     if (force || isNearBottom(messagesEl)) {
       messagesEl.scrollTop = messagesEl.scrollHeight + 10000;
     }
+    notifyScrollUpdate();
   }
 
   /** @param {UiMessageInput} param0 */
@@ -48,6 +56,7 @@ export function createMessageController({
     messagesInner.appendChild(row);
     scrollToBottom(true);
     updateDeleteButtonVisibility?.();
+    notifyScrollUpdate();
     return row;
   }
 
@@ -73,11 +82,13 @@ export function createMessageController({
       contentTarget.textContent = nextText;
     }
     scrollToBottom(false);
+    notifyScrollUpdate();
   }
 
   function clearMessagesUI() {
     messagesInner.innerHTML = '';
     updateDeleteButtonVisibility?.();
+    notifyScrollUpdate();
   }
 
   function createTypingMessageRow() {
@@ -88,6 +99,7 @@ export function createMessageController({
     const typingRow = createTypingRow({ avatarUrl: botAvatarUrl, avatarAlt: botAvatarAlt });
     messagesInner.appendChild(typingRow);
     scrollToBottom(true);
+    notifyScrollUpdate();
 
     return typingRow;
   }
@@ -97,6 +109,7 @@ export function createMessageController({
     existingRows.forEach((bar) => {
       bar.closest('.valki-msg-row')?.remove();
     });
+    notifyScrollUpdate();
   }
 
   function hasAnyRealMessages() {
@@ -114,6 +127,7 @@ export function createMessageController({
       messagesEl.scrollTop = messagesEl.scrollHeight + 10000;
       requestAnimationFrame(() => {
         messagesEl.scrollTop = messagesEl.scrollHeight + 10000;
+        notifyScrollUpdate();
       });
     });
   }
@@ -138,6 +152,7 @@ export function createMessageController({
     setUserLabel,
     removeTypingRows,
     updateMessageText,
+    isNearBottom: () => isNearBottom(messagesEl),
     scrollToBottom,
     scrollToBottomHard
   };

@@ -76,6 +76,12 @@ export const templateHtml = `<div class="valki-root" id="valki-root">
           <div class="valki-messages-inner" id="valki-messages-inner"></div>
         </div>
 
+        <button id="valki-scroll-bottom" class="valki-scroll-bottom" type="button" aria-label="Scroll to bottom" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M6 10l6 6 6-6"></path>
+          </svg>
+        </button>
+
         <!-- Composer -->
         <form id="valki-chat-form" class="valki-chat-form" autocomplete="off">
           <div class="valki-chat-form-inner">
