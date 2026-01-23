@@ -117,7 +117,7 @@ export function createTypingRow({
   status = 'guest'
 } = {}) {
   const row = document.createElement('div');
-  row.className = 'valki-msg-row bot';
+  row.className = 'valki-msg-row bot valki-typing-row';
   row.appendChild(createAvatarWrap({ avatarUrl, avatarAlt }));
 
   const indicator = document.createElement('div');

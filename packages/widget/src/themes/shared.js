@@ -1179,6 +1179,12 @@ html.valki-chat-open #valki-root .valki-bubble{
   gap: 0;
 }
 
+#valki-root .valki-msg-row.valki-typing-row{
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
 #valki-root .valki-bot-avatar-wrap{
   flex:0 0 var(--valki-avatar-col, 28px);
   width: var(--valki-avatar-col, 28px);
@@ -1279,12 +1285,13 @@ html.valki-chat-open #valki-root .valki-bubble{
   background: #ff9f1a;
   box-shadow: 0 0 0 2px rgba(255,159,26,.2);
   animation: valkiPulse 1.6s ease-in-out infinite;
-  margin-top: 6px;
+  margin-top: -2px;
+  margin-left: 2px;
 }
 
 #valki-root .valki-typing-indicator[data-status='authed']{
-  background: #35d07f;
-  box-shadow: 0 0 0 2px rgba(53,208,127,.2);
+  background: #ff9f1a;
+  box-shadow: 0 0 0 2px rgba(255,159,26,.2);
 }
 
 @keyframes valkiPulse{
