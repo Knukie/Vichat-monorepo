@@ -674,6 +674,26 @@ html.valki-chat-open #valki-root .valki-bubble{
   white-space:nowrap;
   overflow:hidden;
   text-overflow:ellipsis;
+  display:inline-flex;
+  align-items:center;
+  gap: 4px;
+}
+
+#valki-root .valki-modal-title-text .session::after{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  font-size: 12px;
+  line-height: 1;
+  transform: translate(2px, -2px);
+}
+
+#valki-root .valki-modal-title-text .session[data-status='guest']::after{
+  content: '🟠';
+}
+
+#valki-root .valki-modal-title-text .session[data-status='authed']::after{
+  content: '🟢';
 }
 
 #valki-root .valki-header-actions{ display:flex; align-items:center; gap: 8px; }
