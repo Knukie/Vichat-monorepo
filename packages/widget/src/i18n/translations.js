@@ -62,9 +62,9 @@ export const translations = {
       subtitle: 'You will switch back to guest mode on this device.'
     },
     labels: {
-      sessionYou: 'You 🟢',
+      sessionYou: 'And you 🟢',
       sessionGuest: 'Guest 🟠',
-      user: 'You'
+      user: 'And you'
     },
     messages: {
       typing: 'Analyzing the signal…'
@@ -171,9 +171,9 @@ export const translations = {
       subtitle: 'Je schakelt op dit apparaat terug naar gastmodus.'
     },
     labels: {
-      sessionYou: 'Jij 🟢',
+      sessionYou: 'En jij 🟢',
       sessionGuest: 'Gast 🟠',
-      user: 'Jij'
+      user: 'En jij'
     },
     messages: {
       typing: 'Signaal analyseren…'
@@ -280,9 +280,9 @@ export const translations = {
       subtitle: 'Du wechselst auf diesem Gerät zurück in den Gastmodus.'
     },
     labels: {
-      sessionYou: 'Du 🟢',
+      sessionYou: 'Und du 🟢',
       sessionGuest: 'Gast 🟠',
-      user: 'Du'
+      user: 'Und du'
     },
     messages: {
       typing: 'Signal wird analysiert…'
@@ -390,9 +390,9 @@ export const translations = {
       subtitle: 'Vous repasserez en mode invité sur cet appareil.'
     },
     labels: {
-      sessionYou: 'Vous 🟢',
+      sessionYou: 'Et vous 🟢',
       sessionGuest: 'Invité 🟠',
-      user: 'Vous'
+      user: 'Et vous'
     },
     messages: {
       typing: 'Analyse du signal…'
@@ -500,9 +500,9 @@ export const translations = {
       subtitle: 'Volverás al modo invitado en este dispositivo.'
     },
     labels: {
-      sessionYou: 'Tú 🟢',
+      sessionYou: 'Y tú 🟢',
       sessionGuest: 'Invitado 🟠',
-      user: 'Tú'
+      user: 'Y tú'
     },
     messages: {
       typing: 'Analizando la señal…'
@@ -610,9 +610,9 @@ export const translations = {
       subtitle: 'Tornerai in modalità ospite su questo dispositivo.'
     },
     labels: {
-      sessionYou: 'Tu 🟢',
+      sessionYou: 'E tu 🟢',
       sessionGuest: 'Ospite 🟠',
-      user: 'Tu'
+      user: 'E tu'
     },
     messages: {
       typing: 'Analisi del segnale…'
@@ -720,9 +720,9 @@ export const translations = {
       subtitle: 'Você voltará ao modo convidado neste dispositivo.'
     },
     labels: {
-      sessionYou: 'Você 🟢',
+      sessionYou: 'E você 🟢',
       sessionGuest: 'Convidado 🟠',
-      user: 'Você'
+      user: 'E você'
     },
     messages: {
       typing: 'Analisando o sinal…'
@@ -830,9 +830,9 @@ export const translations = {
       subtitle: 'Вы вернётесь в гостевой режим на этом устройстве.'
     },
     labels: {
-      sessionYou: 'Вы 🟢',
+      sessionYou: 'И вы 🟢',
       sessionGuest: 'Гость 🟠',
-      user: 'Вы'
+      user: 'И вы'
     },
     messages: {
       typing: 'Анализ сигнала…'
