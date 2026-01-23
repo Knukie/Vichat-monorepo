@@ -62,8 +62,8 @@ export const translations = {
       subtitle: 'You will switch back to guest mode on this device.'
     },
     labels: {
-      sessionYou: 'You 🟢',
-      sessionGuest: 'Guest 🟠',
+      sessionYou: 'You',
+      sessionGuest: 'Guest',
       user: 'You'
     },
     messages: {
@@ -171,8 +171,8 @@ export const translations = {
       subtitle: 'Je schakelt op dit apparaat terug naar gastmodus.'
     },
     labels: {
-      sessionYou: 'Jij 🟢',
-      sessionGuest: 'Gast 🟠',
+      sessionYou: 'Jij',
+      sessionGuest: 'Gast',
       user: 'Jij'
     },
     messages: {
@@ -280,8 +280,8 @@ export const translations = {
       subtitle: 'Du wechselst auf diesem Gerät zurück in den Gastmodus.'
     },
     labels: {
-      sessionYou: 'Du 🟢',
-      sessionGuest: 'Gast 🟠',
+      sessionYou: 'Du',
+      sessionGuest: 'Gast',
       user: 'Du'
     },
     messages: {
@@ -390,8 +390,8 @@ export const translations = {
       subtitle: 'Vous repasserez en mode invité sur cet appareil.'
     },
     labels: {
-      sessionYou: 'Vous 🟢',
-      sessionGuest: 'Invité 🟠',
+      sessionYou: 'Vous',
+      sessionGuest: 'Invité',
       user: 'Vous'
     },
     messages: {
@@ -500,8 +500,8 @@ export const translations = {
       subtitle: 'Volverás al modo invitado en este dispositivo.'
     },
     labels: {
-      sessionYou: 'Tú 🟢',
-      sessionGuest: 'Invitado 🟠',
+      sessionYou: 'Tú',
+      sessionGuest: 'Invitado',
       user: 'Tú'
     },
     messages: {
@@ -610,8 +610,8 @@ export const translations = {
       subtitle: 'Tornerai in modalità ospite su questo dispositivo.'
     },
     labels: {
-      sessionYou: 'Tu 🟢',
-      sessionGuest: 'Ospite 🟠',
+      sessionYou: 'Tu',
+      sessionGuest: 'Ospite',
       user: 'Tu'
     },
     messages: {
@@ -720,8 +720,8 @@ export const translations = {
       subtitle: 'Você voltará ao modo convidado neste dispositivo.'
     },
     labels: {
-      sessionYou: 'Você 🟢',
-      sessionGuest: 'Convidado 🟠',
+      sessionYou: 'Você',
+      sessionGuest: 'Convidado',
       user: 'Você'
     },
     messages: {
@@ -830,8 +830,8 @@ export const translations = {
       subtitle: 'Вы вернётесь в гостевой режим на этом устройстве.'
     },
     labels: {
-      sessionYou: 'Вы 🟢',
-      sessionGuest: 'Гость 🟠',
+      sessionYou: 'Вы',
+      sessionGuest: 'Гость',
       user: 'Вы'
     },
     messages: {

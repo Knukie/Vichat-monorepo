@@ -1472,16 +1472,19 @@ class ViChatWidget {
     const sessionLabel = this.elements['valki-session-label'];
     const displayName = this.me?.displayName;
     if (displayName) {
-      sessionLabel.textContent = `${displayName} 🟢`;
+      sessionLabel.textContent = displayName;
+      sessionLabel.dataset.status = 'authed';
       this.messageController?.setUserLabel(displayName);
       return;
     }
     if (this.isLoggedIn()) {
       sessionLabel.textContent = t('labels.sessionYou');
+      sessionLabel.dataset.status = 'authed';
       this.messageController?.setUserLabel(t('labels.user'));
       return;
     }
     sessionLabel.textContent = t('labels.sessionGuest');
+    sessionLabel.dataset.status = 'guest';
     this.messageController?.setUserLabel(t('labels.user'));
   }
 

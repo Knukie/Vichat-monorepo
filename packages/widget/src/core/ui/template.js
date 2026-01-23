@@ -58,7 +58,7 @@ export const templateHtml = `<div class="valki-root" id="valki-root">
                  alt="Valki avatar" />
             <div class="valki-modal-title-text">
               <span class="name" id="valki-title">Valki Talki</span>
-              <span class="session" id="valki-session-label">Guest 🟠</span>
+              <span class="session" id="valki-session-label" data-status="guest">Guest</span>
             </div>
           </div>
 
