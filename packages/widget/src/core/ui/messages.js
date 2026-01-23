@@ -43,8 +43,7 @@ export function createMessageController({
       avatarUrl: botAvatarUrl,
       avatarAlt: botAvatarAlt,
       renderMarkdown: isCustomer ? undefined : renderMarkdown,
-      hardenLinks: isCustomer ? undefined : hardenLinks,
-      authorLabel: isCustomer ? userLabel : undefined
+      hardenLinks: isCustomer ? undefined : hardenLinks
     });
     messagesInner.appendChild(row);
     scrollToBottom(true);
