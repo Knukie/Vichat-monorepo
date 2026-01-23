@@ -55,7 +55,7 @@ export const sharedCss = `/* ===================================================
   --keyboard-bottom: 0px;
 
   /* Background + vignette + blur */
-  --chat-bg-image: url("https://valki.wiki/onewebmedia/Valki%20Talki%20background___serialized1.jpg");
+  --chat-bg-image: url("https://valki.wiki/onewebmedia/Valki%20Talki%20chat.jpg");
   --chat-bg-color: #070707;
 
   --vignette-strength: .58;  /* iets steviger voor blok-contrast */
