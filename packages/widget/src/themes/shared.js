@@ -1174,6 +1174,9 @@ html.valki-chat-open #valki-root .valki-bubble{
 
 #valki-root .valki-msg-row.bot{
   justify-content: flex-start;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
 }
 
 #valki-root .valki-bot-avatar-wrap{
@@ -1182,7 +1185,7 @@ html.valki-chat-open #valki-root .valki-bubble{
   display:flex;
   align-items:flex-start;
   justify-content:center;
-  margin-top: -4px;
+  margin-top: 0;
 }
 #valki-root .valki-bot-avatar-spacer{
   flex:0 0 var(--valki-avatar-col, 28px);
@@ -1235,13 +1238,15 @@ html.valki-chat-open #valki-root .valki-bubble{
 #valki-root .valki-msg-row.bot .valki-msg-bubble::before{
   content:"";
   position: absolute;
-  left: -6px;
-  top: 14px;
+  left: 16px;
+  top: -6px;
   width: 12px;
   height: 12px;
   background: inherit;
   transform: rotate(45deg);
   border-radius: 2px;
+  border-left: 1px solid rgba(255,255,255,.08);
+  border-top: 1px solid rgba(255,255,255,.08);
 }
 
 #valki-root .valki-msg-row.user .valki-msg-bubble{
