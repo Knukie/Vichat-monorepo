@@ -1188,6 +1188,88 @@ class ViChatWidget {
     });
     on(el['valki-agent-back'], 'click', () => this.showAgentHub());
 
+    const overlayEl = el['valki-overlay'];
+    const modalEl = overlayEl?.querySelector('.valki-modal');
+    const swipeState = {
+      active: false,
+      dragging: false,
+      startX: 0,
+      startY: 0,
+      width: 0
+    };
+    const resetSwipe = () => {
+      swipeState.active = false;
+      swipeState.dragging = false;
+      swipeState.width = 0;
+      if (!overlayEl) return;
+      overlayEl.removeAttribute('data-swipe');
+      overlayEl.style.removeProperty('--valki-modal-shift');
+    };
+    const getSwipeWidth = () => {
+      if (!modalEl) return window.innerWidth || 0;
+      return Math.max(1, Math.round(modalEl.getBoundingClientRect().width || 0));
+    };
+    const shouldHandleSwipe = (event) => {
+      if (!overlayEl || !modalEl) return false;
+      if (event.pointerType && event.pointerType !== 'touch') return false;
+      if (!this.overlayController?.isChatOpen()) return false;
+      if (this.view !== 'chat') return false;
+      if (isDesktopLayout()) return false;
+      if (overlayEl.dataset.layout === 'desktop') return false;
+      return true;
+    };
+
+    const onSwipeStart = (event) => {
+      if (!shouldHandleSwipe(event)) return;
+      swipeState.active = true;
+      swipeState.dragging = false;
+      swipeState.startX = event.clientX || 0;
+      swipeState.startY = event.clientY || 0;
+      swipeState.width = getSwipeWidth();
+    };
+
+    const onSwipeMove = (event) => {
+      if (!swipeState.active || !overlayEl) return;
+      const dx = (event.clientX || 0) - swipeState.startX;
+      const dy = (event.clientY || 0) - swipeState.startY;
+      if (!swipeState.dragging) {
+        if (dx <= 0) return;
+        if (Math.abs(dx) < 8 || Math.abs(dx) < Math.abs(dy)) return;
+        swipeState.dragging = true;
+        overlayEl.setAttribute('data-swipe', 'true');
+      }
+      if (!swipeState.dragging) return;
+      event.preventDefault();
+      const width = swipeState.width || getSwipeWidth();
+      const clamped = Math.max(0, Math.min(dx, width));
+      overlayEl.style.setProperty('--valki-modal-shift', `${clamped}px`);
+    };
+
+    const onSwipeEnd = () => {
+      if (!swipeState.active || !overlayEl) {
+        resetSwipe();
+        return;
+      }
+      if (!swipeState.dragging) {
+        resetSwipe();
+        return;
+      }
+      const width = swipeState.width || getSwipeWidth();
+      const current = parseFloat(overlayEl.style.getPropertyValue('--valki-modal-shift')) || 0;
+      const shouldOpenHub = current > width * 0.28;
+      resetSwipe();
+      if (shouldOpenHub) {
+        this.showAgentHub();
+      } else {
+        this.setView('chat');
+      }
+    };
+
+    on(modalEl, 'pointerdown', onSwipeStart);
+    on(window, 'pointermove', onSwipeMove, { passive: false });
+    on(window, 'pointerup', onSwipeEnd);
+    on(window, 'pointercancel', onSwipeEnd);
+
     on(document, 'keydown', (e) => {
       if (e.key !== 'Escape') return;
       if (el['valki-logout-overlay'].classList.contains('is-visible')) {
