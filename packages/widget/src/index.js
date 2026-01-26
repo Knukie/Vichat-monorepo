@@ -38,6 +38,7 @@ import {
   flushStream,
   initStreamingState,
   removeTypingRow,
+  schedulePlaceholderTimer,
   scheduleStreamFlush,
   shouldIgnoreStreamEvent
 } from './core/streaming.js';
@@ -363,8 +364,9 @@ class ViChatWidget {
     return ensureTypingIndicator(this, state);
   }
 
-  async ensureBotRow(state) {
-    return ensureBotRow(this, state);
+  async ensureBotRow(state, initialText) {
+    const fallbackText = typeof initialText === 'string' ? initialText : state.text;
+    return ensureBotRow(this, state, fallbackText);
   }
 
   clearRenderTimer(state) {
@@ -373,6 +375,10 @@ class ViChatWidget {
 
   scheduleStreamFlush(state) {
     return scheduleStreamFlush(this, state);
+  }
+
+  schedulePlaceholderTimer(state, placeholderText) {
+    return schedulePlaceholderTimer(this, state, placeholderText);
   }
 
   async flushStream(state) {
@@ -483,29 +489,11 @@ class ViChatWidget {
     state.assistantMessageId = cleanText(message?.messageId || '');
     this.setConversationId(message?.conversationId);
     state.started = true;
+    state.streamPhase = 'first';
+    state.placeholderActive = false;
+    state.placeholderText = '';
     this.ensureTypingIndicator(state);
-    this.clearPlaceholderTimer(state);
-    state.placeholderTimer = window.setTimeout(() => {
-      void (async () => {
-        const activeState = this.wsStreaming;
-        if (!activeState || activeState !== state) return;
-        if (activeState.requestId !== requestId) return;
-        if (activeState.ended || activeState.finalized) return;
-        if (this.abortedRequestIds?.has(activeState.requestId)) return;
-        if (activeState.text || activeState.pendingBuffer) return;
-        const content = activeState.uiRow?.querySelector('.valki-msg-content');
-        const existingText = content?.textContent?.trim() || '';
-        if (activeState.uiRow && existingText) return;
-        const placeholder = t('streaming.checkingSources');
-        await this.ensureBotRow(activeState);
-        if (!activeState.uiRow) return;
-        await this.messageController?.updateMessageText?.(activeState.uiRow, placeholder, {
-          streaming: true
-        });
-        activeState.placeholderActive = true;
-        activeState.placeholderText = placeholder;
-      })();
-    }, state.placeholderDelayMs);
+    this.schedulePlaceholderTimer(state, t('streaming.checkingSources'));
   }
 
   async handleWsAssistantDelta(message) {
@@ -517,17 +505,26 @@ class ViChatWidget {
     if (!Number.isFinite(seq) || seq <= state.lastSeq) return;
     state.lastSeq = seq;
     const delta = typeof message?.delta === 'string' ? message.delta : '';
+    const hasRealDelta = /\S/.test(delta);
     if (!state.started) {
       state.started = true;
       this.ensureTypingIndicator(state);
     }
-    this.clearPlaceholderTimer(state);
-    if (state.placeholderActive) {
-      state.placeholderActive = false;
-      state.placeholderText = '';
+    const hadPlaceholder = state.placeholderActive;
+    if (hasRealDelta) {
+      this.clearPlaceholderTimer(state);
+      if (state.placeholderActive) {
+        state.placeholderActive = false;
+        state.placeholderText = '';
+      }
     }
     this.clearAnalysisTimer(state);
     state.pendingBuffer += delta;
+    if (!hasRealDelta && !/\S/.test(state.text)) return;
+    if (hasRealDelta && hadPlaceholder) {
+      await this.flushStream(state);
+      return;
+    }
     this.scheduleStreamFlush(state);
   }
 
@@ -567,8 +564,10 @@ class ViChatWidget {
       this.clearRenderTimer(state);
       state.showAnalysis = false;
       this.removeTypingRow(state);
-      await this.ensureBotRow(state);
       state.text = errorMessage;
+      state.placeholderActive = false;
+      state.placeholderText = '';
+      await this.ensureBotRow(state);
       state.pendingBuffer = '';
       state.ended = true;
       state.finishReason = 'error';
