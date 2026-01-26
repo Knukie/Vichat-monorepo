@@ -1,3 +1,4 @@
+import { t } from '../i18n/index.js';
 import { cleanText, saveGuestHistory } from './storage.js';
 
 export const STREAM_FLUSH_MS = 80;
@@ -21,7 +22,9 @@ export function initStreamingState(widget, requestId) {
       typingRow: null,
       uiRow: null,
       renderTimer: 0,
-      finishReason: ''
+      finishReason: '',
+      placeholderText: '',
+      placeholderActive: false
     };
     widget.wsInFlightByRequestId.set(cleanRequestId, state);
   }
@@ -94,6 +97,19 @@ export function ensureTypingIndicator(widget, state) {
 export async function ensureBotRow(widget, state) {
   if (!state || state.uiRow) return;
   state.uiRow = await widget.messageController?.addMessage({ type: 'assistant', text: '' });
+}
+
+export async function ensureStreamingPlaceholder(widget, state) {
+  if (!state || state.uiRow) return;
+  state.placeholderText = t('streaming.checkingSources');
+  state.placeholderActive = true;
+  state.uiRow = await widget.messageController?.addMessage({
+    type: 'assistant',
+    text: state.placeholderText
+  });
+  await widget.messageController?.updateMessageText?.(state.uiRow, state.placeholderText, {
+    streaming: true
+  });
 }
 
 export function removeTypingRow(state) {
