@@ -1,6 +1,7 @@
 import { cleanText, saveGuestHistory } from './storage.js';
 
 export const STREAM_FLUSH_MS = 80;
+export const PLACEHOLDER_DELAY_MS = 400;
 
 export function initStreamingState(widget, requestId) {
   const cleanRequestId = cleanText(requestId || '');
@@ -22,10 +23,19 @@ export function initStreamingState(widget, requestId) {
       uiRow: null,
       placeholderActive: false,
       placeholderText: '',
+      placeholderTimer: 0,
+      placeholderDelayMs: PLACEHOLDER_DELAY_MS,
       renderTimer: 0,
       finishReason: ''
     };
     widget.wsInFlightByRequestId.set(cleanRequestId, state);
+  } else {
+    if (!state.placeholderDelayMs) {
+      state.placeholderDelayMs = PLACEHOLDER_DELAY_MS;
+    }
+    if (state.placeholderTimer === undefined) {
+      state.placeholderTimer = 0;
+    }
   }
   widget.wsStreaming = state;
   return state;
@@ -37,6 +47,7 @@ export function clearStreamingState(widget, requestId) {
     if (widget.wsStreaming) {
       removeTypingRow(widget.wsStreaming);
       clearAnalysisTimer(widget.wsStreaming);
+      clearPlaceholderTimer(widget.wsStreaming);
       clearRenderTimer(widget.wsStreaming);
       widget.wsInFlightByRequestId.delete(widget.wsStreaming.requestId);
       widget.wsStreaming = null;
@@ -49,6 +60,7 @@ export function clearStreamingState(widget, requestId) {
   }
   removeTypingRow(existing);
   clearAnalysisTimer(existing);
+  clearPlaceholderTimer(existing);
   clearRenderTimer(existing);
   widget.wsInFlightByRequestId.delete(cleanRequestId);
 }
@@ -95,6 +107,7 @@ export function abortActiveStream(widget, reason = 'new-request') {
   }
   removeTypingRow(activeState);
   clearAnalysisTimer(activeState);
+  clearPlaceholderTimer(activeState);
   clearRenderTimer(activeState);
   widget.wsInFlightByRequestId.delete(activeState.requestId);
   widget.wsStreaming = null;
@@ -138,6 +151,12 @@ export function clearAnalysisTimer(state) {
   if (!state?.analysisTimer) return;
   clearTimeout(state.analysisTimer);
   state.analysisTimer = 0;
+}
+
+export function clearPlaceholderTimer(state) {
+  if (!state?.placeholderTimer) return;
+  clearTimeout(state.placeholderTimer);
+  state.placeholderTimer = 0;
 }
 
 export function clearRenderTimer(state) {
