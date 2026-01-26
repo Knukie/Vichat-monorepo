@@ -218,9 +218,10 @@ export function scheduleCheckingSourcesPlaceholder(widget, state) {
       await widget.messageController?.updateMessageText?.(activeState.uiRow, placeholderText, {
         streaming: true
       });
+      activeState.uiRow?.classList.add('valki-sources-placeholder');
       activeState.placeholderActive = true;
       activeState.placeholderText = placeholderText;
-      widget.setSourcesOverlayVisible?.(true);
+      widget.setSourcesOverlayVisible?.(false);
     })();
   }, PLACEHOLDER_DELAY_MS);
 }
@@ -292,6 +293,7 @@ export async function flushStream(widget, state) {
     widget.setSourcesOverlayVisible?.(false);
     if (state.placeholderActive) {
       widget.messageController?.clearInlineTypingIndicator?.(state.uiRow);
+      state.uiRow?.classList.remove('valki-sources-placeholder');
       state.placeholderActive = false;
       state.placeholderText = '';
     }
@@ -323,6 +325,7 @@ export async function finalizeStreaming(widget, state) {
     await widget.messageController?.updateMessageText?.(state.uiRow, finalText, { streaming: false });
   }
   widget.messageController?.clearInlineTypingIndicator?.(state.uiRow);
+  state.uiRow?.classList.remove('valki-sources-placeholder');
 
   if (!widget.isLoggedIn()) {
     widget.guestHistory.push({
