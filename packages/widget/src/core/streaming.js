@@ -151,6 +151,18 @@ export function ensureTypingIndicator(widget, state) {
 export async function ensureBotRow(widget, state, initialText = '') {
   if (!state || state.uiRow) return;
   const nextText = typeof initialText === 'string' ? initialText : '';
+  if (state.typingRow && typeof widget.messageController?.promoteTypingRowToMessage === 'function') {
+    const promoted = await widget.messageController.promoteTypingRowToMessage(
+      state.typingRow,
+      nextText,
+      { streaming: true }
+    );
+    if (promoted) {
+      state.uiRow = promoted;
+      state.typingRow = null;
+      return;
+    }
+  }
   state.uiRow = await widget.messageController?.addMessage({ type: 'assistant', text: nextText });
 }
 
@@ -271,6 +283,7 @@ export async function flushStream(widget, state) {
       streaming: true
     });
     if (state.placeholderActive) {
+      widget.messageController?.clearInlineTypingIndicator?.(state.uiRow);
       state.placeholderActive = false;
       state.placeholderText = '';
     }
@@ -301,6 +314,7 @@ export async function finalizeStreaming(widget, state) {
   } else {
     await widget.messageController?.updateMessageText?.(state.uiRow, finalText, { streaming: false });
   }
+  widget.messageController?.clearInlineTypingIndicator?.(state.uiRow);
 
   if (!widget.isLoggedIn()) {
     widget.guestHistory.push({
