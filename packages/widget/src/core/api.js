@@ -52,7 +52,12 @@ export async function fetchMessages({ token, config, agentId }) {
     const res = await fetch(withAgentParam(config.apiMessages, agentId), {
       headers: { Authorization: `Bearer ${token}` }
     });
-    if (!res.ok) return { ok: false, status: res.status, messages: [] };
+    if (!res.ok) {
+      if (res.status === 404 || res.status === 405) {
+        return { ok: true, status: res.status, messages: [] };
+      }
+      return { ok: false, status: res.status, messages: [] };
+    }
     const data = await res.json().catch(() => null);
     if (!data || !Array.isArray(data.messages)) return { ok: true, status: res.status, messages: [] };
     return {
