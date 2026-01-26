@@ -289,6 +289,7 @@ export async function flushStream(widget, state) {
     await widget.messageController?.updateMessageText?.(state.uiRow, state.text, {
       streaming: true
     });
+    widget.setSourcesOverlayVisible?.(false);
     if (state.placeholderActive) {
       widget.messageController?.clearInlineTypingIndicator?.(state.uiRow);
       state.placeholderActive = false;
