@@ -32,6 +32,7 @@ import {
   clearRenderTimer,
   clearStreamingState,
   ensureBotRow,
+  ensureStreamingPlaceholder,
   ensureTypingIndicator,
   finalizeStreaming,
   flushStream,
@@ -362,6 +363,10 @@ class ViChatWidget {
     return ensureBotRow(this, state);
   }
 
+  async ensureStreamingPlaceholder(state) {
+    return ensureStreamingPlaceholder(this, state);
+  }
+
   clearRenderTimer(state) {
     return clearRenderTimer(state);
   }
@@ -479,6 +484,7 @@ class ViChatWidget {
     this.setConversationId(message?.conversationId);
     state.started = true;
     this.ensureTypingIndicator(state);
+    await this.ensureStreamingPlaceholder(state);
   }
 
   async handleWsAssistantDelta(message) {
@@ -493,6 +499,9 @@ class ViChatWidget {
     if (!state.started) {
       state.started = true;
       this.ensureTypingIndicator(state);
+    }
+    if (delta && state.placeholderActive) {
+      state.placeholderActive = false;
     }
     this.clearAnalysisTimer(state);
     state.pendingBuffer += delta;

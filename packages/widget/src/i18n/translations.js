@@ -69,6 +69,9 @@ export const translations = {
     messages: {
       typing: 'Analyzing the signal…'
     },
+    streaming: {
+      checkingSources: 'Checking sources…'
+    },
     errors: {
       generic: 'Something went wrong talking to Valki.',
       noResponse: '…krrzzzt… no response received.',
@@ -178,6 +181,9 @@ export const translations = {
     messages: {
       typing: 'Signaal analyseren…'
     },
+    streaming: {
+      checkingSources: 'Bronnen controleren…'
+    },
     errors: {
       generic: 'Er is iets misgegaan tijdens het praten met Valki.',
       noResponse: '…krrzzzt… geen antwoord ontvangen.',
@@ -286,6 +292,9 @@ export const translations = {
     },
     messages: {
       typing: 'Signal wird analysiert…'
+    },
+    streaming: {
+      checkingSources: 'Quellen werden geprüft…'
     },
     errors: {
       generic: 'Beim Sprechen mit Valki ist etwas schiefgelaufen.',
@@ -397,6 +406,9 @@ export const translations = {
     messages: {
       typing: 'Analyse du signal…'
     },
+    streaming: {
+      checkingSources: 'Vérification des sources…'
+    },
     errors: {
       generic: 'Une erreur est survenue en parlant à Valki.',
       noResponse: '…krrzzzt… aucune réponse reçue.',
@@ -506,6 +518,9 @@ export const translations = {
     },
     messages: {
       typing: 'Analizando la señal…'
+    },
+    streaming: {
+      checkingSources: 'Comprobando fuentes…'
     },
     errors: {
       generic: 'Algo salió mal al hablar con Valki.',
@@ -617,6 +632,9 @@ export const translations = {
     messages: {
       typing: 'Analisi del segnale…'
     },
+    streaming: {
+      checkingSources: 'Verifica delle fonti…'
+    },
     errors: {
       generic: 'Qualcosa è andato storto parlando con Valki.',
       noResponse: '…krrzzzt… nessuna risposta ricevuta.',
@@ -727,6 +745,9 @@ export const translations = {
     messages: {
       typing: 'Analisando o sinal…'
     },
+    streaming: {
+      checkingSources: 'Verificando fontes…'
+    },
     errors: {
       generic: 'Algo deu errado ao falar com Valki.',
       noResponse: '…krrzzzt… nenhuma resposta recebida.',
@@ -836,6 +857,9 @@ export const translations = {
     },
     messages: {
       typing: 'Анализ сигнала…'
+    },
+    streaming: {
+      checkingSources: 'Проверка источников…'
     },
     errors: {
       generic: 'Произошла ошибка при общении с Valki.',
