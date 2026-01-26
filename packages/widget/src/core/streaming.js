@@ -1,3 +1,4 @@
+import { t } from '../i18n/index.js';
 import { cleanText, saveGuestHistory } from './storage.js';
 
 export const STREAM_FLUSH_FIRST_MS = 70;
@@ -5,6 +6,7 @@ export const STREAM_FLUSH_REST_MS = 15;
 export const STREAM_FIRST_CHUNK = 60;
 export const STREAM_REST_CHUNK = 800;
 export const PLACEHOLDER_DELAY_MS = 350;
+export const FIRST_PARAGRAPH_FALLBACK_CHARS = 220;
 
 function hasNonWhitespace(text) {
   return typeof text === 'string' && /\S/.test(text);
@@ -35,21 +37,25 @@ export function initStreamingState(widget, requestId) {
       placeholderActive: false,
       placeholderText: '',
       placeholderTimer: 0,
-      placeholderDelayMs: PLACEHOLDER_DELAY_MS,
       streamPhase: 'first',
+      firstParagraphCommitted: false,
+      firstParagraphText: '',
       renderTimer: 0,
       finishReason: ''
     };
     widget.wsInFlightByRequestId.set(cleanRequestId, state);
   } else {
-    if (!state.placeholderDelayMs) {
-      state.placeholderDelayMs = PLACEHOLDER_DELAY_MS;
-    }
     if (state.placeholderTimer === undefined) {
       state.placeholderTimer = 0;
     }
     if (!state.streamPhase) {
       state.streamPhase = 'first';
+    }
+    if (state.firstParagraphCommitted === undefined) {
+      state.firstParagraphCommitted = false;
+    }
+    if (state.firstParagraphText === undefined) {
+      state.firstParagraphText = '';
     }
   }
   widget.wsStreaming = state;
@@ -62,7 +68,7 @@ export function clearStreamingState(widget, requestId) {
     if (widget.wsStreaming) {
       removeTypingRow(widget.wsStreaming);
       clearAnalysisTimer(widget.wsStreaming);
-      clearPlaceholderTimer(widget.wsStreaming);
+      cancelCheckingSourcesPlaceholder(widget.wsStreaming);
       clearRenderTimer(widget.wsStreaming);
       widget.wsInFlightByRequestId.delete(widget.wsStreaming.requestId);
       widget.wsStreaming = null;
@@ -75,7 +81,7 @@ export function clearStreamingState(widget, requestId) {
   }
   removeTypingRow(existing);
   clearAnalysisTimer(existing);
-  clearPlaceholderTimer(existing);
+  cancelCheckingSourcesPlaceholder(existing);
   clearRenderTimer(existing);
   widget.wsInFlightByRequestId.delete(cleanRequestId);
 }
@@ -117,7 +123,7 @@ export function abortActiveStream(widget, reason = 'new-request') {
   }
   removeTypingRow(activeState);
   clearAnalysisTimer(activeState);
-  clearPlaceholderTimer(activeState);
+  cancelCheckingSourcesPlaceholder(activeState);
   clearRenderTimer(activeState);
   widget.wsInFlightByRequestId.delete(activeState.requestId);
   widget.wsStreaming = null;
@@ -164,7 +170,7 @@ export function clearAnalysisTimer(state) {
   state.analysisTimer = 0;
 }
 
-export function clearPlaceholderTimer(state) {
+export function cancelCheckingSourcesPlaceholder(state) {
   if (!state?.placeholderTimer) return;
   clearTimeout(state.placeholderTimer);
   state.placeholderTimer = 0;
@@ -176,10 +182,9 @@ export function clearRenderTimer(state) {
   state.renderTimer = 0;
 }
 
-export function schedulePlaceholderTimer(widget, state, placeholderText) {
+export function scheduleCheckingSourcesPlaceholder(widget, state) {
   if (!state) return;
-  clearPlaceholderTimer(state);
-  state.placeholderText = placeholderText || '';
+  cancelCheckingSourcesPlaceholder(state);
   state.placeholderTimer = window.setTimeout(() => {
     void (async () => {
       const activeState = widget.wsStreaming;
@@ -187,18 +192,21 @@ export function schedulePlaceholderTimer(widget, state, placeholderText) {
       if (activeState.requestId !== state.requestId) return;
       if (activeState.ended || activeState.finalized) return;
       if (widget.abortedRequestIds?.has(activeState.requestId)) return;
+      if (activeState.uiRow) return;
       if (hasRealContent(activeState)) return;
       const content = activeState.uiRow?.querySelector('.valki-msg-content');
       const existingText = content?.textContent?.trim() || '';
       if (activeState.uiRow && existingText) return;
-      await ensureBotRow(widget, activeState, state.placeholderText);
+      const placeholderText = t('streaming.checkingSources');
+      await ensureBotRow(widget, activeState, placeholderText);
       if (!activeState.uiRow) return;
-      await widget.messageController?.updateMessageText?.(activeState.uiRow, state.placeholderText, {
+      await widget.messageController?.updateMessageText?.(activeState.uiRow, placeholderText, {
         streaming: true
       });
       activeState.placeholderActive = true;
+      activeState.placeholderText = placeholderText;
     })();
-  }, state.placeholderDelayMs);
+  }, PLACEHOLDER_DELAY_MS);
 }
 
 export function scheduleStreamFlush(widget, state) {
@@ -213,12 +221,38 @@ export function scheduleStreamFlush(widget, state) {
 export async function flushStream(widget, state) {
   if (!state) return;
   if (state.pendingBuffer) {
-    const chunkSize = state.streamPhase === 'rest' ? STREAM_REST_CHUNK : STREAM_FIRST_CHUNK;
-    const chunk = state.pendingBuffer.slice(0, chunkSize);
-    state.pendingBuffer = state.pendingBuffer.slice(chunk.length);
-    state.text += chunk;
+    if (!state.firstParagraphCommitted) {
+      const combined = `${state.text}${state.pendingBuffer}`;
+      const boundaryIndex = combined.indexOf('\n\n');
+      let commitLength = 0;
+      if (boundaryIndex >= 0) {
+        commitLength = boundaryIndex + 2;
+      } else if (combined.length >= FIRST_PARAGRAPH_FALLBACK_CHARS) {
+        commitLength = FIRST_PARAGRAPH_FALLBACK_CHARS;
+      }
+      if (commitLength > 0) {
+        const commitText = combined.slice(0, commitLength);
+        state.firstParagraphText = commitText;
+        state.text = commitText;
+        state.pendingBuffer = combined.slice(commitLength);
+        state.firstParagraphCommitted = true;
+        state.streamPhase = 'rest';
+      }
+    }
+    if (!state.firstParagraphCommitted) {
+      const chunkSize = STREAM_FIRST_CHUNK;
+      const chunk = state.pendingBuffer.slice(0, chunkSize);
+      state.pendingBuffer = state.pendingBuffer.slice(chunk.length);
+      state.text += chunk;
+      state.firstParagraphText = state.text;
+    } else if (state.pendingBuffer) {
+      const chunkSize = STREAM_REST_CHUNK;
+      const chunk = state.pendingBuffer.slice(0, chunkSize);
+      state.pendingBuffer = state.pendingBuffer.slice(chunk.length);
+      state.text += chunk;
+    }
   }
-  if (state.text.includes('\n\n')) {
+  if (state.firstParagraphCommitted || state.text.includes('\n\n')) {
     state.streamPhase = 'rest';
   }
   if (hasNonWhitespace(state.text)) {
@@ -226,6 +260,10 @@ export async function flushStream(widget, state) {
     await widget.messageController?.updateMessageText?.(state.uiRow, state.text, {
       streaming: true
     });
+    if (state.placeholderActive) {
+      state.placeholderActive = false;
+      state.placeholderText = '';
+    }
   }
   if (state.pendingBuffer) {
     scheduleStreamFlush(widget, state);
