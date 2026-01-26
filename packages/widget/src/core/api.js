@@ -45,13 +45,20 @@ function withAgentParam(url, agentId) {
   return next.toString();
 }
 
+function withConversationParam(url, conversationId) {
+  if (!conversationId) return url;
+  const next = new URL(url, window.location.href);
+  next.searchParams.set('conversationId', conversationId);
+  return next.toString();
+}
+
 /** @returns {Promise<FetchMessagesResult>} */
-export async function fetchMessages({ token, config, agentId }) {
-  if (!token) return { ok: false, status: 0, messages: [] };
+export async function fetchMessages({ token, config, agentId, conversationId }) {
+  if (!token && !conversationId) return { ok: false, status: 0, messages: [] };
+  const url = withConversationParam(withAgentParam(config.apiMessages, agentId), conversationId);
+  const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
   try {
-    const res = await fetch(withAgentParam(config.apiMessages, agentId), {
-      headers: { Authorization: `Bearer ${token}` }
-    });
+    const res = await fetch(url, { headers });
     if (!res.ok) {
       if (res.status === 404 || res.status === 405) {
         return { ok: true, status: res.status, messages: [] };
