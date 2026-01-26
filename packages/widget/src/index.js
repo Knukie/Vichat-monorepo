@@ -1791,8 +1791,23 @@ class ViChatWidget {
       this.scheduleLayoutMetrics?.();
       return;
     }
+    this.abortActiveStream('clear-chat');
+    this.wsPendingMessage = null;
+    this.wsStreaming = null;
+    this.wsInFlightByRequestId.clear();
+    this.abortedRequestIds.clear();
+    this.abortedMessageIds.clear();
+    if (this.ws) {
+      try {
+        this.ws.close(1000, 'clear-chat');
+      } catch {
+        /* ignore */
+      }
+    }
     this.guestHistory = [];
     saveGuestHistory(this.guestHistory, this.config, this.currentAgentId);
+    this.conversationId = '';
+    saveConversationId(this.currentAgentId, '');
     this.messageController.clearMessagesUI();
     this.scheduleLayoutMetrics?.();
   }
