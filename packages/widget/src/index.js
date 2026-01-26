@@ -29,6 +29,7 @@ import { createWsClient } from './core/wsClient.js';
 import {
   abortActiveStream,
   clearAnalysisTimer,
+  clearPlaceholderTimer,
   clearRenderTimer,
   clearStreamingState,
   ensureBotRow,
@@ -354,6 +355,10 @@ class ViChatWidget {
     return clearAnalysisTimer(state);
   }
 
+  clearPlaceholderTimer(state) {
+    return clearPlaceholderTimer(state);
+  }
+
   ensureTypingIndicator(state) {
     return ensureTypingIndicator(this, state);
   }
@@ -479,6 +484,28 @@ class ViChatWidget {
     this.setConversationId(message?.conversationId);
     state.started = true;
     this.ensureTypingIndicator(state);
+    this.clearPlaceholderTimer(state);
+    state.placeholderTimer = window.setTimeout(() => {
+      void (async () => {
+        const activeState = this.wsStreaming;
+        if (!activeState || activeState !== state) return;
+        if (activeState.requestId !== requestId) return;
+        if (activeState.ended || activeState.finalized) return;
+        if (this.abortedRequestIds?.has(activeState.requestId)) return;
+        if (activeState.text || activeState.pendingBuffer) return;
+        const content = activeState.uiRow?.querySelector('.valki-msg-content');
+        const existingText = content?.textContent?.trim() || '';
+        if (activeState.uiRow && existingText) return;
+        const placeholder = t('streaming.checkingSources');
+        await this.ensureBotRow(activeState);
+        if (!activeState.uiRow) return;
+        await this.messageController?.updateMessageText?.(activeState.uiRow, placeholder, {
+          streaming: true
+        });
+        activeState.placeholderActive = true;
+        activeState.placeholderText = placeholder;
+      })();
+    }, state.placeholderDelayMs);
   }
 
   async handleWsAssistantDelta(message) {
@@ -493,6 +520,11 @@ class ViChatWidget {
     if (!state.started) {
       state.started = true;
       this.ensureTypingIndicator(state);
+    }
+    this.clearPlaceholderTimer(state);
+    if (state.placeholderActive) {
+      state.placeholderActive = false;
+      state.placeholderText = '';
     }
     this.clearAnalysisTimer(state);
     state.pendingBuffer += delta;
@@ -512,6 +544,7 @@ class ViChatWidget {
     state.ended = true;
     state.finishReason = cleanText(message?.finishReason || '');
     this.clearAnalysisTimer(state);
+    this.clearPlaceholderTimer(state);
     this.scheduleStreamFlush(state);
   }
 
@@ -530,6 +563,7 @@ class ViChatWidget {
     const state = requestId ? this.wsInFlightByRequestId.get(requestId) : this.wsStreaming;
     if (state) {
       this.clearAnalysisTimer(state);
+      this.clearPlaceholderTimer(state);
       this.clearRenderTimer(state);
       state.showAnalysis = false;
       this.removeTypingRow(state);
