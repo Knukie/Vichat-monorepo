@@ -121,6 +121,9 @@ export function abortActiveStream(widget, reason = 'new-request') {
     activeState.placeholderActive = false;
     activeState.placeholderText = '';
   }
+  if (activeState.uiRow) {
+    widget.messageController?.clearInlineTypingIndicator?.(activeState.uiRow);
+  }
   removeTypingRow(activeState);
   clearAnalysisTimer(activeState);
   cancelCheckingSourcesPlaceholder(activeState);
