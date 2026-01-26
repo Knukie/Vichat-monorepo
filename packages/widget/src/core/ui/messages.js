@@ -92,6 +92,17 @@ export function createMessageController({
     notifyScrollUpdate();
   }
 
+  function removeMessageRow(row) {
+    if (!row) return;
+    try {
+      row.remove();
+    } catch {
+      /* ignore */
+    }
+    updateDeleteButtonVisibility?.();
+    notifyScrollUpdate();
+  }
+
   function createTypingMessageRow() {
     const existingRows = messagesInner.querySelectorAll('.valki-typing-indicator');
     existingRows.forEach((indicator) => {
@@ -156,6 +167,7 @@ export function createMessageController({
     setAgentMeta,
     setUserLabel,
     removeTypingRows,
+    removeMessageRow,
     updateMessageText,
     isNearBottom: () => isNearBottom(messagesEl),
     scrollToBottom,

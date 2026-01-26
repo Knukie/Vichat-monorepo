@@ -20,6 +20,8 @@ export function initStreamingState(widget, requestId) {
       showAnalysis: false,
       typingRow: null,
       uiRow: null,
+      placeholderActive: false,
+      placeholderText: '',
       renderTimer: 0,
       finishReason: ''
     };
@@ -68,6 +70,29 @@ export function abortActiveStream(widget, reason = 'new-request') {
   if (widget.wsPendingMessage?.messageId) {
     widget.abortedMessageIds.add(widget.wsPendingMessage.messageId);
   }
+  if (
+    activeState.uiRow &&
+    activeState.placeholderActive &&
+    !activeState.text &&
+    !activeState.pendingBuffer
+  ) {
+    const removeRow =
+      widget.messageController?.removeMessageRow ||
+      widget.messageController?.removeMessage ||
+      widget.messageController?.deleteRow;
+    if (typeof removeRow === 'function') {
+      removeRow(activeState.uiRow);
+    } else {
+      try {
+        activeState.uiRow.remove();
+      } catch {
+        /* ignore */
+      }
+    }
+    activeState.uiRow = null;
+    activeState.placeholderActive = false;
+    activeState.placeholderText = '';
+  }
   removeTypingRow(activeState);
   clearAnalysisTimer(activeState);
   clearRenderTimer(activeState);
@@ -82,6 +107,9 @@ export function abortActiveStream(widget, reason = 'new-request') {
   console.debug('[ViChat debug] aborted stream', { reason, requestId: activeState.requestId });
   return true;
 }
+
+// Regression scenario:
+// - Start stream -> placeholder appears -> abort before first delta -> placeholder must disappear.
 
 export function ensureTypingIndicator(widget, state) {
   if (!state || state.showAnalysis) return;
