@@ -1240,6 +1240,7 @@ html.valki-chat-open #valki-root .valki-bubble{
   flex: 1 1 auto;
   width: 100%;
   max-width: min(100%, 720px);
+  margin-right: 12px;
   background: rgba(255,255,255,.035);
   border: 1px solid rgba(255,255,255,.08);
 }
