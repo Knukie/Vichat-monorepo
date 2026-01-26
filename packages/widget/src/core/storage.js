@@ -45,6 +45,30 @@ function removeLocalStorage(key) {
   }
 }
 
+function resolveConversationKey(agentId) {
+  const safeId = String(agentId || '').trim();
+  if (!safeId) return null;
+  return `vichat_conversation_${safeId}`;
+}
+
+export function loadConversationId(agentId) {
+  const key = resolveConversationKey(agentId);
+  if (!key) return null;
+  const stored = readLocalStorage(key);
+  return typeof stored === 'string' && stored ? stored : null;
+}
+
+export function saveConversationId(agentId, conversationId) {
+  const key = resolveConversationKey(agentId);
+  if (!key) return;
+  const safeValue = String(conversationId || '').trim();
+  if (!safeValue) {
+    removeLocalStorage(key);
+    return;
+  }
+  writeLocalStorage(key, safeValue);
+}
+
 export function getAuthToken(config = DEFAULT_CONSTANTS) {
   return readLocalStorage(config.authKey) || '';
 }
