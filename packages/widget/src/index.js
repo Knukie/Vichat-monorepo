@@ -6,9 +6,11 @@ import {
   clearGuestHistory,
   getAuthToken,
   getOrCreateClientId,
+  loadConversationId,
   loadSelectedAgentId,
   loadGuestHistory,
   markBubbleSeen,
+  saveConversationId,
   saveGuestHistory,
   saveSelectedAgentId,
   setAuthToken,
@@ -205,6 +207,7 @@ class ViChatWidget {
     this.view = 'chat';
     this.resolveInitialAgentState();
     this.selectedAgentId = this.currentAgentId;
+    this.loadConversationIdForAgent(this.currentAgentId);
     this.elements = null;
     this.attachmentController = null;
     this.messageController = null;
@@ -241,6 +244,18 @@ class ViChatWidget {
     if (!this.copyOverrides?.noResponse) {
       this.config.copy.noResponse = t('errors.noResponse');
     }
+  }
+
+  loadConversationIdForAgent(agentId) {
+    this.conversationId = loadConversationId(agentId) || '';
+  }
+
+  setConversationId(nextConversationId) {
+    const cleanId = cleanText(nextConversationId || '');
+    if (!cleanId) return;
+    if (cleanId === this.conversationId) return;
+    this.conversationId = cleanId;
+    saveConversationId(this.currentAgentId, this.conversationId);
   }
 
   resetWsBackoff() {
@@ -564,7 +579,7 @@ class ViChatWidget {
       return;
     }
     const nextConversationId = cleanText(message.conversationId || '');
-    if (nextConversationId) this.conversationId = nextConversationId;
+    if (nextConversationId) this.setConversationId(nextConversationId);
 
     const pending = this.wsPendingMessage;
     const pendingRequestId = pending?.requestId || '';
@@ -640,6 +655,7 @@ class ViChatWidget {
     const state = this.initStreamingState(requestId);
     if (!state) return;
     state.assistantMessageId = cleanText(message?.messageId || '');
+    this.setConversationId(message?.conversationId);
     state.started = true;
     this.ensureTypingIndicator(state);
   }
@@ -1505,6 +1521,7 @@ class ViChatWidget {
     if (!agent) return;
     this.currentAgentId = agent.id;
     this.selectedAgentId = agent.id;
+    this.loadConversationIdForAgent(agent.id);
     saveSelectedAgentId(agent.id, this.config);
     this.setView('chat');
     this.applyAgentToHeader(agent);
@@ -1739,6 +1756,24 @@ class ViChatWidget {
       }
       return;
     }
+    if (this.conversationId) {
+      const { ok, messages } = await fetchMessages({
+        token: '',
+        config: this.config,
+        agentId: this.currentAgentId,
+        conversationId: this.conversationId
+      });
+      if (ok) {
+        this.messageController.clearMessagesUI();
+        for (const m of messages || []) {
+          await this.messageController.addMessage({ type: m.role, text: m.text, images: m.images });
+        }
+        this.messageController.scrollToBottom(true);
+        this.updateDeleteButtonVisibility();
+        this.scheduleLayoutMetrics?.();
+        return;
+      }
+    }
     this.guestHistory = loadGuestHistory(this.config, this.currentAgentId);
     await this.renderGuestHistoryToUI();
     if (this.guestMeter.guestHardBlocked()) this.openAuthOverlay(true);
@@ -1936,6 +1971,7 @@ class ViChatWidget {
     if (shouldShowBubbleBadge(this.config)) this.showBubbleBadge('1');
 
     this.resolveInitialAgentState();
+    this.loadConversationIdForAgent(this.currentAgentId);
     this.setView(this.view);
     this.selectedAgentId = this.currentAgentId;
     this.renderAgentHub();
