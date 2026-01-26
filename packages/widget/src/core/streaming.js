@@ -194,9 +194,6 @@ export function scheduleCheckingSourcesPlaceholder(widget, state) {
       if (widget.abortedRequestIds?.has(activeState.requestId)) return;
       if (activeState.uiRow) return;
       if (hasRealContent(activeState)) return;
-      const content = activeState.uiRow?.querySelector('.valki-msg-content');
-      const existingText = content?.textContent?.trim() || '';
-      if (activeState.uiRow && existingText) return;
       const placeholderText = t('streaming.checkingSources');
       await ensureBotRow(widget, activeState, placeholderText);
       if (!activeState.uiRow) return;
@@ -228,7 +225,20 @@ export async function flushStream(widget, state) {
       if (boundaryIndex >= 0) {
         commitLength = boundaryIndex + 2;
       } else if (combined.length >= FIRST_PARAGRAPH_FALLBACK_CHARS) {
-        commitLength = FIRST_PARAGRAPH_FALLBACK_CHARS;
+        const fallbackLength = FIRST_PARAGRAPH_FALLBACK_CHARS;
+        const fallbackTarget = Math.min(fallbackLength, combined.length);
+        let whitespaceIndex = -1;
+        for (let i = fallbackTarget - 1; i >= 0; i -= 1) {
+          if (/\s/.test(combined[i])) {
+            whitespaceIndex = i + 1;
+            break;
+          }
+        }
+        if (whitespaceIndex >= 120) {
+          commitLength = whitespaceIndex;
+        } else {
+          commitLength = fallbackLength;
+        }
       }
       if (commitLength > 0) {
         const commitText = combined.slice(0, commitLength);
