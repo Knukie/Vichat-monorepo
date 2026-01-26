@@ -70,6 +70,7 @@ export function clearStreamingState(widget, requestId) {
       clearAnalysisTimer(widget.wsStreaming);
       cancelCheckingSourcesPlaceholder(widget.wsStreaming);
       clearRenderTimer(widget.wsStreaming);
+      widget.setSourcesOverlayVisible?.(false);
       widget.wsInFlightByRequestId.delete(widget.wsStreaming.requestId);
       widget.wsStreaming = null;
     }
@@ -83,6 +84,7 @@ export function clearStreamingState(widget, requestId) {
   clearAnalysisTimer(existing);
   cancelCheckingSourcesPlaceholder(existing);
   clearRenderTimer(existing);
+  widget.setSourcesOverlayVisible?.(false);
   widget.wsInFlightByRequestId.delete(cleanRequestId);
 }
 
@@ -128,6 +130,7 @@ export function abortActiveStream(widget, reason = 'new-request') {
   clearAnalysisTimer(activeState);
   cancelCheckingSourcesPlaceholder(activeState);
   clearRenderTimer(activeState);
+  widget.setSourcesOverlayVisible?.(false);
   widget.wsInFlightByRequestId.delete(activeState.requestId);
   widget.wsStreaming = null;
   if (widget.wsPendingMessage?.requestId === activeState.requestId) {
@@ -217,6 +220,7 @@ export function scheduleCheckingSourcesPlaceholder(widget, state) {
       });
       activeState.placeholderActive = true;
       activeState.placeholderText = placeholderText;
+      widget.setSourcesOverlayVisible?.(true);
     })();
   }, PLACEHOLDER_DELAY_MS);
 }

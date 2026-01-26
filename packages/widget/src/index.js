@@ -86,6 +86,8 @@ const REQUIRED_IDS = [
   'valki-messages',
   'valki-messages-inner',
   'valki-scroll-bottom',
+  'valki-sources-overlay',
+  'valki-sources-label',
   'valki-chat-form',
   'valki-chat-input',
   'valki-chat-send',
@@ -356,7 +358,9 @@ class ViChatWidget {
   }
 
   cancelCheckingSourcesPlaceholder(state) {
-    return cancelCheckingSourcesPlaceholder(state);
+    const result = cancelCheckingSourcesPlaceholder(state);
+    this.setSourcesOverlayVisible(false);
+    return result;
   }
 
   ensureTypingIndicator(state) {
@@ -632,6 +636,7 @@ class ViChatWidget {
     el['valki-chat-send'].setAttribute('aria-label', t('buttons.send'));
     el['valki-chat-input'].setAttribute('aria-label', composerLabel);
     el['valki-attachments'].setAttribute('aria-label', t('attachments.label'));
+    el['valki-sources-label'].textContent = t('streaming.checkingSources');
 
     const disclaimerText = el['valki-root'].querySelector('.valki-disclaimer > div');
     if (disclaimerText) disclaimerText.textContent = t('disclaimer.text');
@@ -1571,6 +1576,13 @@ class ViChatWidget {
     this.messageController.scrollToBottom(true);
     this.updateDeleteButtonVisibility();
     this.scheduleLayoutMetrics?.();
+  }
+
+  setSourcesOverlayVisible(isVisible) {
+    const overlay = this.elements?.['valki-sources-overlay'];
+    if (!overlay) return;
+    overlay.classList.toggle('is-visible', isVisible);
+    overlay.setAttribute('aria-hidden', isVisible ? 'false' : 'true');
   }
 
   setSendingState(isBusy) {
