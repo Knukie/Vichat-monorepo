@@ -86,6 +86,36 @@ export function createMessageController({
     notifyScrollUpdate();
   }
 
+  async function promoteTypingRowToMessage(row, text, opts = {}) {
+    if (!row) return null;
+    row.classList.remove('valki-typing-row');
+    let bubble = row.querySelector('.valki-msg-bubble');
+    if (!bubble) {
+      bubble = document.createElement('div');
+      bubble.className = 'valki-msg-bubble';
+      row.appendChild(bubble);
+    }
+    let content = bubble.querySelector('.valki-msg-content');
+    if (!content) {
+      content = document.createElement('div');
+      content.className = 'valki-msg-content';
+      bubble.appendChild(content);
+    }
+    const indicator = row.querySelector('.valki-typing-indicator');
+    if (indicator && !bubble.contains(indicator)) {
+      bubble.appendChild(indicator);
+    }
+    await updateMessageText(row, text, opts);
+    return row;
+  }
+
+  function clearInlineTypingIndicator(row) {
+    if (!row) return;
+    const indicator = row.querySelector('.valki-typing-indicator');
+    if (!indicator) return;
+    indicator.remove();
+  }
+
   function clearMessagesUI() {
     messagesInner.innerHTML = '';
     updateDeleteButtonVisibility?.();
@@ -168,6 +198,8 @@ export function createMessageController({
     setUserLabel,
     removeTypingRows,
     removeMessageRow,
+    promoteTypingRowToMessage,
+    clearInlineTypingIndicator,
     updateMessageText,
     isNearBottom: () => isNearBottom(messagesEl),
     scrollToBottom,
