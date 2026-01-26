@@ -321,6 +321,7 @@ html.valki-chat-open #valki-root .valki-bubble{
   width: 100%;
   display: flex;
   flex-direction: column;
+  position: relative;
   min-height: 0;
 }
 
@@ -347,6 +348,78 @@ html.valki-chat-open #valki-root .valki-bubble{
   display: flex;
   opacity: 1;
   pointer-events: auto;
+}
+
+/* ===============================
+   STREAMING — CHECKING SOURCES
+================================ */
+
+#valki-root .valki-sources-overlay{
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-start;
+  padding: 24px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(8px);
+  transition: opacity 160ms ease, transform 160ms ease;
+  z-index: 8;
+}
+
+#valki-root .valki-sources-overlay.is-visible{
+  opacity: 1;
+  transform: translateY(0);
+}
+
+#valki-root .valki-sources-card{
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  border-radius: 18px;
+  background: rgba(16,16,16,.6);
+  border: 1px solid rgba(255,255,255,.14);
+  box-shadow: 0 16px 40px rgba(0,0,0,.35);
+  color: var(--text);
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+}
+
+#valki-root .valki-sources-dot{
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.75), rgba(241,90,36,.85) 40%, rgba(186,72,32,.9));
+  box-shadow: 0 0 16px rgba(241,90,36,.45);
+  animation: valki-sources-pulse 1.4s ease-in-out infinite;
+}
+
+#valki-root .valki-sources-label{
+  font-size: 0.98rem;
+}
+
+@keyframes valki-sources-pulse{
+  0%, 100%{
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  50%{
+    transform: scale(1.08);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce){
+  #valki-root .valki-sources-overlay{
+    transition: none;
+  }
+  #valki-root .valki-sources-dot{
+    animation: none;
+  }
 }
 
 /* ===============================
