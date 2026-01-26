@@ -34,9 +34,7 @@ import {
   clearStreamingState,
   ensureBotRow,
   ensureTypingIndicator,
-  FIRST_PARAGRAPH_FALLBACK_CHARS,
   finalizeStreaming,
-  flushStream,
   initStreamingState,
   removeTypingRow,
   scheduleCheckingSourcesPlaceholder,
@@ -382,10 +380,6 @@ class ViChatWidget {
     return scheduleCheckingSourcesPlaceholder(this, state);
   }
 
-  async flushStream(state) {
-    return flushStream(this, state);
-  }
-
   async finalizeStreaming(state) {
     return finalizeStreaming(this, state);
   }
@@ -490,11 +484,6 @@ class ViChatWidget {
     state.assistantMessageId = cleanText(message?.messageId || '');
     this.setConversationId(message?.conversationId);
     state.started = true;
-    state.streamPhase = 'first';
-    state.placeholderActive = false;
-    state.placeholderText = '';
-    state.firstParagraphCommitted = false;
-    state.firstParagraphText = '';
     this.ensureTypingIndicator(state);
     this.scheduleCheckingSourcesPlaceholder(state);
   }
@@ -508,34 +497,12 @@ class ViChatWidget {
     if (!Number.isFinite(seq) || seq <= state.lastSeq) return;
     state.lastSeq = seq;
     const delta = typeof message?.delta === 'string' ? message.delta : '';
-    const hasRealDelta = /\S/.test(delta);
-    this.cancelCheckingSourcesPlaceholder(state);
     if (!state.started) {
       state.started = true;
       this.ensureTypingIndicator(state);
     }
-    const hadPlaceholder = state.placeholderActive;
-    if (hasRealDelta) {
-      if (state.placeholderActive) {
-        state.placeholderActive = false;
-        state.placeholderText = '';
-      }
-    }
-    this.clearAnalysisTimer(state);
+    this.cancelCheckingSourcesPlaceholder(state);
     state.pendingBuffer += delta;
-    if (!hasRealDelta && !/\S/.test(state.text)) return;
-    if (hasRealDelta && hadPlaceholder) {
-      await this.flushStream(state);
-      return;
-    }
-    if (!state.firstParagraphCommitted) {
-      const combined = `${state.text}${state.pendingBuffer}`;
-      if (combined.includes('\n\n') || combined.length >= FIRST_PARAGRAPH_FALLBACK_CHARS) {
-        this.clearRenderTimer(state);
-        await this.flushStream(state);
-        return;
-      }
-    }
     this.scheduleStreamFlush(state);
   }
 
@@ -551,7 +518,6 @@ class ViChatWidget {
     }
     state.ended = true;
     state.finishReason = cleanText(message?.finishReason || '');
-    this.clearAnalysisTimer(state);
     this.cancelCheckingSourcesPlaceholder(state);
     this.scheduleStreamFlush(state);
   }
@@ -562,16 +528,18 @@ class ViChatWidget {
     const errorMessage = cleanText(message?.message || '') || this.config.copy.genericError;
     if (this.shouldIgnoreStreamEvent(requestId, 'assistant.message.error')) return;
 
+    const state = requestId ? this.wsInFlightByRequestId.get(requestId) : this.wsStreaming;
+    if (state) {
+      this.cancelCheckingSourcesPlaceholder(state);
+    }
+
     if (code === 'UNAUTHORIZED') {
       this.handleWsError({ code, messageId: this.wsPendingMessage?.messageId || '' });
       this.clearStreamingState(requestId);
       return;
     }
-
-    const state = requestId ? this.wsInFlightByRequestId.get(requestId) : this.wsStreaming;
     if (state) {
       this.clearAnalysisTimer(state);
-      this.cancelCheckingSourcesPlaceholder(state);
       this.clearRenderTimer(state);
       state.showAnalysis = false;
       this.removeTypingRow(state);
