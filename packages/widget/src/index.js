@@ -8,7 +8,6 @@ import {
   getOrCreateClientId,
   loadConversationId,
   loadSelectedAgentId,
-  loadGuestHistory,
   markBubbleSeen,
   saveConversationId,
   saveGuestHistory,
@@ -25,7 +24,29 @@ import { createComposerController } from './core/ui/composer.js';
 import { createOverlayController, setVisible } from './core/ui/overlay.js';
 import { createWidgetHost } from './core/ui/widgetHost.js';
 import { createAuthController } from './core/auth.js';
-import { clearMessages, fetchMe, fetchMessages, importGuestMessages, uploadImages } from './core/api.js';
+import { fetchMe, importGuestMessages, uploadImages } from './core/api.js';
+import { createWsClient } from './core/wsClient.js';
+import {
+  abortActiveStream,
+  clearAnalysisTimer,
+  clearRenderTimer,
+  clearStreamingState,
+  ensureBotRow,
+  ensureTypingIndicator,
+  finalizeStreaming,
+  flushStream,
+  initStreamingState,
+  removeTypingRow,
+  scheduleStreamFlush,
+  shouldIgnoreStreamEvent
+} from './core/streaming.js';
+import {
+  clearChatAll,
+  handleClearingChatSocketClose,
+  loadLoggedInMessagesToUI,
+  loadMessagesForCurrentAgent,
+  logout
+} from './core/chatActions.js';
 import { detectLocale, setLocale, t } from './i18n/index.js';
 import { resolveTheme } from './themes/index.js';
 
@@ -85,9 +106,6 @@ const REQUIRED_IDS = [
   'valki-logout-no',
   'valki-logout-yes'
 ];
-// Streaming UI thresholds (tuned to feel ChatGPT-like).
-const STREAM_FLUSH_MS = 80;
-
 function ensureStyle(theme) {
   const styleId = `vichat-theme-${theme.name}`;
   if (document.getElementById(styleId)) return;
@@ -225,16 +243,20 @@ class ViChatWidget {
     this._readyDispatched = false;
     this.isOpen = false;
     this.teardownUi = null;
-    this.ws = null;
-    this.wsReady = false;
-    this.wsAuthenticated = false;
-    this.wsBackoffMs = 500;
-    this.wsReconnectTimer = 0;
     this.wsPendingMessage = null;
     this.wsStreaming = null;
     this.wsInFlightByRequestId = new Map();
     this.abortedRequestIds = new Set();
     this.abortedMessageIds = new Set();
+    this._isClearingChat = false;
+    this._clearChatAbortTimer = 0;
+    this.wsClient = createWsClient({
+      getUrl: () => this.config.wsUrl,
+      getToken: () => this.token,
+      onReady: () => this.sendPendingWsMessage(),
+      onMessage: (message) => this.handleWsMessage(message),
+      onClose: (reason) => this.handleWsClose(reason)
+    });
   }
 
   updateLocalizedCopy() {
@@ -258,303 +280,102 @@ class ViChatWidget {
     saveConversationId(this.currentAgentId, this.conversationId);
   }
 
-  resetWsBackoff() {
-    this.wsBackoffMs = 500;
-    if (this.wsReconnectTimer) {
-      clearTimeout(this.wsReconnectTimer);
-      this.wsReconnectTimer = 0;
-    }
-  }
-
-  scheduleWsReconnect(reason) {
-    if (this.wsReconnectTimer) return;
-    const delay = this.wsBackoffMs;
-    this.wsBackoffMs = Math.min(this.wsBackoffMs * 2, 8000);
-    this.wsReconnectTimer = window.setTimeout(() => {
-      this.wsReconnectTimer = 0;
-      this.connectWebSocket(`reconnect:${reason}`);
-    }, delay);
-  }
-
   ensureWebSocket() {
-    if (this.ws && (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING)) {
-      return;
-    }
-    this.connectWebSocket('ensure');
+    this.wsClient.connect('ensure');
   }
 
   connectWebSocket(reason) {
-    if (typeof WebSocket === 'undefined') return;
-    const wsUrl = this.config.wsUrl;
-    if (!wsUrl) return;
-
-    try {
-      const ws = new WebSocket(wsUrl);
-      this.ws = ws;
-      this.wsReady = false;
-
-      ws.addEventListener('open', () => {
-        this.resetWsBackoff();
-        this.sendWebSocketAuth();
-      });
-
-      ws.addEventListener('message', (event) => {
-        const raw = typeof event.data === 'string' ? event.data : '';
-        let message = null;
-        try {
-          message = JSON.parse(raw);
-        } catch {
-          return;
-        }
-
-        if (!message || message.v !== 1 || typeof message.type !== 'string') return;
-        if (message.type === 'ready') {
-          this.wsReady = true;
-          this.wsAuthenticated = Boolean(message.authenticated);
-          this.sendPendingWsMessage();
-          return;
-        }
-        if (message.type === 'pong') return;
-        if (message.type === 'assistant.message.start') {
-          void this.handleWsAssistantStart(message);
-          return;
-        }
-        if (message.type === 'assistant.message.delta') {
-          void this.handleWsAssistantDelta(message);
-          return;
-        }
-        if (message.type === 'assistant.message.end') {
-          void this.handleWsAssistantEnd(message);
-          return;
-        }
-        if (message.type === 'assistant.message.error') {
-          void this.handleWsAssistantError(message);
-          return;
-        }
-        if (message.type === 'message') {
-          this.handleWsReply(message);
-          return;
-        }
-        if (message.type === 'error') {
-          this.handleWsError(message);
-        }
-      });
-
-      ws.addEventListener('close', () => {
-        this.wsReady = false;
-        this.wsAuthenticated = false;
-        this.ws = null;
-        if (this.wsPendingMessage) {
-          this.wsPendingMessage.sent = false;
-        }
-        this.scheduleWsReconnect(reason);
-      });
-
-      ws.addEventListener('error', () => {
-        this.wsReady = false;
-      });
-    } catch (err) {
-      console.warn('[ViChat] WebSocket connect failed', err);
-    }
+    this.wsClient.connect(reason);
   }
 
   sendWebSocketAuth() {
-    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return;
-    if (!this.token) {
-      this.wsAuthenticated = false;
-      return;
-    }
-    this.wsAuthenticated = false;
-    try {
-      this.ws.send(JSON.stringify({ v: 1, type: 'auth', token: this.token }));
-    } catch {
-      /* ignore */
-    }
+    this.wsClient.sendAuth();
   }
 
   sendPendingWsMessage() {
-    if (!this.ws || this.ws.readyState !== WebSocket.OPEN || !this.wsReady) return;
-    if (this.token && !this.wsAuthenticated) return;
-    if (!this.wsPendingMessage || this.wsPendingMessage.sent) return;
-    const payload = this.wsPendingMessage.payload;
-    this.wsPendingMessage.sent = true;
-    this.ws.send(JSON.stringify(payload));
+    this.wsClient.sendPendingMessage(this.wsPendingMessage);
+  }
+
+  handleWsClose(reason) {
+    if (this.wsPendingMessage) {
+      this.wsPendingMessage.sent = false;
+    }
+    handleClearingChatSocketClose(this);
+    console.debug('[ViChat debug] websocket closed', { reason });
+  }
+
+  handleWsMessage(message) {
+    if (message.type === 'assistant.message.start') {
+      void this.handleWsAssistantStart(message);
+      return;
+    }
+    if (message.type === 'assistant.message.delta') {
+      void this.handleWsAssistantDelta(message);
+      return;
+    }
+    if (message.type === 'assistant.message.end') {
+      void this.handleWsAssistantEnd(message);
+      return;
+    }
+    if (message.type === 'assistant.message.error') {
+      void this.handleWsAssistantError(message);
+      return;
+    }
+    if (message.type === 'message') {
+      this.handleWsReply(message);
+      return;
+    }
+    if (message.type === 'error') {
+      this.handleWsError(message);
+    }
   }
 
   initStreamingState(requestId) {
-    const cleanRequestId = cleanText(requestId || '');
-    if (!cleanRequestId) return null;
-    let state = this.wsInFlightByRequestId.get(cleanRequestId);
-    if (!state) {
-      state = {
-        requestId: cleanRequestId,
-        assistantMessageId: '',
-        started: false,
-        ended: false,
-        finalized: false,
-        text: '',
-        pendingBuffer: '',
-        lastSeq: 0,
-        analysisTimer: 0,
-        showAnalysis: false,
-        typingRow: null,
-        uiRow: null,
-        renderTimer: 0,
-        finishReason: ''
-      };
-      this.wsInFlightByRequestId.set(cleanRequestId, state);
-    }
-    this.wsStreaming = state;
-    return state;
+    return initStreamingState(this, requestId);
   }
 
   clearStreamingState(requestId) {
-    const cleanRequestId = cleanText(requestId || '');
-    if (!cleanRequestId) {
-      if (this.wsStreaming) {
-        this.removeTypingRow(this.wsStreaming);
-        this.clearAnalysisTimer(this.wsStreaming);
-        this.clearRenderTimer(this.wsStreaming);
-        this.wsInFlightByRequestId.delete(this.wsStreaming.requestId);
-        this.wsStreaming = null;
-      }
-      return;
-    }
-    const existing = this.wsInFlightByRequestId.get(cleanRequestId);
-    if (existing && this.wsStreaming === existing) {
-      this.wsStreaming = null;
-    }
-    this.removeTypingRow(existing);
-    this.clearAnalysisTimer(existing);
-    this.clearRenderTimer(existing);
-    this.wsInFlightByRequestId.delete(cleanRequestId);
+    return clearStreamingState(this, requestId);
   }
 
   shouldIgnoreStreamEvent(requestId, eventType = '') {
-    const cleanRequestId = cleanText(requestId || '');
-    if (!cleanRequestId) return false;
-    if (!this.abortedRequestIds.has(cleanRequestId)) return false;
-    if (eventType === 'assistant.message.end' || eventType === 'assistant.message.error') {
-      this.abortedRequestIds.delete(cleanRequestId);
-    }
-    return true;
+    return shouldIgnoreStreamEvent(this, requestId, eventType);
   }
 
   abortActiveStream(reason = 'new-request') {
-    const activeState = this.wsStreaming;
-    if (!activeState) return false;
-    this.abortedRequestIds.add(activeState.requestId);
-    if (this.wsPendingMessage?.messageId) {
-      this.abortedMessageIds.add(this.wsPendingMessage.messageId);
-    }
-    this.removeTypingRow(activeState);
-    this.clearAnalysisTimer(activeState);
-    this.clearRenderTimer(activeState);
-    this.wsInFlightByRequestId.delete(activeState.requestId);
-    this.wsStreaming = null;
-    if (this.wsPendingMessage?.requestId === activeState.requestId) {
-      this.wsPendingMessage = null;
-    }
-    this.isSending = false;
-    this.setSendingState(false);
-    this.updateDeleteButtonVisibility();
-    console.debug('[ViChat debug] aborted stream', { reason, requestId: activeState.requestId });
-    return true;
+    return abortActiveStream(this, reason);
   }
 
   removeTypingRow(state) {
-    if (!state?.typingRow) return;
-    try {
-      state.typingRow.remove();
-    } catch {
-      /* ignore */
-    }
-    state.typingRow = null;
+    return removeTypingRow(state);
   }
 
   clearAnalysisTimer(state) {
-    if (!state?.analysisTimer) return;
-    clearTimeout(state.analysisTimer);
-    state.analysisTimer = 0;
+    return clearAnalysisTimer(state);
   }
 
   ensureTypingIndicator(state) {
-    if (!state || state.showAnalysis) return;
-    state.showAnalysis = true;
-    if (!state.typingRow) {
-      state.typingRow = this.messageController?.createTypingRow?.() || null;
-    }
+    return ensureTypingIndicator(this, state);
   }
 
   async ensureBotRow(state) {
-    if (!state || state.uiRow) return;
-    state.uiRow = await this.messageController?.addMessage({ type: 'assistant', text: '' });
+    return ensureBotRow(this, state);
   }
 
   clearRenderTimer(state) {
-    if (!state?.renderTimer) return;
-    clearTimeout(state.renderTimer);
-    state.renderTimer = 0;
+    return clearRenderTimer(state);
   }
 
   scheduleStreamFlush(state) {
-    if (!state || state.renderTimer) return;
-    state.renderTimer = window.setTimeout(() => {
-      state.renderTimer = 0;
-      void this.flushStream(state);
-    }, STREAM_FLUSH_MS);
+    return scheduleStreamFlush(this, state);
   }
 
   async flushStream(state) {
-    if (!state) return;
-    if (state.pendingBuffer) {
-      state.text += state.pendingBuffer;
-      state.pendingBuffer = '';
-    }
-    if (state.text) {
-      await this.ensureBotRow(state);
-      await this.messageController?.updateMessageText?.(state.uiRow, state.text, {
-        streaming: true
-      });
-    }
-    if (state.ended) {
-      await this.finalizeStreaming(state);
-    }
+    return flushStream(this, state);
   }
 
   async finalizeStreaming(state) {
-    if (!state || state.finalized) return;
-    state.finalized = true;
-    state.showAnalysis = false;
-    this.removeTypingRow(state);
-    const finishReason = cleanText(state.finishReason || '');
-    let finalText = state.text;
-    if (!finalText) {
-      finalText = finishReason === 'error' ? this.config.copy.genericError : this.config.copy.noResponse;
-      state.text = finalText;
-    }
-
-    if (!state.uiRow) {
-      state.uiRow = await this.messageController?.addMessage({ type: 'assistant', text: finalText });
-    } else {
-      await this.messageController?.updateMessageText?.(state.uiRow, finalText, { streaming: false });
-    }
-
-    if (!this.isLoggedIn()) {
-      this.guestHistory.push({
-        type: 'assistant',
-        text: finalText,
-        images: this.wsPendingMessage?.guestImages
-      });
-      saveGuestHistory(this.guestHistory, this.config, this.currentAgentId);
-      this.guestMeter.maybePromptLoginAfterSend((opts) => this.openAuthOverlay(opts.hard));
-    }
-
-    if (this.wsPendingMessage?.requestId === state.requestId) {
-      this.wsPendingMessage = null;
-    }
-    this.resetSendState();
-    this.clearStreamingState(state.requestId);
+    return finalizeStreaming(this, state);
   }
 
   resetSendState() {
@@ -614,7 +435,7 @@ class ViChatWidget {
       clearAuthToken(this.config);
       this.token = '';
       this.me = null;
-      this.wsAuthenticated = false;
+      this.wsClient.setAuthenticated(false);
       this.updateSessionLabel();
       this.updateLoginOutButtonLabel();
       this.openAuthOverlay(false);
@@ -1715,122 +1536,19 @@ class ViChatWidget {
   }
 
   async loadLoggedInMessagesToUI({ forceOpen = false } = {}) {
-    if (forceOpen) this.ensureOverlayOpen('load logged-in messages');
-    if (!this.token) return false;
-    const { ok, status, messages } = await fetchMessages({
-      token: this.token,
-      config: this.config,
-      agentId: this.currentAgentId
-    });
-    if (!ok) {
-      if (status === 401 || status === 403) {
-        this.handleInvalidToken('fetchMessages', { promptLogin: true });
-        return false;
-      }
-      if (!this.messageController.hasAnyRealMessages()) {
-        await this.messageController.addMessage({ type: 'assistant', text: this.config.copy.genericError });
-      }
-      console.warn('[ViChat] failed to load messages', { status: status ?? 0 });
-      this.updateDeleteButtonVisibility();
-      this.scheduleLayoutMetrics?.();
-      return false;
-    }
-    this.messageController.clearMessagesUI();
-    for (const m of messages || []) {
-      await this.messageController.addMessage({ type: m.role, text: m.text, images: m.images });
-    }
-    this.messageController.scrollToBottom(true);
-    this.updateDeleteButtonVisibility();
-    this.scheduleLayoutMetrics?.();
-    return true;
+    return loadLoggedInMessagesToUI(this, { forceOpen });
   }
 
   async loadMessagesForCurrentAgent({ forceOpen = false } = {}) {
-    if (forceOpen) this.ensureOverlayOpen('load messages');
-    if (this.isLoggedIn()) {
-      const ok = await this.loadLoggedInMessagesToUI({ forceOpen });
-      if (!ok && !this.isLoggedIn()) {
-        this.guestHistory = loadGuestHistory(this.config, this.currentAgentId);
-        await this.renderGuestHistoryToUI();
-        if (this.guestMeter.guestHardBlocked()) this.openAuthOverlay(true);
-      }
-      return;
-    }
-    if (this.conversationId) {
-      const { ok, messages } = await fetchMessages({
-        token: '',
-        config: this.config,
-        agentId: this.currentAgentId,
-        conversationId: this.conversationId
-      });
-      if (ok) {
-        this.messageController.clearMessagesUI();
-        for (const m of messages || []) {
-          await this.messageController.addMessage({ type: m.role, text: m.text, images: m.images });
-        }
-        this.messageController.scrollToBottom(true);
-        this.updateDeleteButtonVisibility();
-        this.scheduleLayoutMetrics?.();
-        return;
-      }
-    }
-    this.guestHistory = loadGuestHistory(this.config, this.currentAgentId);
-    await this.renderGuestHistoryToUI();
-    if (this.guestMeter.guestHardBlocked()) this.openAuthOverlay(true);
+    return loadMessagesForCurrentAgent(this, { forceOpen });
   }
 
   async clearChatAll() {
-    if (this.isLoggedIn()) {
-      const ok = await clearMessages({ token: this.token, config: this.config, agentId: this.currentAgentId });
-      if (ok) {
-        await this.loadLoggedInMessagesToUI();
-        this.scheduleLayoutMetrics?.();
-        return;
-      }
-      this.messageController.clearMessagesUI();
-      this.scheduleLayoutMetrics?.();
-      return;
-    }
-    this.abortActiveStream('clear-chat');
-    this.wsPendingMessage = null;
-    this.wsStreaming = null;
-    this.wsInFlightByRequestId.clear();
-    this.abortedRequestIds.clear();
-    this.abortedMessageIds.clear();
-    if (this.ws) {
-      try {
-        this.ws.close(1000, 'clear-chat');
-      } catch {
-        /* ignore */
-      }
-    }
-    this.guestHistory = [];
-    saveGuestHistory(this.guestHistory, this.config, this.currentAgentId);
-    this.conversationId = '';
-    saveConversationId(this.currentAgentId, '');
-    this.messageController.clearMessagesUI();
-    this.scheduleLayoutMetrics?.();
+    return clearChatAll(this);
   }
 
   async logout() {
-    clearAuthToken(this.config);
-    this.token = '';
-    this.me = null;
-    this.updateSessionLabel();
-    this.updateLoginOutButtonLabel();
-
-    this.elements['valki-chat-input'].disabled = false;
-    this.elements['valki-chat-send'].disabled = false;
-    this.attachmentController.setDisabled(false, false);
-
-    this.attachmentController.clearAttachments();
-    this.guestHistory = [];
-    clearGuestHistory(this.config, this.currentAgentId);
-    this.guestMeter.reset();
-
-    this.messageController.clearMessagesUI();
-    await this.renderGuestHistoryToUI();
-    this.scheduleLayoutMetrics?.();
+    return logout(this);
   }
 
   async renderGuestHistoryToUI() {
