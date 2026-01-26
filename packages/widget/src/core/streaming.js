@@ -144,7 +144,7 @@ export function abortActiveStream(widget, reason = 'new-request') {
 // - Start stream -> placeholder appears -> abort before first delta -> placeholder must disappear.
 
 export function ensureTypingIndicator(widget, state) {
-  if (!state || state.showAnalysis) return;
+  if (!state || state.showAnalysis || state.uiRow) return;
   state.showAnalysis = true;
   if (!state.typingRow) {
     state.typingRow = widget.messageController?.createTypingRow?.() || null;
