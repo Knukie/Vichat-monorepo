@@ -182,7 +182,7 @@ export const translations = {
       typing: 'Signaal analyseren…'
     },
     streaming: {
-      checkingSources: 'Bronnen controleren'
+      checkingSources: 'Analyseren…'
     },
     errors: {
       generic: 'Er is iets misgegaan tijdens het praten met Valki.',

@@ -429,11 +429,11 @@ html.valki-chat-open #valki-root .valki-bubble{
   animation: valki-ellipsis 1.2s infinite;
 }
 
-#valki-root .valki-sources-ellipsis .valki-ellipsis-dot:nth-child(2){
+#valki-root .valki-sources-ellipsis .valki-ellipsis-dot:nth-of-type(2){
   animation-delay: 0.2s;
 }
 
-#valki-root .valki-sources-ellipsis .valki-ellipsis-dot:nth-child(3){
+#valki-root .valki-sources-ellipsis .valki-ellipsis-dot:nth-of-type(3){
   animation-delay: 0.4s;
 }
 

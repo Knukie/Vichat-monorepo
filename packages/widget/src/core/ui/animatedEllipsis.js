@@ -1,8 +1,9 @@
-export function createAnimatedEllipsis(node) {
+export function createAnimatedEllipsis(node, options = {}) {
   if (!node) return () => {};
 
   node.classList.add('valki-ellipsis');
 
+  const { interval = 450 } = options;
   const placeholderText = node.childElementCount === 0 ? node.textContent : null;
   const shouldClearPlaceholder =
     placeholderText && placeholderText.trim() === '.';
@@ -26,10 +27,39 @@ export function createAnimatedEllipsis(node) {
 
   node.appendChild(container);
 
+  dots.forEach((dot) => {
+    dot.style.animation = 'none';
+    dot.style.opacity = '0.35';
+    dot.style.transition = 'opacity 0.2s ease-in-out';
+  });
+
+  const prefersReducedMotion = typeof window !== 'undefined'
+    && typeof window.matchMedia === 'function'
+    && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  let intervalId = 0;
+  if (!prefersReducedMotion) {
+    let tick = 0;
+    const updateDots = () => {
+      const activeCount = tick % (dots.length + 1);
+      dots.forEach((dot, index) => {
+        dot.style.opacity = index < activeCount ? '1' : '0.35';
+      });
+      tick += 1;
+    };
+    updateDots();
+    intervalId = window.setInterval(updateDots, interval);
+  }
+
   let cleanedUp = false;
   return () => {
     if (cleanedUp) return;
     cleanedUp = true;
+
+    if (intervalId) {
+      clearInterval(intervalId);
+      intervalId = 0;
+    }
 
     // Verwijder alleen wat we zelf toegevoegd hebben
     container.remove();
