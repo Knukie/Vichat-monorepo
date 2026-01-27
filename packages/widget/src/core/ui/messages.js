@@ -46,7 +46,9 @@ export function createMessageController({
     ellipsis.className = 'valki-sources-ellipsis valki-inline-ellipsis';
     ellipsis.setAttribute('aria-hidden', 'true');
     ellipsis.textContent = '.';
-    contentTarget.appendChild(ellipsis);
+    const lastParagraph = contentTarget.querySelector?.('p:last-child');
+    const inlineTarget = lastParagraph || contentTarget;
+    inlineTarget.appendChild(ellipsis);
     const cleanup = createAnimatedEllipsis(ellipsis, { interval: 450 });
     ellipsisCleanupByRow.set(row, cleanup);
   }
