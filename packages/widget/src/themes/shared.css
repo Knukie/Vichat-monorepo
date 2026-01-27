@@ -412,9 +412,14 @@ html.valki-chat-open #valki-root .valki-bubble{
 #valki-root .valki-sources-ellipsis{
   display: inline-flex;
   align-items: baseline;
-  gap: 2px;
   color: currentColor;
   opacity: 1;
+}
+
+#valki-root .valki-sources-ellipsis .valki-ellipsis-dots{
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2px;
 }
 
 #valki-root .valki-sources-ellipsis .valki-ellipsis-dot{
