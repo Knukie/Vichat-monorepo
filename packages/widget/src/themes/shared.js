@@ -16,6 +16,7 @@ export const sharedCss = `/* ===================================================
   --brand: #f15a24;
   --brand-2: #ff7a45;
   --ring: rgba(241,90,36,.22);
+  --chat-accent: 255,138,0;
 
   --btn-fill: #e7e7e7;
   --btn-text: #0b0b0b;
@@ -381,8 +382,8 @@ html.valki-chat-open #valki-root .valki-bubble{
   padding: 14px 18px;
   border-radius: 18px;
   background: rgba(16,16,16,.6);
-  border: 1px solid rgba(255,255,255,.14);
-  box-shadow: 0 16px 40px rgba(0,0,0,.35);
+  border: 1px solid rgba(var(--chat-accent), .24);
+  box-shadow: 0 14px 40px rgba(0,0,0,.45), 0 0 0 1px rgba(var(--chat-accent), .08), 0 10px 22px rgba(var(--chat-accent), .12);
   color: var(--text);
   font-weight: 600;
   letter-spacing: 0.2px;
@@ -394,13 +395,18 @@ html.valki-chat-open #valki-root .valki-bubble{
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.75), rgba(241,90,36,.85) 40%, rgba(186,72,32,.9));
-  box-shadow: 0 0 16px rgba(241,90,36,.45);
+  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.75), rgba(var(--chat-accent), .85) 40%, rgba(var(--chat-accent), .9));
+  box-shadow: 0 0 16px rgba(var(--chat-accent), .45);
   animation: valki-sources-pulse 1.4s ease-in-out infinite;
 }
 
 #valki-root .valki-sources-label{
   font-size: 0.98rem;
+}
+
+#valki-root .valki-sources-ellipsis{
+  display: inline-block;
+  min-width: 1.4em;
 }
 
 @keyframes valki-sources-pulse{
@@ -1001,20 +1007,20 @@ html.valki-chat-open #valki-root .valki-bubble{
   inset: 0;
   width: 100%;
   height: 100%;
+  transition: none;
+  will-change: auto;
 }
 
-#valki-root #valki-overlay[data-layout="mobile"]{
-  --valki-modal-shift: 0px;
-}
-
-#valki-root #valki-overlay[data-layout="mobile"] .valki-modal{
-  transform: translateX(var(--valki-modal-shift, 0px));
+#valki-root #valki-overlay[data-layout="mobile"][data-view="agent-hub"] .valki-sidebar,
+#valki-root #valki-overlay[data-layout="mobile"][data-view="agent-hub"] .valki-modal{
   transition: transform 0.28s ease;
   will-change: transform;
 }
 
-#valki-root #valki-overlay[data-layout="mobile"][data-view="agent-hub"]{
-  --valki-modal-shift: 100%;
+#valki-root #valki-overlay[data-layout="mobile"][data-view="chat"] .valki-sidebar,
+#valki-root #valki-overlay[data-layout="mobile"][data-view="chat"] .valki-modal{
+  transition: none;
+  will-change: auto;
 }
 
 #valki-root #valki-overlay[data-layout="mobile"][data-view="agent-hub"] .valki-sidebar{
@@ -1023,6 +1029,7 @@ html.valki-chat-open #valki-root .valki-bubble{
 }
 
 #valki-root #valki-overlay[data-layout="mobile"][data-view="agent-hub"] .valki-modal{
+  transform: translateX(100%);
   pointer-events: none;
 }
 
@@ -1031,12 +1038,8 @@ html.valki-chat-open #valki-root .valki-bubble{
 }
 
 #valki-root #valki-overlay[data-layout="mobile"][data-view="chat"] .valki-modal{
+  transform: none;
   pointer-events: auto;
-}
-
-#valki-root #valki-overlay[data-layout="mobile"][data-swipe="true"] .valki-modal{
-  transition: none;
-  will-change: auto;
 }
 
 #valki-root #valki-overlay[data-layout="mobile"] .valki-sidebar{
@@ -1411,6 +1414,12 @@ html.valki-chat-open #valki-root .valki-bubble{
   margin-left: 8px;
 }
 
+#valki-root .valki-msg-bubble .valki-typing-indicator{
+  display: inline-block;
+  vertical-align: middle;
+  margin-top: 0;
+}
+
 #valki-root .valki-typing-indicator[data-status='authed']{
   background: #ff9f1a;
   box-shadow: 0 0 0 2px rgba(255,159,26,.2);
@@ -1474,8 +1483,8 @@ html.valki-chat-open #valki-root .valki-bubble{
   padding: 6px 10px 6px 16px;
   border-radius: 26px;
   background: rgba(255,255,255,.04);
-  border: 1px solid rgba(255,138,0,.24);
-  box-shadow: 0 14px 40px rgba(0,0,0,.45), 0 0 0 1px rgba(255,138,0,.08), 0 10px 22px rgba(255,138,0,.12);
+  border: 1px solid rgba(var(--chat-accent), .24);
+  box-shadow: 0 14px 40px rgba(0,0,0,.45), 0 0 0 1px rgba(var(--chat-accent), .08), 0 10px 22px rgba(var(--chat-accent), .12);
   transition: border-color .18s ease, background .18s ease, box-shadow .18s ease, transform .18s ease;
 }
   #valki-root .valki-chat-inner::before{
@@ -1492,8 +1501,8 @@ html.valki-chat-open #valki-root .valki-bubble{
 
 #valki-root .valki-chat-inner:focus-within{
   background: rgba(255,255,255,.055);
-  border-color: rgba(255,138,0,.5);
-  box-shadow: 0 16px 46px rgba(0,0,0,.5), 0 0 0 3px rgba(255,138,0,.24), 0 10px 26px rgba(255,138,0,.2);
+  border-color: rgba(var(--chat-accent), .5);
+  box-shadow: 0 16px 46px rgba(0,0,0,.5), 0 0 0 3px rgba(var(--chat-accent), .24), 0 10px 26px rgba(var(--chat-accent), .2);
 }
   #valki-root .valki-chat-inner:focus-within::before{
     background: rgba(255,255,255,.055);
@@ -1565,7 +1574,7 @@ html.valki-chat-open #valki-root .valki-bubble{
   overflow-y:hidden;
   white-space: pre-wrap;
   word-break: break-word;
-  caret-color: #ff8a00;
+  caret-color: rgb(var(--chat-accent));
   position: relative;
   z-index: 1;
 }
@@ -1684,7 +1693,7 @@ html.valki-chat-open #valki-root .valki-bubble{
     overflow-y: hidden;
     white-space: pre-wrap;
     word-break: break-word;
-    caret-color: #ff8a00;
+    caret-color: rgb(var(--chat-accent));
     -webkit-appearance: none;
     appearance: none;
     -webkit-text-size-adjust: 100%;

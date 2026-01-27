@@ -85,7 +85,8 @@ export const templateHtml = `<div class="valki-root" id="valki-root">
         <div id="valki-sources-overlay" class="valki-sources-overlay" aria-hidden="true" hidden>
           <div class="valki-sources-card" role="status" aria-live="polite">
             <span class="valki-sources-dot" aria-hidden="true"></span>
-            <span class="valki-sources-label" id="valki-sources-label">Checking sources…</span>
+            <span class="valki-sources-label" id="valki-sources-label">Checking sources</span>
+            <span class="valki-sources-ellipsis" id="valki-sources-ellipsis" aria-hidden="true">.</span>
           </div>
         </div>
 

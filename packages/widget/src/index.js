@@ -50,6 +50,7 @@ import {
 } from './core/chatActions.js';
 import { detectLocale, setLocale, t } from './i18n/index.js';
 import { resolveTheme } from './themes/index.js';
+import { createAnimatedEllipsis } from './core/ui/animatedEllipsis.js';
 
 /** @typedef {import('@valki/contracts').ImageMeta} ImageMeta */
 /** @typedef {import('@valki/contracts').Message} Message */
@@ -88,6 +89,7 @@ const REQUIRED_IDS = [
   'valki-scroll-bottom',
   'valki-sources-overlay',
   'valki-sources-label',
+  'valki-sources-ellipsis',
   'valki-chat-form',
   'valki-chat-input',
   'valki-chat-send',
@@ -1210,6 +1212,11 @@ class ViChatWidget {
         })
         .catch(() => {});
     }
+
+    const cleanupEllipsis = createAnimatedEllipsis(el['valki-sources-ellipsis'], {
+      interval: 450
+    });
+    cleanupFns.push(cleanupEllipsis);
 
     this.scheduleLayoutMetrics = scheduleLayoutMetrics;
     this.updateComposerHeight = updateComposerHeight;
