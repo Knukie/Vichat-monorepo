@@ -6,7 +6,7 @@
 /** @typedef {Pick<Message, 'role'> & { role: UiRole, text: string, images?: ImageMeta[] }} UiMessage */
 /** @typedef {User & { name?: string | null }} UiUser */
 /** @typedef {Partial<ImageMeta> & { name?: string, dataUrl?: string, file?: File, mime?: string }} UiImagePayload */
-/** @typedef {{ ok: boolean, status?: number, messages: UiMessage[] }} FetchMessagesResult */
+/** @typedef {{ ok: boolean, status?: number, messages: UiMessage[], conversationId?: string, error?: string }} FetchMessagesResult */
 /** @typedef {{ ok: boolean, status: number, user: UiUser | null, loggedIn?: boolean }} FetchMeResult */
 
 import { t } from '../i18n/index.js';
@@ -58,22 +58,25 @@ export async function fetchMessages({ token, config, agentId, conversationId }) 
   const baseUrl = withAgentParam(config.apiMessages, agentId);
   const url = token ? baseUrl : withConversationParam(baseUrl, conversationId);
   const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
+  console.debug('[ViChat debug] fetchMessages url', { url });
   try {
     const res = await fetch(url, { headers });
+    const contentType = String(res.headers.get('content-type') || '').toLowerCase();
+    const data = contentType.includes('application/json') ? await res.json().catch(() => null) : null;
+    const error = data && typeof data.error === 'string' ? data.error : undefined;
     if (!res.ok) {
-      if (res.status === 400) {
-        return { ok: true, status: res.status, messages: [] };
+      if (res.status === 400 || res.status === 404 || res.status === 405) {
+        return { ok: true, status: res.status, messages: [], error };
       }
-      if (res.status === 404 || res.status === 405) {
-        return { ok: true, status: res.status, messages: [] };
-      }
-      return { ok: false, status: res.status, messages: [] };
+      return { ok: false, status: res.status, messages: [], error };
     }
-    const data = await res.json().catch(() => null);
-    if (!data || !Array.isArray(data.messages)) return { ok: true, status: res.status, messages: [] };
+    if (!data || !Array.isArray(data.messages)) {
+      return { ok: true, status: res.status, messages: [], conversationId: data?.conversationId };
+    }
     return {
       ok: true,
       status: res.status,
+      conversationId: typeof data?.conversationId === 'string' ? data.conversationId : undefined,
       messages: data.messages.map((m) => ({
         role: normalizeRole(String(m.role || '')),
         text: String(m.content || ''),
