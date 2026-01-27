@@ -416,6 +416,10 @@ html.valki-chat-open #valki-root .valki-bubble{
   opacity: 0.95;
 }
 
+#valki-root .valki-inline-ellipsis{
+  margin-left: 2px;
+}
+
 #valki-root .valki-sources-ellipsis .valki-ellipsis-dots{
   display: inline-flex;
   align-items: baseline;
