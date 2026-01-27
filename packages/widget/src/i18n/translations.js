@@ -70,7 +70,7 @@ export const translations = {
       typing: 'Analyzing the signal…'
     },
     streaming: {
-      checkingSources: 'Checking sources…'
+      checkingSources: 'Checking sources'
     },
     errors: {
       generic: 'Something went wrong talking to Valki.',
@@ -182,7 +182,7 @@ export const translations = {
       typing: 'Signaal analyseren…'
     },
     streaming: {
-      checkingSources: 'Bronnen controleren…'
+      checkingSources: 'Bronnen controleren'
     },
     errors: {
       generic: 'Er is iets misgegaan tijdens het praten met Valki.',
@@ -294,7 +294,7 @@ export const translations = {
       typing: 'Signal wird analysiert…'
     },
     streaming: {
-      checkingSources: 'Quellen werden geprüft…'
+      checkingSources: 'Quellen werden geprüft'
     },
     errors: {
       generic: 'Beim Sprechen mit Valki ist etwas schiefgelaufen.',
@@ -407,7 +407,7 @@ export const translations = {
       typing: 'Analyse du signal…'
     },
     streaming: {
-      checkingSources: 'Vérification des sources…'
+      checkingSources: 'Vérification des sources'
     },
     errors: {
       generic: 'Une erreur est survenue en parlant à Valki.',
@@ -520,7 +520,7 @@ export const translations = {
       typing: 'Analizando la señal…'
     },
     streaming: {
-      checkingSources: 'Comprobando fuentes…'
+      checkingSources: 'Comprobando fuentes'
     },
     errors: {
       generic: 'Algo salió mal al hablar con Valki.',
@@ -633,7 +633,7 @@ export const translations = {
       typing: 'Analisi del segnale…'
     },
     streaming: {
-      checkingSources: 'Verifica delle fonti…'
+      checkingSources: 'Verifica delle fonti'
     },
     errors: {
       generic: 'Qualcosa è andato storto parlando con Valki.',
@@ -746,7 +746,7 @@ export const translations = {
       typing: 'Analisando o sinal…'
     },
     streaming: {
-      checkingSources: 'Verificando fontes…'
+      checkingSources: 'Verificando fontes'
     },
     errors: {
       generic: 'Algo deu errado ao falar com Valki.',
@@ -859,7 +859,7 @@ export const translations = {
       typing: 'Анализ сигнала…'
     },
     streaming: {
-      checkingSources: 'Проверка источников…'
+      checkingSources: 'Проверка источников'
     },
     errors: {
       generic: 'Произошла ошибка при общении с Valki.',
