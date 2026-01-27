@@ -416,6 +416,16 @@ html.valki-chat-open #valki-root .valki-bubble{
   opacity: 1;
 }
 
+#valki-root .valki-sources-ellipsis.valki-ellipsis::after{
+  content: '...';
+  display: inline-block;
+  width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  vertical-align: bottom;
+  animation: valki-ellipsis 1.2s steps(3, end) infinite;
+}
+
 @keyframes valki-sources-pulse{
   0%, 100%{
     transform: scale(1);
@@ -424,6 +434,12 @@ html.valki-chat-open #valki-root .valki-bubble{
   50%{
     transform: scale(1.08);
     opacity: 1;
+  }
+}
+
+@keyframes valki-ellipsis{
+  to{
+    width: 1.2em;
   }
 }
 
