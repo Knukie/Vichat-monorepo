@@ -17,6 +17,7 @@ export const sharedCss = `/* ===================================================
   --brand-2: #ff7a45;
   --ring: rgba(241,90,36,.22);
   --chat-accent: 241,90,36;
+  --sources-dot-rgb: 241,90,36; /* #F15A24 (pinned, independent of chat accent) */
 
   --btn-fill: #e7e7e7;
   --btn-text: #0b0b0b;
@@ -64,7 +65,7 @@ export const sharedCss = `/* ===================================================
   --side-tint: rgba(0,0,0,.18); /* transparanter zodat bg sterker doorkomt */
 
   /* Chat block */
-  --chat-block-bg: rgba(8,8,8,.78);           /* “massief blok” */
+  --chat-block-bg: rgba(8,8,8,.78);           /* massief blok */
   --chat-block-border: rgba(255,255,255,.10);
   --chat-block-blur: 10px;
 }
@@ -395,8 +396,13 @@ html.valki-chat-open #valki-root .valki-bubble{
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.75), rgba(var(--chat-accent), .85) 40%, rgba(var(--chat-accent), .9));
-  box-shadow: 0 0 16px rgba(var(--chat-accent), .45);
+  background: radial-gradient(
+    circle at 30% 30%,
+    rgba(255,255,255,.75),
+    rgba(var(--sources-dot-rgb), .85) 40%,
+    rgba(var(--sources-dot-rgb), .9)
+  );
+  box-shadow: 0 0 16px rgba(var(--sources-dot-rgb), .45);
   animation: valki-sources-pulse 1.4s ease-in-out infinite;
 }
 
@@ -407,6 +413,8 @@ html.valki-chat-open #valki-root .valki-bubble{
 #valki-root .valki-sources-ellipsis{
   display: inline-block;
   min-width: 1.4em;
+  color: currentColor;
+  opacity: 1;
 }
 
 @keyframes valki-sources-pulse{
@@ -621,7 +629,7 @@ html.valki-chat-open #valki-root .valki-bubble{
   position: relative;
   isolation: isolate;
 
-  /* Outer “block presence” */
+  /* Outer block presence */
   box-shadow:
     0 0 0 1px rgba(255,255,255,.04),
     0 30px 80px rgba(0,0,0,.65);
@@ -784,6 +792,7 @@ html.valki-chat-open #valki-root .valki-bubble{
   color: rgba(255,255,255,.86);
   transition: transform .12s ease, background .12s ease, border-color .12s ease;
 }
+
 #valki-root .valki-pill:hover{
   transform: translateY(-1px);
   background: rgba(255,255,255,.06);
@@ -1280,6 +1289,12 @@ html.valki-chat-open #valki-root .valki-bubble{
   gap: 0;
 }
 
+#valki-root .valki-msg-row.bot .valki-msg-bubble-wrap{
+  max-width: 85%;
+  display: inline-flex;
+  align-self: flex-start;
+}
+
 #valki-root .valki-msg-row.valki-typing-row{
   flex-direction: row;
   align-items: center;
@@ -1335,9 +1350,11 @@ html.valki-chat-open #valki-root .valki-bubble{
 }
 
 #valki-root .valki-msg-row.bot .valki-msg-bubble{
-  flex: 1 1 auto;
-  width: 100%;
-  max-width: min(100%, 720px);
+  display: inline-flex;
+  flex-direction: column;
+  flex: 0 1 auto;
+  width: auto;
+  max-width: 100%;
   margin-right: 12px;
   background: rgba(255,255,255,.035);
   border: 1px solid rgba(255,255,255,.08);

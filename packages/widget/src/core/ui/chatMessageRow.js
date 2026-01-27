@@ -57,6 +57,11 @@ export function createChatMessageRow({
 
   const bubble = document.createElement('div');
   bubble.className = 'valki-msg-bubble';
+  const bubbleWrap = role === 'bot' ? document.createElement('div') : null;
+  if (bubbleWrap) {
+    bubbleWrap.className = 'valki-msg-bubble-wrap';
+    bubbleWrap.appendChild(bubble);
+  }
 
   if (role === 'user' && authorLabel) {
     const label = document.createElement('div');
@@ -103,7 +108,7 @@ export function createChatMessageRow({
     }
   }
 
-  row.appendChild(bubble);
+  row.appendChild(bubbleWrap || bubble);
   return row;
 }
 

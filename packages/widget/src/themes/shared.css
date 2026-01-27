@@ -1288,6 +1288,12 @@ html.valki-chat-open #valki-root .valki-bubble{
   gap: 0;
 }
 
+#valki-root .valki-msg-row.bot .valki-msg-bubble-wrap{
+  max-width: 85%;
+  display: inline-flex;
+  align-self: flex-start;
+}
+
 #valki-root .valki-msg-row.valki-typing-row{
   flex-direction: row;
   align-items: center;
@@ -1343,9 +1349,11 @@ html.valki-chat-open #valki-root .valki-bubble{
 }
 
 #valki-root .valki-msg-row.bot .valki-msg-bubble{
-  flex: 1 1 auto;
-  width: 100%;
-  max-width: min(100%, 720px);
+  display: inline-flex;
+  flex-direction: column;
+  flex: 0 1 auto;
+  width: auto;
+  max-width: 100%;
   margin-right: 12px;
   background: rgba(255,255,255,.035);
   border: 1px solid rgba(255,255,255,.08);
