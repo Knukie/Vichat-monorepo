@@ -357,7 +357,7 @@ html.valki-chat-open #valki-root .valki-bubble{
 #valki-root .valki-sources-overlay{
   position: absolute;
   inset: 0;
-  display: flex;
+  display: none;
   align-items: flex-end;
   justify-content: flex-start;
   padding: 24px;
@@ -369,6 +369,7 @@ html.valki-chat-open #valki-root .valki-bubble{
 }
 
 #valki-root .valki-sources-overlay.is-visible{
+  display: flex;
   opacity: 1;
   transform: translateY(0);
 }

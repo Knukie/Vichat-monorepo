@@ -1581,8 +1581,16 @@ class ViChatWidget {
   setSourcesOverlayVisible(isVisible) {
     const overlay = this.elements?.['valki-sources-overlay'];
     if (!overlay) return;
-    overlay.classList.toggle('is-visible', isVisible);
-    overlay.setAttribute('aria-hidden', isVisible ? 'false' : 'true');
+    // Keep the overlay out of layout when hidden to avoid the mobile "stripe" regression.
+    if (isVisible) {
+      overlay.hidden = false;
+      overlay.setAttribute('aria-hidden', 'false');
+      overlay.classList.add('is-visible');
+    } else {
+      overlay.classList.remove('is-visible');
+      overlay.setAttribute('aria-hidden', 'true');
+      overlay.hidden = true;
+    }
   }
 
   setSendingState(isBusy) {
