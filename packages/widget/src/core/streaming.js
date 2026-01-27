@@ -216,7 +216,8 @@ export function scheduleCheckingSourcesPlaceholder(widget, state) {
       await ensureBotRow(widget, activeState, placeholderText);
       if (!activeState.uiRow) return;
       await widget.messageController?.updateMessageText?.(activeState.uiRow, placeholderText, {
-        streaming: true
+        streaming: true,
+        ellipsis: true
       });
       activeState.uiRow?.classList.add('valki-sources-placeholder');
       activeState.placeholderActive = true;

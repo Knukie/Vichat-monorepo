@@ -2,6 +2,7 @@ import { ensureMarkdownLibs, hardenLinks, renderMarkdown } from '../markdown.js'
 import { isCustomerRole } from '../roles.js';
 import { t } from '../../i18n/index.js';
 import { createChatMessageRow, createTypingRow } from './chatMessageRow.js';
+import { createAnimatedEllipsis } from './animatedEllipsis.js';
 
 /** @typedef {import('@valki/contracts').ImageMeta} ImageMeta */
 /** @typedef {import('@valki/contracts').Role} Role */
@@ -26,6 +27,29 @@ export function createMessageController({
   let botAvatarUrl = avatarUrl;
   let botAvatarAlt = t('avatar.assistantIconDefault');
   let userLabel = t('labels.user');
+  const ellipsisCleanupByRow = new WeakMap();
+
+  function clearInlineEllipsis(row) {
+    if (!row) return;
+    const cleanup = ellipsisCleanupByRow.get(row);
+    if (typeof cleanup === 'function') {
+      cleanup();
+    }
+    ellipsisCleanupByRow.delete(row);
+    row.querySelector('.valki-inline-ellipsis')?.remove();
+  }
+
+  function attachInlineEllipsis(row, contentTarget) {
+    if (!row || !contentTarget) return;
+    clearInlineEllipsis(row);
+    const ellipsis = document.createElement('span');
+    ellipsis.className = 'valki-sources-ellipsis valki-inline-ellipsis';
+    ellipsis.setAttribute('aria-hidden', 'true');
+    ellipsis.textContent = '.';
+    contentTarget.appendChild(ellipsis);
+    const cleanup = createAnimatedEllipsis(ellipsis, { interval: 450 });
+    ellipsisCleanupByRow.set(row, cleanup);
+  }
 
   function notifyScrollUpdate() {
     if (typeof onScrollUpdate === 'function') {
@@ -66,6 +90,7 @@ export function createMessageController({
     const bubble = row.querySelector('.valki-msg-bubble');
     if (!bubble) return;
     const contentTarget = row.querySelector('.valki-msg-content') || bubble;
+    clearInlineEllipsis(row);
     const nextText = text || '';
     if (row.classList.contains('bot')) {
       await ensureMarkdownLibs();
@@ -81,6 +106,9 @@ export function createMessageController({
       if (typeof hardenLinks === 'function') hardenLinks(contentTarget);
     } else {
       contentTarget.textContent = nextText;
+    }
+    if (opts?.ellipsis) {
+      attachInlineEllipsis(row, contentTarget);
     }
     scrollToBottom(false);
     notifyScrollUpdate();
