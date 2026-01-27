@@ -93,7 +93,14 @@ export function createMessageController({
     if (!bubble) {
       bubble = document.createElement('div');
       bubble.className = 'valki-msg-bubble';
-      row.appendChild(bubble);
+      if (row.classList.contains('bot')) {
+        const bubbleWrap = document.createElement('div');
+        bubbleWrap.className = 'valki-msg-bubble-wrap';
+        bubbleWrap.appendChild(bubble);
+        row.appendChild(bubbleWrap);
+      } else {
+        row.appendChild(bubble);
+      }
     }
     let content = bubble.querySelector('.valki-msg-content');
     if (!content) {
