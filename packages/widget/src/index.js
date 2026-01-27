@@ -197,6 +197,13 @@ function createMessageId() {
   return `msg-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
+function createConversationId() {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return createMessageId();
+}
+
 class ViChatWidget {
   constructor(options = {}) {
     this.config = buildConfig(options);
@@ -275,6 +282,16 @@ class ViChatWidget {
 
   loadConversationIdForAgent(agentId) {
     this.conversationId = loadConversationId(agentId) || '';
+    this.ensureGuestConversationId(agentId);
+  }
+
+  ensureGuestConversationId(agentId) {
+    if (this.isLoggedIn()) return;
+    const safeAgentId = cleanText(agentId || '');
+    if (!safeAgentId || this.conversationId) return;
+    const nextConversationId = createConversationId();
+    this.conversationId = nextConversationId;
+    saveConversationId(safeAgentId, nextConversationId);
   }
 
   setConversationId(nextConversationId) {
@@ -745,6 +762,7 @@ class ViChatWidget {
     this.updateSessionLabel();
     this.updateLoginOutButtonLabel();
     console.warn('[ViChat] auth token invalid', { reason });
+    this.ensureGuestConversationId(this.currentAgentId);
     if (promptLogin) {
       this.authHard = false;
       this.openAuthOverlay(false);

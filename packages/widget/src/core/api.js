@@ -55,7 +55,8 @@ function withConversationParam(url, conversationId) {
 /** @returns {Promise<FetchMessagesResult>} */
 export async function fetchMessages({ token, config, agentId, conversationId }) {
   if (!token && !conversationId) return { ok: false, status: 0, messages: [] };
-  const url = withConversationParam(withAgentParam(config.apiMessages, agentId), conversationId);
+  const baseUrl = withAgentParam(config.apiMessages, agentId);
+  const url = token ? baseUrl : withConversationParam(baseUrl, conversationId);
   const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
   try {
     const res = await fetch(url, { headers });
