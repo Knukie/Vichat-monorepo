@@ -2,6 +2,7 @@ import { ensureMarkdownLibs, hardenLinks, renderMarkdown } from '../markdown.js'
 import { isCustomerRole } from '../roles.js';
 import { t } from '../../i18n/index.js';
 import { createChatMessageRow, createTypingRow } from './chatMessageRow.js';
+import { createPinnedUserHeader } from './pinnedUserHeader.js';
 import { createAnimatedEllipsis } from './animatedEllipsis.js';
 
 /** @typedef {import('@valki/contracts').ImageMeta} ImageMeta */
@@ -19,6 +20,8 @@ function isNearBottom(el, thresholdPx = 90) {
 export function createMessageController({
   messagesEl,
   messagesInner,
+  pinnedHeaderEl,
+  pinnedHeaderInner,
   avatarUrl,
   updateDeleteButtonVisibility,
   onScrollUpdate,
@@ -28,6 +31,11 @@ export function createMessageController({
   let botAvatarAlt = t('avatar.assistantIconDefault');
   let userLabel = t('labels.user');
   const ellipsisCleanupByRow = new WeakMap();
+  const pinnedHeader = createPinnedUserHeader({
+    headerEl: pinnedHeaderEl,
+    headerInner: pinnedHeaderInner
+  });
+  let pinnedMessageRow = null;
 
   function clearInlineEllipsis(row) {
     if (!row) return;
@@ -80,7 +88,15 @@ export function createMessageController({
       renderMarkdown: isCustomer ? undefined : renderMarkdown,
       hardenLinks: isCustomer ? undefined : hardenLinks
     });
+    if (isCustomer) {
+      if (pinnedMessageRow) pinnedMessageRow.classList.remove('valki-hidden');
+      row.classList.add('valki-hidden');
+    }
     messagesInner.appendChild(row);
+    if (isCustomer) {
+      pinnedHeader?.setPinnedMessage({ type: 'customer', text, images });
+      pinnedMessageRow = row;
+    }
     scrollToBottom(true);
     updateDeleteButtonVisibility?.();
     notifyScrollUpdate();
@@ -155,6 +171,8 @@ export function createMessageController({
 
   function clearMessagesUI() {
     messagesInner.innerHTML = '';
+    pinnedHeader?.clearPinnedMessage();
+    pinnedMessageRow = null;
     updateDeleteButtonVisibility?.();
     notifyScrollUpdate();
   }
@@ -165,6 +183,10 @@ export function createMessageController({
       row.remove();
     } catch {
       /* ignore */
+    }
+    if (row === pinnedMessageRow) {
+      pinnedHeader?.clearPinnedMessage();
+      pinnedMessageRow = null;
     }
     updateDeleteButtonVisibility?.();
     notifyScrollUpdate();

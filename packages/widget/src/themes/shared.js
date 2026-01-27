@@ -1000,6 +1000,7 @@ html.valki-chat-open #valki-root .valki-bubble{
 }
 
 #valki-root #valki-overlay[data-view="agent-hub"] .valki-modal-header,
+#valki-root #valki-overlay[data-view="agent-hub"] .valki-pinned-header,
 #valki-root #valki-overlay[data-view="agent-hub"] .valki-messages,
 #valki-root #valki-overlay[data-view="agent-hub"] .valki-chat-form{
   display:none !important;
@@ -1144,6 +1145,7 @@ html.valki-chat-open #valki-root .valki-bubble{
    - Makes header/messages/composer read like ONE block
 ========================================================= */
 #valki-root .valki-modal > .valki-modal-header,
+#valki-root .valki-modal > .valki-pinned-header,
 #valki-root .valki-modal > .valki-messages,
 #valki-root .valki-modal > .valki-chat-form{
   background: var(--chat-block-bg);
@@ -1155,12 +1157,25 @@ html.valki-chat-open #valki-root .valki-bubble{
 }
 
 #valki-root .valki-modal > .valki-modal-header,
+#valki-root .valki-modal > .valki-pinned-header,
 #valki-root .valki-modal > .valki-chat-form{
   flex: 0 0 auto;
 }
 
 #valki-root .valki-modal > .valki-modal-header{
   border-top: 1px solid rgba(255,255,255,.12);
+}
+
+#valki-root .valki-modal > .valki-pinned-header{
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  border-top: 1px solid rgba(255,255,255,.08);
+  border-bottom: 1px solid rgba(255,255,255,.08);
+}
+
+#valki-root .valki-modal > .valki-pinned-header.is-empty{
+  display: none;
 }
 
 #valki-root .valki-modal > .valki-chat-form{
@@ -1186,6 +1201,11 @@ html.valki-chat-open #valki-root .valki-bubble{
 
 #valki-root #valki-overlay[data-layout="mobile"] .valki-modal > .valki-modal-header{
   border-top-color: transparent;
+}
+
+#valki-root #valki-overlay[data-layout="mobile"] .valki-modal > .valki-pinned-header{
+  border-top-color: transparent;
+  border-bottom-color: transparent;
 }
 
 #valki-root #valki-overlay[data-layout="mobile"] .valki-modal > .valki-chat-form{
@@ -1215,6 +1235,16 @@ html.valki-chat-open #valki-root .valki-bubble{
 #valki-root .valki-messages,
 #valki-root .valki-messages-inner{
   overflow-anchor: none;
+}
+
+/* =========================================================
+   Pinned user header
+========================================================= */
+#valki-root .valki-pinned-header-inner{
+  max-width: var(--col) !important;
+  width: 100% !important;
+  margin: 0 auto !important;
+  padding: 12px var(--gutter) 10px !important;
 }
 
 /* =========================================================
@@ -1834,6 +1864,7 @@ html.valki-chat-open #valki-root .valki-messages{
   }
 
   #valki-root .valki-modal > .valki-modal-header,
+  #valki-root .valki-modal > .valki-pinned-header,
   #valki-root .valki-modal > .valki-messages,
   #valki-root .valki-modal > .valki-chat-form{
     backdrop-filter: none;

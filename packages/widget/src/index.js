@@ -84,6 +84,8 @@ const REQUIRED_IDS = [
   'valki-session-label',
   'valki-loginout-btn',
   'valki-deleteall-btn',
+  'valki-pinned-header',
+  'valki-pinned-header-inner',
   'valki-messages',
   'valki-messages-inner',
   'valki-scroll-bottom',
@@ -905,6 +907,8 @@ class ViChatWidget {
     this.messageController = createMessageController({
       messagesEl: el['valki-messages'],
       messagesInner: el['valki-messages-inner'],
+      pinnedHeaderEl: el['valki-pinned-header'],
+      pinnedHeaderInner: el['valki-pinned-header-inner'],
       avatarUrl: this.config.avatarUrl,
       updateDeleteButtonVisibility: () => this.updateDeleteButtonVisibility(),
       onScrollUpdate: (isNearBottom) => updateScrollIndicator(isNearBottom),

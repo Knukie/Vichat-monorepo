@@ -71,6 +71,11 @@ export const templateHtml = `<div class="valki-root" id="valki-root">
         </div>
       </div>
 
+        <!-- Pinned user message -->
+        <div id="valki-pinned-header" class="valki-pinned-header" role="region" aria-live="polite">
+          <div class="valki-pinned-header-inner" id="valki-pinned-header-inner"></div>
+        </div>
+
         <!-- Messages -->
         <div id="valki-messages" class="valki-messages" role="log" aria-live="polite">
           <div class="valki-messages-inner" id="valki-messages-inner"></div>
