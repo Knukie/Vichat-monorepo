@@ -9,7 +9,7 @@ import {
 } from './storage.js';
 import { clearMessages, fetchMessages } from './api.js';
 
-export function ensureConversation(widget, agentId) {
+export function ensureConversation(widget, agentId, { forceCreate = false } = {}) {
   if (widget.isLoggedIn()) {
     console.debug('[ViChat debug] ensureConversation: auth session active');
     return widget.conversationId || '';
@@ -25,19 +25,22 @@ export function ensureConversation(widget, agentId) {
     });
     return widget.conversationId;
   }
-  const stored = loadConversationId(safeAgentId);
-  if (stored) {
-    widget.conversationId = stored;
-    console.debug('[ViChat debug] ensureConversation: loaded conversation from storage', {
-      conversationId: stored
-    });
-    return stored;
+  if (!forceCreate) {
+    const stored = loadConversationId(safeAgentId);
+    if (stored) {
+      widget.conversationId = stored;
+      console.debug('[ViChat debug] ensureConversation: loaded conversation from storage', {
+        conversationId: stored
+      });
+      return stored;
+    }
   }
   const created = createConversationId();
   widget.conversationId = created;
   saveConversationId(safeAgentId, created);
   console.debug('[ViChat debug] ensureConversation: created new guest conversation', {
-    conversationId: created
+    conversationId: created,
+    forced: forceCreate
   });
   return created;
 }
@@ -76,7 +79,7 @@ export async function loadLoggedInMessagesToUI(widget, { forceOpen = false } = {
 export async function loadMessagesForCurrentAgent(widget, { forceOpen = false } = {}) {
   if (forceOpen) widget.ensureOverlayOpen('load messages');
   if (widget.isLoggedIn()) {
-    console.debug('[ViChat debug] load messages: logged-in flow');
+    console.debug('[ViChat debug] load messages: auth flow');
     const ok = await loadLoggedInMessagesToUI(widget, { forceOpen });
     if (!ok && !widget.isLoggedIn()) {
       widget.guestHistory = loadGuestHistory(widget.config, widget.currentAgentId);
@@ -85,18 +88,43 @@ export async function loadMessagesForCurrentAgent(widget, { forceOpen = false } 
     }
     return;
   }
-  const conversationId = ensureConversation(widget, widget.currentAgentId);
-  if (conversationId) {
-    console.debug('[ViChat debug] load messages: guest conversation fetch', { conversationId });
-    const { ok, messages } = await fetchMessages({
+  console.debug('[ViChat debug] load messages: guest flow');
+  let conversationId = ensureConversation(widget, widget.currentAgentId);
+  let attemptedRetry = false;
+  const fetchGuestMessages = async (cid) =>
+    fetchMessages({
       token: '',
       config: widget.config,
       agentId: widget.currentAgentId,
-      conversationId
+      conversationId: cid
     });
-    if (ok) {
+  if (conversationId) {
+    console.debug('[ViChat debug] load messages: guest conversation fetch', { conversationId });
+    let result = await fetchGuestMessages(conversationId);
+    if (
+      result.status === 400 &&
+      typeof result.error === 'string' &&
+      result.error.includes('conversationId required for guests') &&
+      !attemptedRetry
+    ) {
+      attemptedRetry = true;
+      console.debug('[ViChat debug] load messages: missing conversationId retry');
+      conversationId = ensureConversation(widget, widget.currentAgentId, { forceCreate: true });
+      if (conversationId) {
+        console.debug('[ViChat debug] load messages: guest conversation retry', { conversationId });
+        result = await fetchGuestMessages(conversationId);
+      }
+    }
+    if (result.conversationId && result.conversationId !== widget.conversationId) {
+      widget.conversationId = result.conversationId;
+      saveConversationId(widget.currentAgentId, result.conversationId);
+      console.debug('[ViChat debug] load messages: updated conversation from backend', {
+        conversationId: result.conversationId
+      });
+    }
+    if (result.ok) {
       widget.messageController.clearMessagesUI();
-      for (const m of messages || []) {
+      for (const m of result.messages || []) {
         await widget.messageController.addMessage({ type: m.role, text: m.text, images: m.images });
       }
       widget.messageController.scrollToBottom(true);
