@@ -413,7 +413,7 @@ html.valki-chat-open #valki-root .valki-bubble{
   display: inline-flex;
   align-items: baseline;
   color: currentColor;
-  opacity: 1;
+  opacity: 0.95;
 }
 
 #valki-root .valki-sources-ellipsis .valki-ellipsis-dots{
@@ -424,7 +424,7 @@ html.valki-chat-open #valki-root .valki-bubble{
 
 #valki-root .valki-sources-ellipsis .valki-ellipsis-dot{
   display: inline-block;
-  opacity: 0.2;
+  opacity: 0.45;
   animation: valki-ellipsis 1.2s infinite;
 }
 
@@ -449,7 +449,7 @@ html.valki-chat-open #valki-root .valki-bubble{
 
 @keyframes valki-ellipsis{
   0%, 100%{
-    opacity: 0.2;
+    opacity: 0.45;
   }
   50%{
     opacity: 1;
