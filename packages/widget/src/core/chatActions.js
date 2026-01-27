@@ -1,11 +1,46 @@
 import {
   clearAuthToken,
   clearGuestHistory,
+  createConversationId,
   loadGuestHistory,
+  loadConversationId,
   saveConversationId,
   saveGuestHistory
 } from './storage.js';
 import { clearMessages, fetchMessages } from './api.js';
+
+export function ensureConversation(widget, agentId) {
+  if (widget.isLoggedIn()) {
+    console.debug('[ViChat debug] ensureConversation: auth session active');
+    return widget.conversationId || '';
+  }
+  const safeAgentId = String(agentId || '').trim();
+  if (!safeAgentId) {
+    console.debug('[ViChat debug] ensureConversation: missing agentId for guest session');
+    return '';
+  }
+  if (widget.conversationId) {
+    console.debug('[ViChat debug] ensureConversation: using existing conversation', {
+      conversationId: widget.conversationId
+    });
+    return widget.conversationId;
+  }
+  const stored = loadConversationId(safeAgentId);
+  if (stored) {
+    widget.conversationId = stored;
+    console.debug('[ViChat debug] ensureConversation: loaded conversation from storage', {
+      conversationId: stored
+    });
+    return stored;
+  }
+  const created = createConversationId();
+  widget.conversationId = created;
+  saveConversationId(safeAgentId, created);
+  console.debug('[ViChat debug] ensureConversation: created new guest conversation', {
+    conversationId: created
+  });
+  return created;
+}
 
 export async function loadLoggedInMessagesToUI(widget, { forceOpen = false } = {}) {
   if (forceOpen) widget.ensureOverlayOpen('load logged-in messages');
@@ -41,6 +76,7 @@ export async function loadLoggedInMessagesToUI(widget, { forceOpen = false } = {
 export async function loadMessagesForCurrentAgent(widget, { forceOpen = false } = {}) {
   if (forceOpen) widget.ensureOverlayOpen('load messages');
   if (widget.isLoggedIn()) {
+    console.debug('[ViChat debug] load messages: logged-in flow');
     const ok = await loadLoggedInMessagesToUI(widget, { forceOpen });
     if (!ok && !widget.isLoggedIn()) {
       widget.guestHistory = loadGuestHistory(widget.config, widget.currentAgentId);
@@ -49,12 +85,14 @@ export async function loadMessagesForCurrentAgent(widget, { forceOpen = false } 
     }
     return;
   }
-  if (widget.conversationId) {
+  const conversationId = ensureConversation(widget, widget.currentAgentId);
+  if (conversationId) {
+    console.debug('[ViChat debug] load messages: guest conversation fetch', { conversationId });
     const { ok, messages } = await fetchMessages({
       token: '',
       config: widget.config,
       agentId: widget.currentAgentId,
-      conversationId: widget.conversationId
+      conversationId
     });
     if (ok) {
       widget.messageController.clearMessagesUI();
@@ -66,6 +104,7 @@ export async function loadMessagesForCurrentAgent(widget, { forceOpen = false } 
       widget.scheduleLayoutMetrics?.();
       return;
     }
+    console.warn('[ViChat] failed to load guest messages', { conversationId });
   }
   widget.guestHistory = loadGuestHistory(widget.config, widget.currentAgentId);
   await widget.renderGuestHistoryToUI();

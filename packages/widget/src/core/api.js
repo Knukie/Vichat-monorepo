@@ -61,7 +61,7 @@ export async function fetchMessages({ token, config, agentId, conversationId }) 
   try {
     const res = await fetch(url, { headers });
     if (!res.ok) {
-      if (res.status === 400 && !agentId && !conversationId) {
+      if (res.status === 400) {
         return { ok: true, status: res.status, messages: [] };
       }
       if (res.status === 404 || res.status === 405) {

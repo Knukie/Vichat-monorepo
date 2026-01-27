@@ -193,3 +193,10 @@ export function generateId(prefix = 'id') {
   }
   return `${p}-${Math.random().toString(16).slice(2)}${Date.now().toString(16)}`;
 }
+
+export function createConversationId() {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return generateId('valk-conversation');
+}
