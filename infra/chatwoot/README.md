@@ -9,6 +9,34 @@
 3. `pnpm infra:up`
 4. `pnpm chatwoot:setup`
 
+## Railway deploy (web + worker)
+Deze setup gaat uit van **twee Railway services** (web en worker) vanuit dezelfde GitHub repo. De Dockerfile in `infra/chatwoot` draait automatisch `db:chatwoot_prepare` bij deploy.
+
+### Web service
+1. Maak een nieuwe Railway service: **Deploy > GitHub Repository**.
+2. Kies deze repo en zet **Root Directory** op `infra/chatwoot`.
+3. Laat Railway de Dockerfile gebruiken (default).
+4. Start command is de default uit de Dockerfile (web):
+   - `bundle exec rails s -p 3000 -b 0.0.0.0`
+
+### Worker service
+1. Maak een tweede Railway service op dezelfde repo.
+2. Gebruik ook **Root Directory** `infra/chatwoot`.
+3. Override de start command naar:
+   - `bundle exec sidekiq -C config/sidekiq.yml`
+
+### Required environment variables
+- `DATABASE_URL`
+- `REDIS_URL`
+- `SECRET_KEY_BASE` (nooit committen)
+- `FRONTEND_URL`
+- `RAILS_ENV`
+- `NODE_ENV`
+- `DEFAULT_LOCALE`
+- `ENABLE_ACCOUNT_SIGNUP`
+
+> Opmerking: als je Railway anders wilt opzetten (bijv. één service), pas de bovenstaande aannames aan.
+
 ## Troubleshooting
 - **Ports in use:** stop services die poort 3000/5432/6379 gebruiken of pas de poorten aan in `docker-compose.yml`.
 - **Reset volumes:** `docker compose --env-file infra/chatwoot/.env -f infra/chatwoot/docker-compose.yml down --volumes`
