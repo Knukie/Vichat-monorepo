@@ -49,16 +49,18 @@ module HostUriGuard
   end
 end
 
-host = HostUriGuard.choose_host
-protocol = HostUriGuard.choose_protocol
+if defined?(Rails) && Rails.respond_to?(:application) && Rails.application
+  host = HostUriGuard.choose_host
+  protocol = HostUriGuard.choose_protocol
 
-if HostUriGuard.present?(host)
-  current_host = ENV["HOST"]
-  if !HostUriGuard.present?(current_host) || current_host == "0.0.0.0"
-    ENV["HOST"] = host
-    HostUriGuard.log_warn("HOST was invalid or empty. Overriding HOST to '#{host}'.")
+  if HostUriGuard.present?(host)
+    current_host = ENV["HOST"]
+    if !HostUriGuard.present?(current_host) || current_host == "0.0.0.0"
+      ENV["HOST"] = host
+      HostUriGuard.log_warn("HOST was invalid or empty. Overriding HOST to '#{host}'.")
+    end
+
+    Rails.application.routes.default_url_options[:host] = host
+    Rails.application.routes.default_url_options[:protocol] = protocol
   end
-
-  Rails.application.routes.default_url_options[:host] = host
-  Rails.application.routes.default_url_options[:protocol] = protocol
 end
