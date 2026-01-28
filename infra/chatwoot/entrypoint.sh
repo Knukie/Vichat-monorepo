@@ -1,4 +1,6 @@
 #!/bin/sh
+echo "[entrypoint] BOOT $(date)"
+echo "[entrypoint] ROLE=${ROLE:-web} PORT=${PORT:-unset}"#!/bin/sh
 
 
 echo "[entrypoint] starting..."
