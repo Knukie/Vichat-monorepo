@@ -1,8 +1,22 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
-echo "[entrypoint] Running Chatwoot db:chatwoot_prepare..."
+set -euo pipefail
 
-bundle exec rails db:chatwoot_prepare || echo "[entrypoint] prepare already applied or skipped"
+log() {
+  echo "[entrypoint] $*"
+}
 
-echo "[entrypoint] Starting: $@"
+role="${ROLE:-web}"
+
+if [[ "${role}" == "web" ]]; then
+  log "Running Chatwoot db:chatwoot_prepare..."
+  if ! bundle exec rails db:chatwoot_prepare; then
+    log "db:chatwoot_prepare failed. Exiting."
+    exit 1
+  fi
+else
+  log "ROLE=${role} - skipping migrations."
+fi
+
+log "Starting: $*"
 exec "$@"
