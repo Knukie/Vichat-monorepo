@@ -71,6 +71,18 @@ if [ "${DEBUG_URI:-}" = "1" ]; then
   export RUBYOPT="${RUBYOPT:-} -W2 -d"
 fi
 
+puma_bind="${PUMA_BIND:-}"
+if [ -z "$puma_bind" ] || [ "$puma_bind" = "0.0.0.0" ] || [ "$puma_bind" = "http://0.0.0.0" ]; then
+  export PUMA_BIND="tcp://0.0.0.0:${PORT:-3000}"
+else
+  case "$puma_bind" in
+    http://0.0.0.0*)
+      export PUMA_BIND="tcp://0.0.0.0:${PORT:-3000}"
+      ;;
+  esac
+fi
+log "EFFECTIVE PUMA_BIND=${PUMA_BIND:-unset}"
+
 if [ "$role" = "web" ]; then
   log "Running db:chatwoot_prepare..."
   bundle exec rails db:chatwoot_prepare
