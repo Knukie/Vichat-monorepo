@@ -7,7 +7,7 @@ log() {
 
 log "BOOT $(date) ROLE=${ROLE:-web} PORT=${PORT:-unset}"
 
-mkdir -p /app/tmp/pids /app/tmp/cache /app/tmp/sockets
+mkdir -p /app/tmp/pids /app/tmp/cache /app/tmp/sockets /app/log
 
 extract_host() {
   value="$1"
