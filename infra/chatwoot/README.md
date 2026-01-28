@@ -15,27 +15,26 @@ Deze setup gaat uit van **twee Railway services** (web en worker) vanuit dezelfd
 ### Web service
 1. Maak een nieuwe Railway service: **Deploy > GitHub Repository**.
 2. Kies deze repo en zet **Root Directory** op `infra/chatwoot`.
-3. Laat Railway de Dockerfile gebruiken (default).
+3. Laat Railway de Dockerfile gebruiken (default). Start command moet **leeg** blijven.
 4. Zet environment variable `ROLE=web`.
-5. Start command is de default uit de Dockerfile (web):
-   - `bundle exec rails s -p 3000 -b 0.0.0.0`
+5. Runtime wordt bepaald door `WORKDIR /app` in de Dockerfile (Chatwoot draait onder `/app`).
 6. Koppel je **custom domain alleen aan de web service** (niet aan de worker).
 
 ### Worker service
 1. Maak een tweede Railway service op dezelfde repo.
 2. Gebruik ook **Root Directory** `infra/chatwoot`.
 3. Zet environment variable `ROLE=worker`.
-4. Override de start command naar:
-   - `bundle exec sidekiq -C config/sidekiq.yml`
+4. Laat **Start Command** leeg (Dockerfile + entrypoint start Sidekiq als PID1).
 
 ### Required environment variables
+- `ROLE` (`web` of `worker`)
+- `RAILS_ENV=production`
+- `NODE_ENV=production`
 - `DATABASE_URL` (gebruik de **Supabase Session Pooler** URL met IPv4)
 - `REDIS_URL`
 - `SECRET_KEY_BASE` (nooit committen)
 - `FRONTEND_URL`
 - `BACKEND_URL`
-- `RAILS_ENV`
-- `NODE_ENV`
 - `FORCE_SSL` (true/false)
 - `DEFAULT_LOCALE`
 - `ENABLE_ACCOUNT_SIGNUP`
