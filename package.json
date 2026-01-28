@@ -4,6 +4,10 @@
   "packageManager": "pnpm@9.0.0",
   "scripts": {
     "build": "pnpm -r build",
+    "infra:down": "docker compose --env-file infra/chatwoot/.env -f infra/chatwoot/docker-compose.yml down",
+    "infra:logs": "docker compose --env-file infra/chatwoot/.env -f infra/chatwoot/docker-compose.yml logs -f",
+    "infra:up": "docker compose --env-file infra/chatwoot/.env -f infra/chatwoot/docker-compose.yml up -d",
+    "chatwoot:setup": "docker compose --env-file infra/chatwoot/.env -f infra/chatwoot/docker-compose.yml run --rm chatwoot-web bundle exec rails db:chatwoot_prepare",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test"
   },
