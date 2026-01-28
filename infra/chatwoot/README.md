@@ -17,13 +17,14 @@ Deze setup gaat uit van **twee Railway services** (web en worker) vanuit dezelfd
 2. Kies deze repo en zet **Root Directory** op `infra/chatwoot`.
 3. Laat Railway de Dockerfile gebruiken (default). Start command moet **leeg** blijven.
 4. Zet environment variable `ROLE=web`.
-5. Runtime wordt bepaald door `WORKDIR /app` in de Dockerfile (Chatwoot draait onder `/app`).
-6. Koppel je **custom domain alleen aan de web service** (niet aan de worker).
+5. Zet een geldige host via `APP_HOST` of `RAILS_HOST`, of gebruik `FRONTEND_URL`/`BACKEND_URL` met een `https://`-URL.
+6. Runtime wordt bepaald door `WORKDIR /app` in de Dockerfile (Chatwoot draait onder `/app`).
+7. Koppel je **custom domain alleen aan de web service** (niet aan de worker).
 
 ### Worker service
 1. Maak een tweede Railway service op dezelfde repo.
 2. Gebruik ook **Root Directory** `infra/chatwoot`.
-3. Zet environment variable `ROLE=worker`.
+3. Zet environment variable `ROLE=worker` (geen `PORT` nodig).
 4. Laat **Start Command** leeg (Dockerfile + entrypoint start Sidekiq als PID1).
 
 ### Required environment variables

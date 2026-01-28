@@ -55,33 +55,42 @@ module HostUriGuard
       warn(message)
     end
   end
+
+  def apply_default_url_options(target, host, protocol)
+    return unless target.respond_to?(:default_url_options)
+
+    target.default_url_options ||= {}
+    target.default_url_options[:host] = host
+    target.default_url_options[:protocol] = protocol
+  end
 end
 
 # --- initializer body ---
 begin
   unless HostUriGuard.disabled?
-    # Only run when Rails app exists
     if defined?(Rails) && Rails.respond_to?(:application) && Rails.application
       host = HostUriGuard.extract_host
       protocol = HostUriGuard.choose_protocol
 
-      # Only override ENV["HOST"] if it's empty/invalid and we have a valid host
       if HostUriGuard.present?(host) && HostUriGuard.invalid_host?(ENV["HOST"])
         ENV["HOST"] = host
         HostUriGuard.log_warn("HOST was invalid/empty. Overriding HOST to '#{host}'.")
       end
 
-      # IMPORTANT: Only set default_url_options when host is valid.
       if HostUriGuard.present?(host)
         Rails.application.routes.default_url_options[:host] = host
         Rails.application.routes.default_url_options[:protocol] = protocol
-      end
 
-      # DO NOT touch action_mailer/action_controller config here.
-      # That can trigger early framework initialization and credentials loading.
+        if Rails.application.config.respond_to?(:action_mailer)
+          HostUriGuard.apply_default_url_options(Rails.application.config.action_mailer, host, protocol)
+        end
+
+        if Rails.application.config.respond_to?(:action_controller)
+          HostUriGuard.apply_default_url_options(Rails.application.config.action_controller, host, protocol)
+        end
+      end
     end
   end
-rescue => e
-  # Never crash boot because of a guard initializer
+rescue StandardError, URI::InvalidURIError => e
   HostUriGuard.log_warn("HostUriGuard failed safely: #{e.class}: #{e.message}")
 end
