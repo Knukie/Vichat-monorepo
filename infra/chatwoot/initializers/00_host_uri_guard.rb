@@ -5,11 +5,21 @@ require "uri"
 module HostUriGuard
   module_function
 
+  DISABLE_FLAG = "DISABLE_HOST_URI_GUARD"
+
+  def disabled?
+    ENV[DISABLE_FLAG].to_s.strip == "1"
+  end
+
   def present?(value)
     value.is_a?(String) && !value.strip.empty?
   end
 
-  def parse_url(value)
+  def invalid_host?(value)
+    !present?(value) || value.strip == "0.0.0.0"
+  end
+
+  def safe_parse_url(value)
     return [nil, nil] unless present?(value)
 
     uri = URI.parse(value)
@@ -18,26 +28,24 @@ module HostUriGuard
     [nil, nil]
   end
 
-  def choose_host
-    return ENV["APP_HOST"] if present?(ENV["APP_HOST"])
-    return ENV["RAILS_HOST"] if present?(ENV["RAILS_HOST"])
+  def extract_host
+    return ENV["APP_HOST"].to_s.strip if present?(ENV["APP_HOST"])
+    return ENV["RAILS_HOST"].to_s.strip if present?(ENV["RAILS_HOST"])
 
-    backend_host, = parse_url(ENV["BACKEND_URL"])
-    return backend_host if present?(backend_host)
+    backend_host, = safe_parse_url(ENV["BACKEND_URL"])
+    return backend_host.to_s.strip if present?(backend_host)
 
-    frontend_host, = parse_url(ENV["FRONTEND_URL"])
-    return frontend_host if present?(frontend_host)
+    frontend_host, = safe_parse_url(ENV["FRONTEND_URL"])
+    return frontend_host.to_s.strip if present?(frontend_host)
 
     nil
   end
 
   def choose_protocol
-    _, backend_scheme = parse_url(ENV["BACKEND_URL"])
-    _, frontend_scheme = parse_url(ENV["FRONTEND_URL"])
+    _, backend_scheme = safe_parse_url(ENV["BACKEND_URL"])
+    _, frontend_scheme = safe_parse_url(ENV["FRONTEND_URL"])
 
-    return "https" if backend_scheme == "https" || frontend_scheme == "https"
-
-    "http"
+    (backend_scheme == "https" || frontend_scheme == "https") ? "https" : "http"
   end
 
   def log_warn(message)
@@ -49,32 +57,31 @@ module HostUriGuard
   end
 end
 
-if defined?(Rails) && Rails.respond_to?(:application) && Rails.application
-  host = HostUriGuard.choose_host
-  protocol = HostUriGuard.choose_protocol
+# --- initializer body ---
+begin
+  unless HostUriGuard.disabled?
+    # Only run when Rails app exists
+    if defined?(Rails) && Rails.respond_to?(:application) && Rails.application
+      host = HostUriGuard.extract_host
+      protocol = HostUriGuard.choose_protocol
 
-  if HostUriGuard.present?(host)
-    current_host = ENV["HOST"]
-    if !HostUriGuard.present?(current_host) || current_host == "0.0.0.0"
-      ENV["HOST"] = host
-      HostUriGuard.log_warn("HOST was invalid or empty. Overriding HOST to '#{host}'.")
+      # Only override ENV["HOST"] if it's empty/invalid and we have a valid host
+      if HostUriGuard.present?(host) && HostUriGuard.invalid_host?(ENV["HOST"])
+        ENV["HOST"] = host
+        HostUriGuard.log_warn("HOST was invalid/empty. Overriding HOST to '#{host}'.")
+      end
+
+      # IMPORTANT: Only set default_url_options when host is valid.
+      if HostUriGuard.present?(host)
+        Rails.application.routes.default_url_options[:host] = host
+        Rails.application.routes.default_url_options[:protocol] = protocol
+      end
+
+      # DO NOT touch action_mailer/action_controller config here.
+      # That can trigger early framework initialization and credentials loading.
     end
   end
-
-  Rails.application.routes.default_url_options[:host] = host
-  Rails.application.routes.default_url_options[:protocol] = protocol
-
-  if Rails.application.config.respond_to?(:action_mailer)
-    Rails.application.config.action_mailer.default_url_options = {
-      host: host,
-      protocol: protocol
-    }
-  end
-
-  if Rails.application.config.respond_to?(:action_controller)
-    Rails.application.config.action_controller.default_url_options = {
-      host: host,
-      protocol: protocol
-    }
-  end
+rescue => e
+  # Never crash boot because of a guard initializer
+  HostUriGuard.log_warn("HostUriGuard failed safely: #{e.class}: #{e.message}")
 end
