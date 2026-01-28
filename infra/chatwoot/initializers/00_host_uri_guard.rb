@@ -59,8 +59,22 @@ if defined?(Rails) && Rails.respond_to?(:application) && Rails.application
       ENV["HOST"] = host
       HostUriGuard.log_warn("HOST was invalid or empty. Overriding HOST to '#{host}'.")
     end
+  end
 
-    Rails.application.routes.default_url_options[:host] = host
-    Rails.application.routes.default_url_options[:protocol] = protocol
+  Rails.application.routes.default_url_options[:host] = host
+  Rails.application.routes.default_url_options[:protocol] = protocol
+
+  if Rails.application.config.respond_to?(:action_mailer)
+    Rails.application.config.action_mailer.default_url_options = {
+      host: host,
+      protocol: protocol
+    }
+  end
+
+  if Rails.application.config.respond_to?(:action_controller)
+    Rails.application.config.action_controller.default_url_options = {
+      host: host,
+      protocol: protocol
+    }
   end
 end
