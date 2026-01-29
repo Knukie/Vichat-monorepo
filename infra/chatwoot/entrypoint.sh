@@ -5,7 +5,11 @@ log() {
   echo "[entrypoint] $*"
 }
 
-log "BOOT $(date) ROLE=${ROLE:-web} PORT=${PORT:-unset}"
+# Railway expects the app to listen on $PORT.
+# Provide a safe fallback for environments that don't inject it.
+export PORT="${PORT:-3000}"
+
+log "BOOT $(date) ROLE=${ROLE:-web} PORT=${PORT}"
 
 mkdir -p /app/tmp/pids /app/tmp/cache /app/tmp/sockets /app/log
 
@@ -42,6 +46,7 @@ else
   fi
 fi
 
+# Only override HOST if it's empty or the default bind-all value.
 if [ -z "${HOST:-}" ] || [ "${HOST:-}" = "0.0.0.0" ]; then
   if [ -n "$effective_host" ]; then
     export HOST="$effective_host"
