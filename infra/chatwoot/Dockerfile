@@ -11,4 +11,4 @@ RUN sed -i 's/\r$//' /entrypoint.sh \
 
 ENTRYPOINT ["/entrypoint.sh"]
 
-CMD ["sh","-c","bundle exec puma -C config/puma.rb -p ${PORT:-3000} -b tcp://0.0.0.0:${PORT:-3000}"]
+CMD ["sh","-c","bundle exec puma -C config/puma.rb"]
