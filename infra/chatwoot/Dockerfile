@@ -1,66 +1,18 @@
-#!/bin/sh
-set -eu
+FROM chatwoot/chatwoot:latest-ce
 
-log() {
-  echo "[entrypoint] $*"
-}
+WORKDIR /app
 
-log "BOOT $(date) ROLE=${ROLE:-web} PORT=${PORT:-unset}"
+# Entrypoint + custom initializers
+COPY entrypoint.sh /entrypoint.sh
+COPY initializers/00_ai_agents_guard.rb /app/config/initializers/00_ai_agents_guard.rb
+COPY initializers/00_host_uri_guard.rb /app/config/initializers/00_host_uri_guard.rb
 
-mkdir -p /app/tmp/pids /app/tmp/cache /app/tmp/sockets /app/log
+# ActiveStorage config
+COPY config/storage.yml /app/config/storage.yml
 
-extract_host() {
-  value="$1"
-  if [ -z "$value" ]; then
-    echo ""
-    return
-  fi
+# Normalize line endings + make entrypoint executable
+RUN sed -i 's/\r$//' /entrypoint.sh \
+ && chmod +x /entrypoint.sh
 
-  case "$value" in
-    *://*) value="${value#*://}" ;;
-  esac
-
-  value="${value%%/*}"
-  value="${value%%\?*}"
-  value="${value%%\#*}"
-  value="${value%%:*}"
-  echo "$value"
-}
-
-effective_host=""
-if [ -n "${APP_HOST:-}" ]; then
-  effective_host="$APP_HOST"
-elif [ -n "${RAILS_HOST:-}" ]; then
-  effective_host="$RAILS_HOST"
-else
-  backend_host="$(extract_host "${BACKEND_URL:-}")"
-  frontend_host="$(extract_host "${FRONTEND_URL:-}")"
-  if [ -n "$backend_host" ]; then
-    effective_host="$backend_host"
-  elif [ -n "$frontend_host" ]; then
-    effective_host="$frontend_host"
-  fi
-fi
-
-if [ -z "${HOST:-}" ] || [ "${HOST:-}" = "0.0.0.0" ]; then
-  if [ -n "$effective_host" ]; then
-    export HOST="$effective_host"
-  fi
-fi
-
-log "EFFECTIVE HOST=${HOST:-unset}"
-
-role="${ROLE:-web}"
-
-if [ "$role" = "web" ]; then
-  log "Running db:chatwoot_prepare..."
-  bundle exec rails db:chatwoot_prepare
-fi
-
-if [ "$role" = "worker" ]; then
-  log "Starting Sidekiq..."
-  exec bundle exec sidekiq -C config/sidekiq.yml
-fi
-
-log "Starting main process: $*"
-exec "$@"
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["sh", "-c", "bundle exec puma -C config/puma.rb"]
