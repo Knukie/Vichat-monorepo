@@ -1,0 +1,14 @@
+# Local disk storage for development and test environments.
+local:
+  service: Disk
+  root: <%= Rails.root.join("storage") %>
+
+# S3-compatible object storage for production (Supabase/MinIO/etc.).
+s3_compatible:
+  service: S3
+  access_key_id: <%= ENV.fetch("AWS_ACCESS_KEY_ID") %>
+  secret_access_key: <%= ENV.fetch("AWS_SECRET_ACCESS_KEY") %>
+  region: <%= ENV.fetch("AWS_REGION") %>
+  bucket: <%= ENV.fetch("S3_BUCKET") %>
+  endpoint: <%= ENV.fetch("S3_ENDPOINT") %>
+  force_path_style: true
