@@ -1,14 +1,20 @@
-# Local disk storage for development and test environments.
+# Local disk storage for development/test.
 local:
   service: Disk
   root: <%= Rails.root.join("storage") %>
 
-# S3-compatible object storage for production (Supabase/MinIO/etc.).
+# S3-compatible object storage (Supabase S3 / MinIO / Wasabi / R2 via S3 API)
 s3_compatible:
   service: S3
-  access_key_id: <%= ENV.fetch("AWS_ACCESS_KEY_ID") %>
-  secret_access_key: <%= ENV.fetch("AWS_SECRET_ACCESS_KEY") %>
-  region: <%= ENV.fetch("AWS_REGION") %>
-  bucket: <%= ENV.fetch("S3_BUCKET") %>
-  endpoint: <%= ENV.fetch("S3_ENDPOINT") %>
+  access_key_id: <%= ENV["AWS_ACCESS_KEY_ID"] %>
+  secret_access_key: <%= ENV["AWS_SECRET_ACCESS_KEY"] %>
+
+  # Region is REQUIRED by aws-sdk-s3.
+  # We allow both AWS_REGION and AWS_DEFAULT_REGION to avoid boot crashes.
+  region: <%= ENV["AWS_REGION"] || ENV["AWS_DEFAULT_REGION"] || "us-east-1" %>
+
+  bucket: <%= ENV["S3_BUCKET"] %>
+  endpoint: <%= ENV["S3_ENDPOINT"] %>
+
+  # Required for many S3-compatible providers.
   force_path_style: true
