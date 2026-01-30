@@ -62,10 +62,5 @@ if [ "$role" = "worker" ]; then
   exec bundle exec sidekiq -C config/sidekiq.yml
 fi
 
-log "LOGO=${LOGO:-unset}"
-log "LOGO_THUMBNAIL=${LOGO_THUMBNAIL:-unset}"
-log "RAILS_SERVE_STATIC_FILES=${RAILS_SERVE_STATIC_FILES:-unset}"
-ls -lah /app/public/brand-assets || true
-
 log "Starting main process: $*"
 exec "$@"
