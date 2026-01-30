@@ -10,7 +10,7 @@ COPY initializers/00_host_uri_guard.rb /app/config/initializers/00_host_uri_guar
 # ActiveStorage config
 COPY config/storage.yml /app/config/storage.yml
 
-# Brand assets (make a local, stable path for LOGO + also overwrite default svg assets)
+# Brand assets
 # - Downloads your PNG into /public/brand-assets/logo.png
 # - Writes svg wrappers so if Chatwoot expects logo.svg/logo_dark.svg/logo_thumbnail.svg, it still shows your PNG
 RUN set -eux; \
@@ -31,14 +31,14 @@ RUN set -eux; \
   curl -fsSL "https://szowwbnppsueshvxiwoi.supabase.co/storage/v1/object/public/branding/netco-logo.png" \
     -o /app/public/brand-assets/logo.png; \
   \
-  # Create SVG wrappers (covers cases where CE uses logo.svg assets)
-  cat > /app/public/brand-assets/logo.svg <<'SVG'; \
+  # Create SVG wrapper (covers cases where CE uses logo.svg assets)
+  cat > /app/public/brand-assets/logo.svg <<'SVG'
 <svg xmlns="http://www.w3.org/2000/svg" width="240" height="80" viewBox="0 0 240 80">
   <image href="/brand-assets/logo.png" width="240" height="80" preserveAspectRatio="xMidYMid meet"/>
 </svg>
 SVG
-  cp /app/public/brand-assets/logo.svg /app/public/brand-assets/logo_dark.svg; \
-  cp /app/public/brand-assets/logo.svg /app/public/brand-assets/logo_thumbnail.svg
+RUN cp /app/public/brand-assets/logo.svg /app/public/brand-assets/logo_dark.svg \
+ && cp /app/public/brand-assets/logo.svg /app/public/brand-assets/logo_thumbnail.svg
 
 # Normalize + make entrypoint executable
 RUN sed -i 's/\r$//' /entrypoint.sh && chmod +x /entrypoint.sh
