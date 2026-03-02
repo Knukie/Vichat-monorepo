@@ -1,8 +1,6 @@
 import { Router } from "express";
 import { cleanText } from "../core/utils.js";
 
-const CHATWOOT_API_PREFIX = "/app/v1";
-
 const chatwootRouter = Router();
 
 // -----------------------
@@ -81,7 +79,7 @@ async function postChatwootMessage({ chatwootBaseUrl, apiToken, accountId, conve
   if (!base) throw new Error("CHATWOOT_BASE_URL missing/empty");
   if (!token) throw new Error("CHATWOOT_API_TOKEN missing/empty");
 
-  const url = `${base}/app/v1/accounts/${accountId}/conversations/${conversationId}/messages`;
+  const url = `${base}/api/v1/accounts/${accountId}/conversations/${conversationId}/messages`;
 
   // Debug zonder secrets te loggen
   console.info("[chatwoot] send debug", {
