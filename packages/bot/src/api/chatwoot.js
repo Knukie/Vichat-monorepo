@@ -81,7 +81,6 @@ async function postChatwootMessage({ chatwootBaseUrl, apiToken, accountId, conve
 
   const url = `${base}/api/v1/accounts/${accountId}/conversations/${conversationId}/messages`;
 
-  // Debug zonder secrets te loggen
   console.info("[chatwoot] send debug", {
     base,
     accountId,
@@ -93,11 +92,9 @@ async function postChatwootMessage({ chatwootBaseUrl, apiToken, accountId, conve
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-
-      // Primary auth (werkt met curl.exe bij jou)
+      // Primary auth
       api_access_token: token,
-
-      // Fallback auth (handig achter proxies)
+      // Fallback auth
       Authorization: `Bearer ${token}`
     },
     body: JSON.stringify({
@@ -116,6 +113,38 @@ async function postChatwootMessage({ chatwootBaseUrl, apiToken, accountId, conve
   return resp.json().catch(() => ({}));
 }
 
+// ✅ Typing indicator toggle (server-side)
+async function toggleChatwootTyping({ chatwootBaseUrl, apiToken, accountId, conversationId, typing }) {
+  const base = normalizeBaseUrl(chatwootBaseUrl);
+  const token = cleanText(apiToken);
+
+  if (!base) throw new Error("CHATWOOT_BASE_URL missing/empty");
+  if (!token) throw new Error("CHATWOOT_API_TOKEN missing/empty");
+
+  const url = `${base}/api/v1/accounts/${accountId}/conversations/${conversationId}/toggle_typing_status`;
+
+  const resp = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      api_access_token: token,
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify({
+      typing_status: typing ? "on" : "off",
+      is_private: false
+    })
+  });
+
+  // Niet fatal maken voor je bot flow: je kunt ook alleen loggen als je wil.
+  if (!resp.ok) {
+    const t = await resp.text().catch(() => "");
+    throw new Error(`Chatwoot typing toggle failed: ${resp.status} ${t.slice(0, 300)}`);
+  }
+
+  return resp.json().catch(() => ({}));
+}
+
 // -----------------------
 // Webhook
 // -----------------------
@@ -124,7 +153,6 @@ chatwootRouter.post("/webhook", async (req, res) => {
 
   try {
     // Optional: verify webhook calls really come from Chatwoot
-    // (only enforced if CHATWOOT_BOT_TOKEN is set)
     const expectedBotToken = cleanText(process.env.CHATWOOT_BOT_TOKEN);
     if (expectedBotToken) {
       const provided =
@@ -171,32 +199,59 @@ chatwootRouter.post("/webhook", async (req, res) => {
       images: images.length
     });
 
-    const publicSelfBaseUrl = normalizeBaseUrl(process.env.PUBLIC_SELF_BASE_URL) || "https://auth.valki.wiki";
+    const publicSelfBaseUrl =
+      normalizeBaseUrl(process.env.PUBLIC_SELF_BASE_URL) || "https://auth.valki.wiki";
     const chatwootBaseUrl = normalizeBaseUrl(process.env.CHATWOOT_BASE_URL);
     const chatwootApiToken = cleanText(process.env.CHATWOOT_API_TOKEN);
 
-    const valkiJson = await callLocalValkiAPI({
-      baseUrl: publicSelfBaseUrl,
-      message: text || (images.length ? "[image]" : ""),
-      conversationId: valkiConversationId,
-      locale,
-      images
-    });
+    let reply = "";
 
-    const reply =
-      cleanText(valkiJson?.reply) ||
-      cleanText(valkiJson?.message) ||
-      "Ik kan hier nog niet op reageren.";
+    try {
+      // ✅ typing ON (voor de UX)
+      await toggleChatwootTyping({
+        chatwootBaseUrl,
+        apiToken: chatwootApiToken,
+        accountId,
+        conversationId: conversationIdRaw,
+        typing: true
+      });
 
-    console.info("[chatwoot] valki reply", { len: reply.length });
+      const valkiJson = await callLocalValkiAPI({
+        baseUrl: publicSelfBaseUrl,
+        message: text || (images.length ? "[image]" : ""),
+        conversationId: valkiConversationId,
+        locale,
+        images
+      });
 
-    await postChatwootMessage({
-      chatwootBaseUrl,
-      apiToken: chatwootApiToken,
-      accountId,
-      conversationId: conversationIdRaw,
-      text: reply
-    });
+      reply =
+        cleanText(valkiJson?.reply) ||
+        cleanText(valkiJson?.message) ||
+        "Ik kan hier nog niet op reageren.";
+
+      console.info("[chatwoot] valki reply", { len: reply.length });
+
+      await postChatwootMessage({
+        chatwootBaseUrl,
+        apiToken: chatwootApiToken,
+        accountId,
+        conversationId: conversationIdRaw,
+        text: reply
+      });
+    } finally {
+      // ✅ typing OFF (altijd uitvoeren)
+      try {
+        await toggleChatwootTyping({
+          chatwootBaseUrl,
+          apiToken: chatwootApiToken,
+          accountId,
+          conversationId: conversationIdRaw,
+          typing: false
+        });
+      } catch (e) {
+        console.warn("[chatwoot] typing off failed", e?.message || e);
+      }
+    }
 
     return ok(res);
   } catch (e) {
