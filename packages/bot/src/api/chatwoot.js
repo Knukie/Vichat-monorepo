@@ -52,6 +52,15 @@ function pickChatwootImages(payload) {
     .filter((img) => !!img.url);
 }
 
+function sleep(ms) {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
+async function ensureMinDuration(startedAtMs, minMs) {
+  const elapsed = Date.now() - startedAtMs;
+  if (elapsed < minMs) await sleep(minMs - elapsed);
+}
+
 async function callLocalValkiAPI({ baseUrl, message, conversationId, locale, images }) {
   const base = normalizeBaseUrl(baseUrl);
   if (!base) throw new Error("PUBLIC_SELF_BASE_URL missing/empty");
@@ -92,9 +101,7 @@ async function postChatwootMessage({ chatwootBaseUrl, apiToken, accountId, conve
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      // Primary auth
       api_access_token: token,
-      // Fallback auth
       Authorization: `Bearer ${token}`
     },
     body: JSON.stringify({
@@ -136,7 +143,6 @@ async function toggleChatwootTyping({ chatwootBaseUrl, apiToken, accountId, conv
     })
   });
 
-  // Niet fatal maken voor je bot flow: je kunt ook alleen loggen als je wil.
   if (!resp.ok) {
     const t = await resp.text().catch(() => "");
     throw new Error(`Chatwoot typing toggle failed: ${resp.status} ${t.slice(0, 300)}`);
@@ -204,10 +210,16 @@ chatwootRouter.post("/webhook", async (req, res) => {
     const chatwootBaseUrl = normalizeBaseUrl(process.env.CHATWOOT_BASE_URL);
     const chatwootApiToken = cleanText(process.env.CHATWOOT_API_TOKEN);
 
-    let reply = "";
+    // ---- Perfect typing timing config ----
+    const MIN_TYPING_MS = Number(process.env.CHATWOOT_MIN_TYPING_MS || 800);
+    const TYPING_HEARTBEAT_MS = Number(process.env.CHATWOOT_TYPING_HEARTBEAT_MS || 4000);
+    const AFTER_TYPING_OFF_DELAY_MS = Number(process.env.CHATWOOT_AFTER_TYPING_OFF_DELAY_MS || 150);
 
+    const typingStartedAt = Date.now();
+    let heartbeat = null;
+
+    // ✅ typing ON zo vroeg mogelijk + heartbeat voor lange calls
     try {
-      // ✅ typing ON (voor de UX)
       await toggleChatwootTyping({
         chatwootBaseUrl,
         apiToken: chatwootApiToken,
@@ -216,6 +228,22 @@ chatwootRouter.post("/webhook", async (req, res) => {
         typing: true
       });
 
+      heartbeat = setInterval(() => {
+        toggleChatwootTyping({
+          chatwootBaseUrl,
+          apiToken: chatwootApiToken,
+          accountId,
+          conversationId: conversationIdRaw,
+          typing: true
+        }).catch(() => {});
+      }, TYPING_HEARTBEAT_MS);
+      // interval mag Node niet openhouden bij shutdown
+      if (heartbeat.unref) heartbeat.unref();
+    } catch (e) {
+      console.warn("[chatwoot] typing on failed", e?.message || e);
+    }
+
+    try {
       const valkiJson = await callLocalValkiAPI({
         baseUrl: publicSelfBaseUrl,
         message: text || (images.length ? "[image]" : ""),
@@ -224,22 +252,20 @@ chatwootRouter.post("/webhook", async (req, res) => {
         images
       });
 
-      reply =
+      const reply =
         cleanText(valkiJson?.reply) ||
         cleanText(valkiJson?.message) ||
         "Ik kan hier nog niet op reageren.";
 
       console.info("[chatwoot] valki reply", { len: reply.length });
 
-      await postChatwootMessage({
-        chatwootBaseUrl,
-        apiToken: chatwootApiToken,
-        accountId,
-        conversationId: conversationIdRaw,
-        text: reply
-      });
-    } finally {
-      // ✅ typing OFF (altijd uitvoeren)
+      // ✅ zorg dat typing minimaal even zichtbaar was
+      await ensureMinDuration(typingStartedAt, MIN_TYPING_MS);
+
+      // ✅ stop heartbeat voordat we typing uitzetten
+      if (heartbeat) clearInterval(heartbeat);
+
+      // ✅ typing OFF vóór we het bericht posten (voorkomt “naloop”)
       try {
         await toggleChatwootTyping({
           chatwootBaseUrl,
@@ -251,14 +277,39 @@ chatwootRouter.post("/webhook", async (req, res) => {
       } catch (e) {
         console.warn("[chatwoot] typing off failed", e?.message || e);
       }
-    }
 
-    return ok(res);
+      // ✅ mini delay zodat UI de OFF kan renderen
+      await sleep(AFTER_TYPING_OFF_DELAY_MS);
+
+      await postChatwootMessage({
+        chatwootBaseUrl,
+        apiToken: chatwootApiToken,
+        accountId,
+        conversationId: conversationIdRaw,
+        text: reply
+      });
+
+      return ok(res);
+    } catch (e) {
+      console.error("❌ chatwoot webhook error:", e?.message || e);
+      return ok(res);
+    } finally {
+      // ✅ absolute failsafe: heartbeat stoppen + typing uit
+      if (heartbeat) clearInterval(heartbeat);
+      try {
+        await toggleChatwootTyping({
+          chatwootBaseUrl,
+          apiToken: chatwootApiToken,
+          accountId,
+          conversationId: conversationIdRaw,
+          typing: false
+        });
+      } catch {}
+    }
   } catch (e) {
-    console.error("❌ chatwoot webhook error:", e?.message || e);
-    // Always return 200 to avoid retries/loops
+    console.error("❌ chatwoot webhook outer error:", e?.message || e);
     return ok(res);
   }
 });
 
-export { chatwootRouter };
+export { chatwootRouter }
