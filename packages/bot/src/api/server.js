@@ -27,6 +27,7 @@ import { config, corsOrigins, ensureApiEnv } from "../core/config.js";
 import { ALLOWED_IMAGE_TYPES, sanitizeImages } from "../core/images.js";
 import { MAX_IMAGE_BYTES, storeUploadedFile, uploadDir } from "../core/uploads.js";
 import { attachWebSocketServer } from "../ws/index.js";
+import { chatwootRouter } from "./chatwoot.js";
 
 ensureApiEnv();
 
@@ -35,6 +36,7 @@ const READY_TIMEOUT_MS = Number(process.env.READY_TIMEOUT_MS) || 2000;
 const app = express();
 app.set("trust proxy", 1);
 app.use(express.json({ limit: config.JSON_BODY_LIMIT }));
+app.use("/chatwoot", chatwootRouter);
 app.use(
   "/uploads",
   express.static(uploadDir, {
