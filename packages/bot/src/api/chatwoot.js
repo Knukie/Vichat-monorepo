@@ -14,10 +14,7 @@ function pickChatwootText(payload) {
 }
 
 function pickChatwootLocale(payload) {
-  // chatwoot webwidget zet vaak browser_language in additional_attributes
-  const lang = cleanText(
-    payload?.conversation?.additional_attributes?.browser?.browser_language
-  );
+  const lang = cleanText(payload?.conversation?.additional_attributes?.browser?.browser_language);
   return lang || "";
 }
 
@@ -26,23 +23,17 @@ function pickChatwootImages(payload) {
   return attachments
     .filter((a) => cleanText(a?.file_type) === "image")
     .map((a) => ({
-      url: cleanText(a?.data_url),     // chatwoot geeft meestal data_url
-      type: cleanText(a?.content_type) // bijv image/jpeg
+      url: cleanText(a?.data_url),
+      type: cleanText(a?.content_type)
     }))
     .filter((img) => !!img.url);
 }
 
 async function callLocalValkiAPI({ baseUrl, message, conversationId, locale, images }) {
-  // baseUrl = jouw eigen service URL, bv https://auth.valki.wiki
   const resp = await fetch(`${baseUrl}/api/valki`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      message,
-      conversationId,
-      locale,
-      images
-    })
+    body: JSON.stringify({ message, conversationId, locale, images })
   });
 
   const json = await resp.json().catch(() => ({}));
@@ -50,7 +41,7 @@ async function callLocalValkiAPI({ baseUrl, message, conversationId, locale, ima
     const errMsg = cleanText(json?.error) || `Valki API error (${resp.status})`;
     throw new Error(errMsg);
   }
-  return json; // verwacht: { reply/message, ... }
+  return json;
 }
 
 async function postChatwootMessage({ chatwootBaseUrl, apiToken, accountId, conversationId, text }) {
@@ -76,18 +67,19 @@ async function postChatwootMessage({ chatwootBaseUrl, apiToken, accountId, conve
   }
 }
 
+// Chatwoot webhook: map -> /api/valki -> post reply to Chatwoot
 chatwootRouter.post("/webhook", async (req, res) => {
   const payload = req.body ?? {};
 
   try {
-    // ✅ filters tegen loops & ruis
+    // Filters to avoid noise/loops
     if (payload.event !== "message_created") return res.status(200).json({ ok: true });
     if (payload.message_type !== "incoming") return res.status(200).json({ ok: true });
     if (payload.private === true) return res.status(200).json({ ok: true });
 
     const text = pickChatwootText(payload);
 
-    // Skip lange “welcome template” HTML zonder echte user tekst
+    // Skip long HTML “welcome template” messages
     if (!cleanText(payload?.processed_message_content) && text.length > 200) {
       console.info("[chatwoot] skipped long html template");
       return res.status(200).json({ ok: true });
@@ -95,14 +87,13 @@ chatwootRouter.post("/webhook", async (req, res) => {
 
     const accountId = payload?.account?.id;
     const conversationIdRaw = payload?.conversation?.id ?? payload?.conversation_id;
+
     if (!accountId || !conversationIdRaw) {
       console.warn("[chatwoot] missing accountId/conversationId");
       return res.status(200).json({ ok: true });
     }
 
-    // ✅ voorkom clash met jouw eigen conversation ids
     const valkiConversationId = `cw:${conversationIdRaw}`;
-
     const locale = pickChatwootLocale(payload);
     const images = pickChatwootImages(payload);
 
@@ -114,7 +105,6 @@ chatwootRouter.post("/webhook", async (req, res) => {
       images: images.length
     });
 
-    // ✅ roep jouw bestaande Valki HTTP pipeline aan
     const publicSelfBaseUrl =
       cleanText(process.env.PUBLIC_SELF_BASE_URL) || "https://auth.valki.wiki";
 
@@ -131,7 +121,6 @@ chatwootRouter.post("/webhook", async (req, res) => {
 
     console.info("[chatwoot] valki reply", { len: reply.length });
 
-    // ✅ post terug naar chatwoot
     await postChatwootMessage({
       chatwootBaseUrl: cleanText(process.env.CHATWOOT_BASE_URL),
       apiToken: cleanText(process.env.CHATWOOT_API_TOKEN),
@@ -143,7 +132,6 @@ chatwootRouter.post("/webhook", async (req, res) => {
     return res.status(200).json({ ok: true });
   } catch (e) {
     console.error("❌ chatwoot webhook error:", e?.message || e);
-    // altijd 200 om retries/loops te voorkomen
     return res.status(200).json({ ok: true });
   }
 });
