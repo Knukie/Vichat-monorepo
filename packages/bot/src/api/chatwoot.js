@@ -1,6 +1,8 @@
 import { Router } from "express";
 import { cleanText } from "../core/utils.js";
 
+const CHATWOOT_API_PREFIX = "/app/v1";
+
 const chatwootRouter = Router();
 
 // -----------------------
