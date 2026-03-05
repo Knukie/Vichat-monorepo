@@ -36,22 +36,21 @@ const prisma = new PrismaClient();
 const READY_TIMEOUT_MS = Number(process.env.READY_TIMEOUT_MS) || 2000;
 const app = express();
 const allowedOrigins = ["https://valki.wiki", "https://www.valki.wiki"];
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error("CORS not allowed"));
+  },
+  methods: ["GET", "POST", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "Accept"]
+};
 
 app.set("trust proxy", 1);
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-      return callback(new Error("CORS not allowed"));
-    },
-    methods: ["GET", "POST", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "Accept"]
-  })
-);
-app.options("*", cors());
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
 app.use(express.json({ limit: config.JSON_BODY_LIMIT }));
 app.use("/chatwoot", chatwootRouter);
 app.use("/api/iqai", iqaiRouter);
