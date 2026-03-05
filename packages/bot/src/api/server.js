@@ -28,6 +28,7 @@ import { ALLOWED_IMAGE_TYPES, sanitizeImages } from "../core/images.js";
 import { MAX_IMAGE_BYTES, storeUploadedFile, uploadDir } from "../core/uploads.js";
 import { attachWebSocketServer } from "../ws/index.js";
 import { chatwootRouter } from "./chatwoot.js";
+import { iqaiRouter } from "./iqai.js";
 
 ensureApiEnv();
 
@@ -37,6 +38,7 @@ const app = express();
 app.set("trust proxy", 1);
 app.use(express.json({ limit: config.JSON_BODY_LIMIT }));
 app.use("/chatwoot", chatwootRouter);
+app.use("/api/iqai", iqaiRouter);
 app.use(
   "/uploads",
   express.static(uploadDir, {
