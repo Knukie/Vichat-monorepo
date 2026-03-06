@@ -274,6 +274,24 @@ function buildSnapshot(requestedRange = null) {
   };
 }
 
+function buildPersistedSnapshot() {
+  const candles = normalizeCandles(snapshot.candles, RANGE_CONFIG[DEFAULT_RANGE].maxPoints);
+  const series = Array.isArray(snapshot.series)
+    ? snapshot.series.map((value) => Number(value)).filter((value) => Number.isFinite(value))
+    : [];
+
+  return {
+    price: Number.isFinite(snapshot.price) ? snapshot.price : 0,
+    marketCap: Number.isFinite(snapshot.marketCap) ? snapshot.marketCap : 0,
+    change24h: Number.isFinite(snapshot.change24h) ? snapshot.change24h : 0,
+    series,
+    candles,
+    updatedAt: Number.isFinite(snapshot.updatedAt) ? snapshot.updatedAt : Date.now(),
+    range: null,
+    source: snapshotSource
+  };
+}
+
 function persistState() {
   safeWriteJson(LIVE_TIMEFRAMES_FILE_PATH, timeframeCandles);
   safeWriteJson(SNAPSHOT_FILE_PATH, snapshot);
@@ -311,10 +329,11 @@ export async function refreshValkiSnapshot() {
       price: stats.price,
       marketCap: stats.marketCap,
       change24h: stats.change24h,
-      updatedAt: nowMs
+      updatedAt: nowMs,
+      range: null,
+      source: snapshotSource
     };
 
-    snapshot = buildSnapshot(null);
     persistState();
 
     console.info("[VALKI] Snapshot updated");
@@ -322,7 +341,11 @@ export async function refreshValkiSnapshot() {
   } catch (error) {
     console.error("[VALKI] snapshot error", error);
     snapshotSource = "fallback";
-    snapshot = buildSnapshot(null);
+    snapshot = {
+      ...snapshot,
+      range: null,
+      source: snapshotSource
+    };
     safeWriteJson(SNAPSHOT_FILE_PATH, snapshot);
     scheduleRetry();
     return snapshot;
@@ -341,11 +364,11 @@ export function getValkiSnapshot(range) {
   const selectedRange = normalizeRange(range);
 
   if (!range) {
-    return buildSnapshot(null);
+    return buildPersistedSnapshot();
   }
 
   if (!selectedRange) {
-    return buildSnapshot(null);
+    return buildPersistedSnapshot();
   }
 
   return buildSnapshot(selectedRange);
@@ -367,7 +390,11 @@ export async function startValkiSnapshotScheduler() {
   }
 
   snapshotSource = hasLiveStateOnDisk ? "live+seed" : hasSeedData() ? "seed" : "fallback";
-  snapshot = buildSnapshot(null);
+  snapshot = {
+    ...snapshot,
+    range: null,
+    source: snapshotSource
+  };
   safeWriteJson(SNAPSHOT_FILE_PATH, snapshot);
 
   await refreshValkiSnapshot();
