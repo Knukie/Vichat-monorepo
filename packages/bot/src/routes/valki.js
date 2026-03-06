@@ -1,14 +1,17 @@
-import { Router } from "express";
+import express from "express";
 import { getValkiSnapshot } from "../services/valkiSnapshot.js";
 
-export const valkiRoutes = Router();
+export const valkiRoutes = express.Router();
 
 valkiRoutes.get("/snapshot", (_req, res) => {
   const snapshot = getValkiSnapshot();
-
-  if (!snapshot) {
-    return res.status(503).json({ error: "VALKI snapshot unavailable" });
-  }
-
-  return res.json(snapshot);
+  return res.json(
+    snapshot || {
+      price: 0,
+      marketCap: 0,
+      change24h: 0,
+      series: [],
+      updatedAt: Date.now()
+    }
+  );
 });
