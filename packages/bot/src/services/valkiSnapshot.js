@@ -4,6 +4,7 @@ import { fileURLToPath } from "url";
 
 const DEFAULT_INTERVAL_MS = 60 * 60 * 1000;
 const MAX_SERIES_POINTS = 200;
+const SNAPSHOT_RETRY_MS = 15000;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -19,10 +20,13 @@ let snapshot = {
   marketCap: 0,
   change24h: 0,
   series: [],
+  candles: [],
   updatedAt: Date.now()
 };
 /** @type {NodeJS.Timeout | null} */
 let refreshTimer = null;
+/** @type {NodeJS.Timeout | null} */
+let retryTimer = null;
 let hasStarted = false;
 
 function getUpstreamUrl() {
@@ -32,6 +36,46 @@ function getUpstreamUrl() {
 function getRefreshIntervalMs() {
   const parsed = Number(process.env.VALKI_SNAPSHOT_INTERVAL);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : DEFAULT_INTERVAL_MS;
+}
+
+/**
+ * @param {unknown} value
+ */
+function normalizeSeries(value) {
+  const series = Array.isArray(value) ? value.map((point) => Number(point)).filter((point) => Number.isFinite(point)) : [];
+  return series.length > MAX_SERIES_POINTS ? series.slice(-MAX_SERIES_POINTS) : series;
+}
+
+/**
+ * @param {unknown} value
+ */
+function normalizeCandles(value) {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .map((candle) => {
+      if (!candle || typeof candle !== "object") return null;
+      const normalized = {
+        time: Number(candle.time),
+        open: Number(candle.open),
+        high: Number(candle.high),
+        low: Number(candle.low),
+        close: Number(candle.close)
+      };
+
+      if (
+        !Number.isFinite(normalized.time) ||
+        !Number.isFinite(normalized.open) ||
+        !Number.isFinite(normalized.high) ||
+        !Number.isFinite(normalized.low) ||
+        !Number.isFinite(normalized.close)
+      ) {
+        return null;
+      }
+
+      return normalized;
+    })
+    .filter(Boolean);
 }
 
 async function fetchValkiStats() {
@@ -69,65 +113,70 @@ function loadSnapshotFromDisk() {
     const raw = fs.readFileSync(SNAPSHOT_FILE_PATH, "utf8");
     const parsed = JSON.parse(raw);
 
-    if (
-      !parsed ||
-      typeof parsed.price !== "number" ||
-      typeof parsed.marketCap !== "number" ||
-      typeof parsed.change24h !== "number" ||
-      typeof parsed.updatedAt !== "number"
-    ) {
+    if (!parsed || typeof parsed !== "object") {
       return null;
     }
 
-    const series = Array.isArray(parsed.series) && parsed.series.every((point) => typeof point === "number") ? parsed.series : [];
+    if (!Array.isArray(parsed.series)) parsed.series = [];
+    if (!Array.isArray(parsed.candles)) parsed.candles = [];
+
+    const price = Number(parsed.price);
+    const marketCap = Number(parsed.marketCap);
+    const change24h = Number(parsed.change24h);
+    const updatedAt = Number(parsed.updatedAt);
 
     const nextSnapshot = {
-      price: parsed.price,
-      marketCap: parsed.marketCap,
-      change24h: parsed.change24h,
-      series,
-      updatedAt: parsed.updatedAt
+      price: Number.isFinite(price) ? price : 0,
+      marketCap: Number.isFinite(marketCap) ? marketCap : 0,
+      change24h: Number.isFinite(change24h) ? change24h : 0,
+      series: normalizeSeries(parsed.series),
+      candles: normalizeCandles(parsed.candles),
+      updatedAt: Number.isFinite(updatedAt) ? updatedAt : Date.now()
     };
-
-    if (nextSnapshot.series.length > MAX_SERIES_POINTS) {
-      nextSnapshot.series = nextSnapshot.series.slice(-MAX_SERIES_POINTS);
-    }
 
     return nextSnapshot;
   } catch (error) {
     if (error?.code === "ENOENT") return null;
-    console.error("[VALKI] Snapshot refresh failed", error);
+    console.error("[VALKI] snapshot error", error);
     return null;
   }
+}
+
+function scheduleRetry() {
+  if (retryTimer) return;
+  retryTimer = setTimeout(async () => {
+    retryTimer = null;
+    await refreshValkiSnapshot();
+  }, SNAPSHOT_RETRY_MS);
 }
 
 export async function refreshValkiSnapshot() {
   try {
     const stats = await fetchValkiStats();
-    if (!Array.isArray(snapshot.series)) {
-      snapshot.series = [];
+
+    if (retryTimer) {
+      clearTimeout(retryTimer);
+      retryTimer = null;
     }
 
-    snapshot.series.push(stats.price);
+    const nextSeries = normalizeSeries([...(Array.isArray(snapshot.series) ? snapshot.series : []), stats.price]);
 
-    if (snapshot.series.length > MAX_SERIES_POINTS) {
-      snapshot.series = snapshot.series.slice(-MAX_SERIES_POINTS);
-    }
-
-    const nextSnapshot = {
+    snapshot = {
+      ...snapshot,
       price: stats.price,
       marketCap: stats.marketCap,
       change24h: stats.change24h,
-      series: snapshot.series,
+      series: nextSeries,
+      candles: Array.isArray(snapshot.candles) ? snapshot.candles : [],
       updatedAt: Date.now()
     };
 
-    snapshot = nextSnapshot;
-    writeSnapshotToDisk(nextSnapshot);
+    writeSnapshotToDisk(snapshot);
     console.info("[VALKI] Snapshot updated");
-    return nextSnapshot;
+    return snapshot;
   } catch (error) {
-    console.error("[VALKI] Snapshot refresh failed", error);
+    console.error("[VALKI] snapshot error", error);
+    scheduleRetry();
     return snapshot;
   }
 }
@@ -156,6 +205,10 @@ export function stopValkiSnapshotScheduler() {
   if (refreshTimer) {
     clearInterval(refreshTimer);
     refreshTimer = null;
+  }
+  if (retryTimer) {
+    clearTimeout(retryTimer);
+    retryTimer = null;
   }
   hasStarted = false;
 }
