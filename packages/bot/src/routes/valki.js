@@ -3,8 +3,9 @@ import { getValkiSnapshot } from "../services/valkiSnapshot.js";
 
 export const valkiRoutes = express.Router();
 
-valkiRoutes.get("/snapshot", (_req, res) => {
-  const snapshot = getValkiSnapshot();
+valkiRoutes.get("/snapshot", (req, res) => {
+  const range = typeof req.query?.range === "string" ? req.query.range : undefined;
+  const snapshot = getValkiSnapshot(range);
   return res.json(
     snapshot || {
       price: 0,

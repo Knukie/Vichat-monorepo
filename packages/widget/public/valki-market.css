@@ -1,0 +1,138 @@
+:root {
+  color-scheme: dark;
+  --bg: #05070c;
+  --card: #0c111d;
+  --card-border: #1a2336;
+  --text-main: #f5f7ff;
+  --text-muted: #95a3be;
+  --green: #32d583;
+  --red: #f97066;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  background: radial-gradient(circle at top, #131b2e 0, var(--bg) 42%);
+  color: var(--text-main);
+}
+
+.market-shell {
+  min-height: 100vh;
+  padding: 24px;
+  display: grid;
+  place-items: center;
+}
+
+.market-card {
+  width: min(880px, 100%);
+  background: linear-gradient(180deg, #0f1628 0%, var(--card) 100%);
+  border: 1px solid var(--card-border);
+  border-radius: 18px;
+  padding: 20px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+}
+
+.market-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.eyebrow {
+  margin: 0;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 12px;
+}
+
+h1 {
+  margin: 6px 0 0;
+  font-size: clamp(32px, 5vw, 46px);
+}
+
+.change-badge {
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.change-badge.up {
+  color: var(--green);
+  background: rgba(50, 213, 131, 0.14);
+}
+
+.change-badge.down {
+  color: var(--red);
+  background: rgba(249, 112, 102, 0.14);
+}
+
+.change-badge.neutral {
+  color: var(--text-muted);
+  background: rgba(149, 163, 190, 0.18);
+}
+
+.range-buttons {
+  margin-top: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.range-btn {
+  border: 1px solid #2a3550;
+  background: transparent;
+  color: var(--text-muted);
+  padding: 8px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.range-btn.active,
+.range-btn:hover {
+  color: var(--text-main);
+  border-color: #4b6bff;
+  background: rgba(75, 107, 255, 0.12);
+}
+
+.chart-wrap {
+  margin-top: 16px;
+  position: relative;
+  border: 1px solid #1e2940;
+  background: #090f1b;
+  border-radius: 14px;
+  min-height: 320px;
+}
+
+#valkiChart {
+  width: 100%;
+  height: 320px;
+  display: block;
+}
+
+.chart-loading {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--text-muted);
+  background: rgba(9, 15, 27, 0.72);
+  border-radius: 14px;
+}
+
+.market-footer {
+  margin-top: 16px;
+  color: var(--text-muted);
+  font-size: 13px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+}

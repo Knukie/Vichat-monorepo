@@ -5,13 +5,18 @@ import { fileURLToPath } from "url";
 const DEFAULT_INTERVAL_MS = 60 * 60 * 1000;
 const MAX_SERIES_POINTS = 200;
 const SNAPSHOT_RETRY_MS = 15000;
+const DEFAULT_RANGE = "1M";
+const VALID_RANGES = ["5D", "1M", "3M", "6M", "1Y", "5Y"];
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const SNAPSHOT_FILE_PATH = path.resolve(__dirname, "../../data/valki-snapshot.json");
+const TIMEFRAMES_FILE_PATH = path.resolve(__dirname, "../../data/valki-timeframes.json");
 
 /**
  * @typedef {import("../../types/valkiSnapshot.d.ts").ValkiSnapshot} ValkiSnapshot
+ * @typedef {import("../../types/valkiSnapshot.d.ts").ValkiSnapshotRange} ValkiSnapshotRange
+ * @typedef {import("../../types/valkiSnapshot.d.ts").ValkiTimeframeCandles} ValkiTimeframeCandles
  */
 
 /** @type {ValkiSnapshot} */
@@ -22,6 +27,15 @@ let snapshot = {
   series: [],
   candles: [],
   updatedAt: Date.now()
+};
+/** @type {ValkiTimeframeCandles} */
+let timeframeCandles = {
+  "5D": [],
+  "1M": [],
+  "3M": [],
+  "6M": [],
+  "1Y": [],
+  "5Y": []
 };
 /** @type {NodeJS.Timeout | null} */
 let refreshTimer = null;
@@ -42,7 +56,9 @@ function getRefreshIntervalMs() {
  * @param {unknown} value
  */
 function normalizeSeries(value) {
-  const series = Array.isArray(value) ? value.map((point) => Number(point)).filter((point) => Number.isFinite(point)) : [];
+  const series = Array.isArray(value)
+    ? value.map((point) => Number(point)).filter((point) => Number.isFinite(point))
+    : [];
   return series.length > MAX_SERIES_POINTS ? series.slice(-MAX_SERIES_POINTS) : series;
 }
 
@@ -52,10 +68,10 @@ function normalizeSeries(value) {
 function normalizeCandles(value) {
   if (!Array.isArray(value)) return [];
 
-  return value
+  const normalized = value
     .map((candle) => {
       if (!candle || typeof candle !== "object") return null;
-      const normalized = {
+      const next = {
         time: Number(candle.time),
         open: Number(candle.open),
         high: Number(candle.high),
@@ -64,18 +80,61 @@ function normalizeCandles(value) {
       };
 
       if (
-        !Number.isFinite(normalized.time) ||
-        !Number.isFinite(normalized.open) ||
-        !Number.isFinite(normalized.high) ||
-        !Number.isFinite(normalized.low) ||
-        !Number.isFinite(normalized.close)
+        !Number.isFinite(next.time) ||
+        !Number.isFinite(next.open) ||
+        !Number.isFinite(next.high) ||
+        !Number.isFinite(next.low) ||
+        !Number.isFinite(next.close)
       ) {
         return null;
       }
 
-      return normalized;
+      return next;
     })
-    .filter(Boolean);
+    .filter(Boolean)
+    .sort((a, b) => a.time - b.time);
+
+  return normalized.length > MAX_SERIES_POINTS ? normalized.slice(-MAX_SERIES_POINTS) : normalized;
+}
+
+/**
+ * @param {unknown} value
+ * @returns {ValkiSnapshotRange | null}
+ */
+function normalizeRange(value) {
+  const range = String(value || "").trim().toUpperCase();
+  return VALID_RANGES.includes(range) ? /** @type {ValkiSnapshotRange} */ (range) : null;
+}
+
+function loadTimeframeCandlesFromDisk() {
+  try {
+    const raw = fs.readFileSync(TIMEFRAMES_FILE_PATH, "utf8");
+    const parsed = JSON.parse(raw);
+
+    if (!parsed || typeof parsed !== "object") return;
+
+    timeframeCandles = {
+      "5D": normalizeCandles(parsed["5D"]),
+      "1M": normalizeCandles(parsed["1M"]),
+      "3M": normalizeCandles(parsed["3M"]),
+      "6M": normalizeCandles(parsed["6M"]),
+      "1Y": normalizeCandles(parsed["1Y"]),
+      "5Y": normalizeCandles(parsed["5Y"])
+    };
+  } catch (error) {
+    if (error?.code !== "ENOENT") {
+      console.error("[VALKI] timeframe dataset error", error);
+    }
+  }
+}
+
+function getCandlesForRange(range) {
+  const normalizedRange = normalizeRange(range) || DEFAULT_RANGE;
+  const selected = timeframeCandles[normalizedRange];
+  return {
+    range: normalizedRange,
+    candles: normalizeCandles(selected)
+  };
 }
 
 async function fetchValkiStats() {
@@ -159,7 +218,10 @@ export async function refreshValkiSnapshot() {
       retryTimer = null;
     }
 
-    const nextSeries = normalizeSeries([...(Array.isArray(snapshot.series) ? snapshot.series : []), stats.price]);
+    const nextSeries = normalizeSeries([
+      ...(Array.isArray(snapshot.series) ? snapshot.series : []),
+      stats.price
+    ]);
 
     snapshot = {
       ...snapshot,
@@ -181,13 +243,32 @@ export async function refreshValkiSnapshot() {
   }
 }
 
-export function getValkiSnapshot() {
-  return snapshot;
+/**
+ * @param {string | undefined | null} [range]
+ * @returns {ValkiSnapshot}
+ */
+export function getValkiSnapshot(range) {
+  if (!range) {
+    return snapshot;
+  }
+
+  const { range: selectedRange, candles } = getCandlesForRange(range);
+  const series = normalizeSeries(candles.map((candle) => candle.close));
+
+  return {
+    ...snapshot,
+    range: selectedRange,
+    candles,
+    series,
+    price: series.length ? series[series.length - 1] : snapshot.price
+  };
 }
 
 export async function startValkiSnapshotScheduler() {
   if (hasStarted) return;
   hasStarted = true;
+
+  loadTimeframeCandlesFromDisk();
 
   const diskSnapshot = loadSnapshotFromDisk();
   if (diskSnapshot) {
