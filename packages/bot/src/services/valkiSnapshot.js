@@ -13,8 +13,14 @@ const SNAPSHOT_FILE_PATH = path.resolve(__dirname, "../../data/valki-snapshot.js
  * @typedef {import("../../types/valkiSnapshot.d.ts").ValkiSnapshot} ValkiSnapshot
  */
 
-/** @type {ValkiSnapshot | null} */
-let snapshot = null;
+/** @type {ValkiSnapshot} */
+let snapshot = {
+  price: 0,
+  marketCap: 0,
+  change24h: 0,
+  series: [],
+  updatedAt: Date.now()
+};
 /** @type {NodeJS.Timeout | null} */
 let refreshTimer = null;
 let hasStarted = false;

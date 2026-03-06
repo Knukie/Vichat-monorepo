@@ -614,112 +614,117 @@ app.post("/api/import-guest", requireAuth, async (req, res) => {
   }
 });
 
-app.use("/api/valki", simpleRateLimit({ windowMs: 60_000, max: 60 }));
+app.post(
+  "/api/valki",
+  simpleRateLimit({ windowMs: 60_000, max: 60 }),
+  optionalAuth,
+  async (req, res) => {
+    const requestId = crypto.randomUUID();
+    try {
+      const body = req.body || {};
+      const { message, conversationId, locale, clientId } = body;
+      const userMessage = typeof message === "string" ? message : "";
+      const headerLocale = pickPrimaryLocale(req.headers["accept-language"]);
+      const preferredLocale = cleanText(locale) || headerLocale;
 
-app.post("/api/valki", optionalAuth, async (req, res) => {
-  const requestId = crypto.randomUUID();
-  try {
-    const body = req.body || {};
-    const { message, conversationId, locale, clientId } = body;
-    const userMessage = typeof message === "string" ? message : "";
-    const headerLocale = pickPrimaryLocale(req.headers["accept-language"]);
-    const preferredLocale = cleanText(locale) || headerLocale;
+      const incomingList = pickIncomingImageList(body);
+      const imagesType = Array.isArray(body?.images) ? "array" : typeof body?.images;
+      const contentLength = cleanText(req.headers["content-length"]);
+      console.info("[valki] body", {
+        requestId,
+        keys: Object.keys(body),
+        hasImages: incomingList.length > 0,
+        imagesType,
+        imagesLen: incomingList.length,
+        contentLength
+      });
 
-    const incomingList = pickIncomingImageList(body);
-    const imagesType = Array.isArray(body?.images) ? "array" : typeof body?.images;
-    const contentLength = cleanText(req.headers["content-length"]);
-    console.info("[valki] body", {
-      requestId,
-      keys: Object.keys(body),
-      hasImages: incomingList.length > 0,
-      imagesType,
-      imagesLen: incomingList.length,
-      contentLength
-    });
+      const normalizedIncoming = normalizeIncomingImageUrls(incomingList, req);
+      const { images: normalizedImages, warnings: imageWarnings } = sanitizeImages(normalizedIncoming);
+      const attemptedImages = incomingList.length;
+      const dropped = Math.max(0, attemptedImages - normalizedIncoming.length);
+      const imageHosts = normalizedImages.map((img) => img.host).filter(Boolean);
+      const imageUrlLengths = normalizedImages.map((img) => (img?.url || "").length);
 
-    const normalizedIncoming = normalizeIncomingImageUrls(incomingList, req);
-    const { images: normalizedImages, warnings: imageWarnings } = sanitizeImages(normalizedIncoming);
-    const attemptedImages = incomingList.length;
-    const dropped = Math.max(0, attemptedImages - normalizedIncoming.length);
-    const imageHosts = normalizedImages.map((img) => img.host).filter(Boolean);
-    const imageUrlLengths = normalizedImages.map((img) => (img?.url || "").length);
+      console.info("[valki] images", {
+        requestId,
+        received: attemptedImages,
+        normalized: normalizedIncoming.length,
+        dropped,
+        finalCount: normalizedImages.length,
+        hosts: Array.from(new Set(imageHosts)),
+        urlLengths: imageUrlLengths
+      });
 
-    console.info("[valki] images", {
-      requestId,
-      received: attemptedImages,
-      normalized: normalizedIncoming.length,
-      dropped,
-      finalCount: normalizedImages.length,
-      hosts: Array.from(new Set(imageHosts)),
-      urlLengths: imageUrlLengths
-    });
+      const hasText = !!cleanText(userMessage);
+      const hasImages = normalizedImages.length > 0;
 
-    const hasText = !!cleanText(userMessage);
-    const hasImages = normalizedImages.length > 0;
+      if (!hasText && !hasImages) {
+        const errorMessage = attemptedImages
+          ? "Invalid image payload. Send image URLs only."
+          : "Message or image required.";
+        return res.status(400).json({ error: errorMessage });
+      }
 
-    if (!hasText && !hasImages) {
-      const errorMessage = attemptedImages
-        ? "Invalid image payload. Send image URLs only."
-        : "Message or image required.";
-      return res.status(400).json({ error: errorMessage });
+      if (!hasImages && attemptedImages > 0) {
+        return res
+          .status(400)
+          .json({ error: "ksshh… I couldn't read that image. Please try a JPEG/PNG under 5MB." });
+      }
+
+      await ensureTablesExistOrThrow();
+
+      let cid = "";
+      if (req.user?.id) {
+        cid = await getOrCreateConversationForUser(req.user.id);
+      } else {
+        cid = cleanText(conversationId) || newConversationId();
+      }
+
+      console.info("[valki] request", {
+        requestId,
+        conversationId: cid,
+        clientId: cleanText(clientId),
+        hasText,
+        images: normalizedImages.length,
+        imageHosts: Array.from(new Set(imageHosts)),
+        imageUrlLengths
+      });
+
+      const userTextForRun = hasText ? userMessage : "[image]";
+
+      const { reply, assistantImages } = await runValki({
+        userText: userTextForRun,
+        conversationId: cid,
+        preferredLocale,
+        images: normalizedImages,
+        requestId
+      });
+
+      const responseBody = { ok: true, message: reply, reply, conversationId: cid };
+      const cleanedImages = responseImages(normalizedImages);
+      if (cleanedImages.length) responseBody.images = cleanedImages;
+      if (assistantImages?.length) responseBody.assistantImages = assistantImages;
+      if (imageWarnings.length) responseBody.warnings = Array.from(new Set(imageWarnings));
+
+      return res.json(responseBody);
+    } catch (err) {
+      if (err instanceof ValkiModelError) {
+        console.error("/api/valki OpenAI error:", { requestId, message: err.message });
+        return res.status(502).json({ error: "Temporary error analyzing image.", requestId });
+      }
+      console.error("/api/valki error:", { requestId, message: err?.message || err });
+      return res.status(500).json({ error: "ksshh… Internal backend error", requestId });
     }
-
-    if (!hasImages && attemptedImages > 0) {
-      return res
-        .status(400)
-        .json({ error: "ksshh… I couldn't read that image. Please try a JPEG/PNG under 5MB." });
-    }
-
-    await ensureTablesExistOrThrow();
-
-    let cid = "";
-    if (req.user?.id) {
-      cid = await getOrCreateConversationForUser(req.user.id);
-    } else {
-      cid = cleanText(conversationId) || newConversationId();
-    }
-
-    console.info("[valki] request", {
-      requestId,
-      conversationId: cid,
-      clientId: cleanText(clientId),
-      hasText,
-      images: normalizedImages.length,
-      imageHosts: Array.from(new Set(imageHosts)),
-      imageUrlLengths
-    });
-
-    const userTextForRun = hasText ? userMessage : "[image]";
-
-    const { reply, assistantImages } = await runValki({
-      userText: userTextForRun,
-      conversationId: cid,
-      preferredLocale,
-      images: normalizedImages,
-      requestId
-    });
-
-    const responseBody = { ok: true, message: reply, reply, conversationId: cid };
-    const cleanedImages = responseImages(normalizedImages);
-    if (cleanedImages.length) responseBody.images = cleanedImages;
-    if (assistantImages?.length) responseBody.assistantImages = assistantImages;
-    if (imageWarnings.length) responseBody.warnings = Array.from(new Set(imageWarnings));
-
-    return res.json(responseBody);
-  } catch (err) {
-    if (err instanceof ValkiModelError) {
-      console.error("/api/valki OpenAI error:", { requestId, message: err.message });
-      return res.status(502).json({ error: "Temporary error analyzing image.", requestId });
-    }
-    console.error("/api/valki error:", { requestId, message: err?.message || err });
-    return res.status(500).json({ error: "ksshh… Internal backend error", requestId });
   }
-});
+);
 
 const port = Number(config.PORT) || 3000;
 const server = http.createServer(app);
 attachWebSocketServer(server, { path: process.env.WS_PATH || "/ws" });
-await startValkiSnapshotScheduler();
+startValkiSnapshotScheduler().catch((err) => {
+  console.error("[VALKI] Snapshot scheduler failed to start", err);
+});
 server.listen(port, () => {
   console.log(`🌐 HTTP API running on port ${port} (${config.NODE_ENV})`);
 });
