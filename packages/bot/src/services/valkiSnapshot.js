@@ -5,7 +5,6 @@ import { fileURLToPath } from "url";
 const DEFAULT_INTERVAL_MS = 60 * 60 * 1000;
 const MAX_SERIES_POINTS = 200;
 const SNAPSHOT_RETRY_MS = 15000;
-const DEFAULT_RANGE = "1M";
 const VALID_RANGES = ["5D", "1M", "3M", "6M", "1Y", "5Y"];
 
 const __filename = fileURLToPath(import.meta.url);
@@ -128,11 +127,13 @@ function loadTimeframeCandlesFromDisk() {
   }
 }
 
+/**
+ * @param {ValkiSnapshotRange} range
+ */
 function getCandlesForRange(range) {
-  const normalizedRange = normalizeRange(range) || DEFAULT_RANGE;
-  const selected = timeframeCandles[normalizedRange];
+  const selected = timeframeCandles[range];
   return {
-    range: normalizedRange,
+    range,
     candles: normalizeCandles(selected)
   };
 }
@@ -252,7 +253,12 @@ export function getValkiSnapshot(range) {
     return snapshot;
   }
 
-  const { range: selectedRange, candles } = getCandlesForRange(range);
+  const selectedRange = normalizeRange(range);
+  if (!selectedRange) {
+    return snapshot;
+  }
+
+  const { candles } = getCandlesForRange(selectedRange);
   const series = normalizeSeries(candles.map((candle) => candle.close));
 
   return {
