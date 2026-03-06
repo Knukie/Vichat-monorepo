@@ -11,6 +11,7 @@ valkiRoutes.get("/snapshot", (_req, res) => {
       marketCap: 0,
       change24h: 0,
       series: [],
+      candles: [],
       updatedAt: Date.now()
     }
   );
