@@ -29,6 +29,8 @@ import { MAX_IMAGE_BYTES, storeUploadedFile, uploadDir } from "../core/uploads.j
 import { attachWebSocketServer } from "../ws/index.js";
 import { chatwootRouter } from "./chatwoot.js";
 import { iqaiRouter } from "./iqai.js";
+import { valkiRouter } from "../routes/valki.js";
+import { startValkiSnapshotScheduler, stopValkiSnapshotScheduler } from "../services/valkiSnapshot.js";
 
 ensureApiEnv();
 
@@ -54,6 +56,7 @@ app.options("*", cors(corsOptions));
 app.use(express.json({ limit: config.JSON_BODY_LIMIT }));
 app.use("/chatwoot", chatwootRouter);
 app.use("/api/iqai", iqaiRouter);
+app.use("/api/valki", valkiRouter);
 app.use(
   "/uploads",
   express.static(uploadDir, {
@@ -716,6 +719,7 @@ app.post("/api/valki", optionalAuth, async (req, res) => {
 const port = Number(config.PORT) || 3000;
 const server = http.createServer(app);
 attachWebSocketServer(server, { path: process.env.WS_PATH || "/ws" });
+await startValkiSnapshotScheduler();
 server.listen(port, () => {
   console.log(`🌐 HTTP API running on port ${port} (${config.NODE_ENV})`);
 });
@@ -728,6 +732,7 @@ async function shutdown(signal) {
     console.log(`\n🧯 Shutdown (${signal})...`);
     await new Promise((resolve) => server?.close?.(resolve));
     console.log("HTTP server closed.");
+    stopValkiSnapshotScheduler();
     await prisma.$disconnect().then(
       () => console.log("Prisma disconnected."),
       (err) => console.warn("Prisma disconnect failed:", err?.message || err)
