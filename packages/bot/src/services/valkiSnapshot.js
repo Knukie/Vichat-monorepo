@@ -3,7 +3,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 const DEFAULT_INTERVAL_MS = 60 * 60 * 1000;
-const MAX_SERIES_POINTS = 40;
+const MAX_SERIES_POINTS = 200;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -32,18 +32,6 @@ function getUpstreamUrl() {
 function getRefreshIntervalMs() {
   const parsed = Number(process.env.VALKI_SNAPSHOT_INTERVAL);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : DEFAULT_INTERVAL_MS;
-}
-
-function isValidSnapshot(candidate) {
-  return (
-    candidate &&
-    typeof candidate.price === "number" &&
-    typeof candidate.marketCap === "number" &&
-    typeof candidate.change24h === "number" &&
-    typeof candidate.updatedAt === "number" &&
-    Array.isArray(candidate.series) &&
-    candidate.series.every((point) => typeof point === "number")
-  );
 }
 
 async function fetchValkiStats() {
@@ -80,12 +68,32 @@ function loadSnapshotFromDisk() {
   try {
     const raw = fs.readFileSync(SNAPSHOT_FILE_PATH, "utf8");
     const parsed = JSON.parse(raw);
-    if (!isValidSnapshot(parsed)) return null;
 
-    return {
-      ...parsed,
-      series: parsed.series.slice(-MAX_SERIES_POINTS)
+    if (
+      !parsed ||
+      typeof parsed.price !== "number" ||
+      typeof parsed.marketCap !== "number" ||
+      typeof parsed.change24h !== "number" ||
+      typeof parsed.updatedAt !== "number"
+    ) {
+      return null;
+    }
+
+    const series = Array.isArray(parsed.series) && parsed.series.every((point) => typeof point === "number") ? parsed.series : [];
+
+    const nextSnapshot = {
+      price: parsed.price,
+      marketCap: parsed.marketCap,
+      change24h: parsed.change24h,
+      series,
+      updatedAt: parsed.updatedAt
     };
+
+    if (nextSnapshot.series.length > MAX_SERIES_POINTS) {
+      nextSnapshot.series = nextSnapshot.series.slice(-MAX_SERIES_POINTS);
+    }
+
+    return nextSnapshot;
   } catch (error) {
     if (error?.code === "ENOENT") return null;
     console.error("[VALKI] Snapshot refresh failed", error);
@@ -96,14 +104,21 @@ function loadSnapshotFromDisk() {
 export async function refreshValkiSnapshot() {
   try {
     const stats = await fetchValkiStats();
-    const existingSeries = Array.isArray(snapshot?.series) ? snapshot.series : [];
-    const nextSeries = [...existingSeries, stats.price].slice(-MAX_SERIES_POINTS);
+    if (!Array.isArray(snapshot.series)) {
+      snapshot.series = [];
+    }
+
+    snapshot.series.push(stats.price);
+
+    if (snapshot.series.length > MAX_SERIES_POINTS) {
+      snapshot.series = snapshot.series.slice(-MAX_SERIES_POINTS);
+    }
 
     const nextSnapshot = {
       price: stats.price,
       marketCap: stats.marketCap,
       change24h: stats.change24h,
-      series: nextSeries,
+      series: snapshot.series,
       updatedAt: Date.now()
     };
 
