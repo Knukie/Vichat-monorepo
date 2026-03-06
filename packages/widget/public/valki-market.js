@@ -15,6 +15,7 @@ const els = {
 let currentRange = DEFAULT_RANGE;
 let latestSnapshot = null;
 let lastTrendUp = true;
+let snapshotRequestSeq = 0;
 
 const resizeObserver = new ResizeObserver(() => {
   if (latestSnapshot) renderChart(latestSnapshot.candles || []);
@@ -60,11 +61,14 @@ async function loadSnapshot(range = DEFAULT_RANGE) {
   currentRange = RANGES.includes(range) ? range : DEFAULT_RANGE;
   buildButtons();
   els.loadingState.hidden = false;
+  const requestSeq = ++snapshotRequestSeq;
 
   try {
     const response = await fetch(`/api/valki/snapshot?range=${encodeURIComponent(currentRange)}`);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const data = await response.json();
+
+    if (requestSeq !== snapshotRequestSeq) return;
 
     const candles = Array.isArray(data.candles) ? data.candles : [];
     const closes = candles.map((c) => Number(c.close)).filter((v) => Number.isFinite(v));
@@ -92,10 +96,13 @@ async function loadSnapshot(range = DEFAULT_RANGE) {
 
     renderChart(candles);
   } catch (error) {
+    if (requestSeq !== snapshotRequestSeq) return;
     els.metaUpdated.textContent = "Updated: failed to load snapshot";
     console.error("[VALKI] failed loading snapshot", error);
   } finally {
-    els.loadingState.hidden = true;
+    if (requestSeq === snapshotRequestSeq) {
+      els.loadingState.hidden = true;
+    }
   }
 }
 
