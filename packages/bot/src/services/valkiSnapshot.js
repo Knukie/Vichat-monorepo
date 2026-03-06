@@ -1,10 +1,8 @@
-import fs from "fs/promises";
+import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
-const UPSTREAM_URL =
-  "https://auth.valki.wiki/api/iqai/api/agents/stats?ticker=VALKI";
-const REFRESH_INTERVAL_MS = 60 * 60 * 1000;
+const DEFAULT_INTERVAL_MS = 60 * 60 * 1000;
 const MAX_SERIES_POINTS = 40;
 
 const __filename = fileURLToPath(import.meta.url);
@@ -12,12 +10,7 @@ const __dirname = path.dirname(__filename);
 const SNAPSHOT_FILE_PATH = path.resolve(__dirname, "../../data/valki-snapshot.json");
 
 /**
- * @typedef {Object} ValkiSnapshot
- * @property {number} price
- * @property {number} marketCap
- * @property {number} change24h
- * @property {number[]} series
- * @property {number} updatedAt
+ * @typedef {import("../../types/valkiSnapshot.d.ts").ValkiSnapshot} ValkiSnapshot
  */
 
 /** @type {ValkiSnapshot | null} */
@@ -25,6 +18,15 @@ let snapshot = null;
 /** @type {NodeJS.Timeout | null} */
 let refreshTimer = null;
 let hasStarted = false;
+
+function getUpstreamUrl() {
+  return String(process.env.VALKI_STATS_API || "").trim();
+}
+
+function getRefreshIntervalMs() {
+  const parsed = Number(process.env.VALKI_SNAPSHOT_INTERVAL);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : DEFAULT_INTERVAL_MS;
+}
 
 function isValidSnapshot(candidate) {
   return (
@@ -39,13 +41,18 @@ function isValidSnapshot(candidate) {
 }
 
 async function fetchValkiStats() {
-  const response = await fetch(UPSTREAM_URL);
+  const upstreamUrl = getUpstreamUrl();
+  if (!upstreamUrl) {
+    throw new Error("VALKI_STATS_API is not configured");
+  }
+
+  const response = await fetch(upstreamUrl);
   if (!response.ok) {
     throw new Error(`Upstream stats error (${response.status})`);
   }
 
   const data = await response.json();
-  const agent = Array.isArray(data) ? data[0] : null;
+  const agent = Array.isArray(data) ? data[0] : data;
 
   const price = Number(agent?.currentPriceInUSD);
   const marketCap = Number(agent?.marketCap);
@@ -58,14 +65,14 @@ async function fetchValkiStats() {
   return { price, marketCap, change24h };
 }
 
-async function writeSnapshotToDisk(nextSnapshot) {
-  await fs.mkdir(path.dirname(SNAPSHOT_FILE_PATH), { recursive: true });
-  await fs.writeFile(SNAPSHOT_FILE_PATH, `${JSON.stringify(nextSnapshot, null, 2)}\n`, "utf8");
+function writeSnapshotToDisk(nextSnapshot) {
+  fs.mkdirSync(path.dirname(SNAPSHOT_FILE_PATH), { recursive: true });
+  fs.writeFileSync(SNAPSHOT_FILE_PATH, `${JSON.stringify(nextSnapshot, null, 2)}\n`, "utf8");
 }
 
-async function loadSnapshotFromDisk() {
+function loadSnapshotFromDisk() {
   try {
-    const raw = await fs.readFile(SNAPSHOT_FILE_PATH, "utf8");
+    const raw = fs.readFileSync(SNAPSHOT_FILE_PATH, "utf8");
     const parsed = JSON.parse(raw);
     if (!isValidSnapshot(parsed)) return null;
 
@@ -80,13 +87,6 @@ async function loadSnapshotFromDisk() {
   }
 }
 
-/**
- * Snapshot refresh flow:
- * 1) pull latest VALKI stats from upstream,
- * 2) append latest price to the existing sparkline series,
- * 3) trim the series to the most recent 40 points,
- * 4) store in memory and persist to disk.
- */
 export async function refreshValkiSnapshot() {
   try {
     const stats = await fetchValkiStats();
@@ -102,7 +102,7 @@ export async function refreshValkiSnapshot() {
     };
 
     snapshot = nextSnapshot;
-    await writeSnapshotToDisk(nextSnapshot);
+    writeSnapshotToDisk(nextSnapshot);
     console.info("[VALKI] Snapshot updated");
     return nextSnapshot;
   } catch (error) {
@@ -119,16 +119,16 @@ export async function startValkiSnapshotScheduler() {
   if (hasStarted) return;
   hasStarted = true;
 
-  const diskSnapshot = await loadSnapshotFromDisk();
+  const diskSnapshot = loadSnapshotFromDisk();
   if (diskSnapshot) {
     snapshot = diskSnapshot;
-  } else {
-    await refreshValkiSnapshot();
   }
+
+  await refreshValkiSnapshot();
 
   refreshTimer = setInterval(() => {
     refreshValkiSnapshot();
-  }, REFRESH_INTERVAL_MS);
+  }, getRefreshIntervalMs());
 }
 
 export function stopValkiSnapshotScheduler() {
