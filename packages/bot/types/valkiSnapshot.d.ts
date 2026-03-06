@@ -6,6 +6,10 @@ export interface ValkiCandle {
   close: number;
 }
 
+export type ValkiSnapshotRange = "5D" | "1M" | "3M" | "6M" | "1Y" | "5Y";
+
+export type ValkiTimeframeCandles = Record<ValkiSnapshotRange, ValkiCandle[]>;
+
 export interface ValkiSnapshot {
   price: number;
   marketCap: number;
@@ -13,4 +17,5 @@ export interface ValkiSnapshot {
   series: number[];
   candles: ValkiCandle[];
   updatedAt: number;
+  range?: ValkiSnapshotRange;
 }

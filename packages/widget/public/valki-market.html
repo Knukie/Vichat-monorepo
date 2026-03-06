@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VALKI Market</title>
+    <link rel="stylesheet" href="./valki-market.css" />
+  </head>
+  <body>
+    <main class="market-shell">
+      <section class="market-card" aria-live="polite">
+        <header class="market-header">
+          <div>
+            <p class="eyebrow">VALKI Market</p>
+            <h1 id="price">$0.00</h1>
+          </div>
+          <div id="change" class="change-badge neutral">0.00%</div>
+        </header>
+
+        <div class="range-buttons" id="rangeButtons" role="tablist" aria-label="Chart timeframe"></div>
+
+        <div class="chart-wrap" id="chartWrap">
+          <canvas id="valkiChart" aria-label="VALKI price chart" role="img"></canvas>
+          <div class="chart-loading" id="loadingState">Loading market snapshot...</div>
+        </div>
+
+        <footer class="market-footer">
+          <span id="metaRange">Range: --</span>
+          <span id="metaMinMax">Min/Max: --</span>
+          <span id="metaUpdated">Updated: --</span>
+        </footer>
+      </section>
+    </main>
+
+    <script type="module" src="./valki-market.js"></script>
+  </body>
+</html>
