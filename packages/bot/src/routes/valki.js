@@ -13,7 +13,9 @@ valkiRoutes.get("/snapshot", (req, res) => {
       change24h: 0,
       series: [],
       candles: [],
-      updatedAt: Date.now()
+      updatedAt: Date.now(),
+      range: null,
+      source: "fallback"
     }
   );
 });

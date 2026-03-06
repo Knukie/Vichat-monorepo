@@ -7,6 +7,7 @@ export interface ValkiCandle {
 }
 
 export type ValkiSnapshotRange = "5D" | "1M" | "3M" | "6M" | "1Y" | "5Y";
+export type ValkiSnapshotSource = "live" | "fallback" | "seed" | "live+seed";
 
 export type ValkiTimeframeCandles = Record<ValkiSnapshotRange, ValkiCandle[]>;
 
@@ -17,5 +18,6 @@ export interface ValkiSnapshot {
   series: number[];
   candles: ValkiCandle[];
   updatedAt: number;
-  range?: ValkiSnapshotRange;
+  range: ValkiSnapshotRange | null;
+  source: ValkiSnapshotSource;
 }
