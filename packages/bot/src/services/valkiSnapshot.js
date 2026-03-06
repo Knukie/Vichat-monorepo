@@ -87,8 +87,6 @@ function loadSnapshotFromDisk() {
         : []
     };
 
-    if (!Array.isArray(loadedSnapshot.series)) loadedSnapshot.series = [];
-
     if (loadedSnapshot.series.length > MAX_SERIES_POINTS) {
       loadedSnapshot.series = loadedSnapshot.series.slice(-MAX_SERIES_POINTS);
     }
@@ -104,6 +102,10 @@ function loadSnapshotFromDisk() {
 export async function refreshValkiSnapshot() {
   try {
     const { price, marketCap, change24h } = await fetchValkiStats();
+
+    if (!Array.isArray(snapshot.series)) {
+      snapshot.series = [];
+    }
 
     snapshot.series.push(price);
     if (snapshot.series.length > MAX_SERIES_POINTS) {
@@ -124,10 +126,7 @@ export async function refreshValkiSnapshot() {
       clearTimeout(retryTimer);
     }
 
-    retryTimer = setTimeout(() => {
-      retryTimer = null;
-      refreshValkiSnapshot();
-    }, SNAPSHOT_RETRY_MS);
+    retryTimer = setTimeout(refreshValkiSnapshot, SNAPSHOT_RETRY_MS);
 
     return snapshot;
   }
