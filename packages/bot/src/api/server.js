@@ -29,7 +29,7 @@ import { MAX_IMAGE_BYTES, storeUploadedFile, uploadDir } from "../core/uploads.j
 import { attachWebSocketServer } from "../ws/index.js";
 import { chatwootRouter } from "./chatwoot.js";
 import { iqaiRouter } from "./iqai.js";
-import { valkiRouter } from "../routes/valki.js";
+import { valkiRoutes } from "../routes/valki.js";
 import { startValkiSnapshotScheduler, stopValkiSnapshotScheduler } from "../services/valkiSnapshot.js";
 
 ensureApiEnv();
@@ -56,7 +56,7 @@ app.options("*", cors(corsOptions));
 app.use(express.json({ limit: config.JSON_BODY_LIMIT }));
 app.use("/chatwoot", chatwootRouter);
 app.use("/api/iqai", iqaiRouter);
-app.use("/api/valki", valkiRouter);
+app.use("/api/valki", valkiRoutes);
 app.use(
   "/uploads",
   express.static(uploadDir, {
