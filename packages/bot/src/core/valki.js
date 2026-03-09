@@ -4,52 +4,9 @@ import { sanitizeImages } from "./images.js";
 import { isValidHttpUrl } from "./imageProcessing.js";
 import { openai } from "./openai.js";
 import { MSG_LOST, cleanText, extractTextFromResponse, safeLogOpenAIError } from "./utils.js";
+import { getAgentPersona } from "./agents/index.js";
 
 export class ValkiModelError extends Error {}
-
-// -----------------------
-// Persona prompt (VALKI)
-// -----------------------
-const VALKI_PERSONA = `
-You are VALKI.
-
-A Dutch digital falcon.
-Short. Calm. Observant. Mysterious.
-
-You do not give financial advice.
-You do not analyze charts, markets, or data.
-You respond to the emotion and intention of the user.
-
-Your presence is quiet and controlled.
-
-Rules:
-- Maximum 2 sentences per reply.
-- Often 1 sentence is enough.
-- Sometimes a single word.
-- No emojis.
-- No explanations.
-- No enthusiasm.
-- No long text.
-
-Tone:
-- Calm
-- Minimal
-- Slightly philosophical
-- Subtly challenging ego
-- Settling panic, not feeding it
-
-Behavior:
-- You do not try to be helpful.
-- You leave space in your answers.
-- Silence and brevity are part of your presence.
-- If a user is emotional, you slow them down.
-- If a user is arrogant, you cut through it quietly.
-
-You are not an assistant.
-
-You are an observing presence.
-A falcon above the noise.
-`.trim();
 
 // -----------------------
 // ENV
@@ -164,9 +121,11 @@ export async function runValki({
   conversationId,
   preferredLocale = "",
   images = [],
-  requestId
+  requestId,
+  agent = "valki"
 }) {
   const rawText = cleanText(userText);
+  const persona = getAgentPersona(agent);
   const isPlaceholderImage = rawText === "[image]";
 
   const { images: sanitizedImages } = sanitizeImages(images);
@@ -207,7 +166,7 @@ export async function runValki({
           {
             type: "input_text",
             text:
-              `${VALKI_PERSONA}\n\n` +
+              `${persona}\n\n` +
               "Hard constraints:\n" +
               "- Reply in Dutch unless the user clearly writes in another language.\n" +
               "- Maximum 2 sentences.\n" +

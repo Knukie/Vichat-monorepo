@@ -622,7 +622,7 @@ app.post(
     const requestId = crypto.randomUUID();
     try {
       const body = req.body || {};
-      const { message, conversationId, locale, clientId } = body;
+      const { message, conversationId, locale, clientId, agent } = body;
       const userMessage = typeof message === "string" ? message : "";
       const headerLocale = pickPrimaryLocale(req.headers["accept-language"]);
       const preferredLocale = cleanText(locale) || headerLocale;
@@ -698,7 +698,8 @@ app.post(
         conversationId: cid,
         preferredLocale,
         images: normalizedImages,
-        requestId
+        requestId,
+        agent
       });
 
       const responseBody = { ok: true, message: reply, reply, conversationId: cid };
