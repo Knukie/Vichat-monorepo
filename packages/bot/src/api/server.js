@@ -22,6 +22,7 @@ import {
 import { normalizeRole } from "../core/contracts.js";
 import { prepareGuestImportMessages } from "../core/importGuest.js";
 import { runValki, ValkiModelError } from "../core/valki.js";
+import { selectAgent } from "../core/agents/selectAgent.js";
 import { simpleRateLimit } from "../core/rateLimit.js";
 import { config, corsOrigins, ensureApiEnv } from "../core/config.js";
 import { ALLOWED_IMAGE_TYPES, sanitizeImages } from "../core/images.js";
@@ -624,6 +625,11 @@ app.post(
       const body = req.body || {};
       const { message, conversationId, locale, clientId, agent } = body;
       const userMessage = typeof message === "string" ? message : "";
+      const normalizedAgent = cleanText(agent).toLowerCase();
+      const resolvedAgent =
+        normalizedAgent === "valki" || normalizedAgent === "omni"
+          ? normalizedAgent
+          : selectAgent({ agent: normalizedAgent, message: userMessage });
       const headerLocale = pickPrimaryLocale(req.headers["accept-language"]);
       const preferredLocale = cleanText(locale) || headerLocale;
 
@@ -699,7 +705,7 @@ app.post(
         preferredLocale,
         images: normalizedImages,
         requestId,
-        agent
+        agent: resolvedAgent
       });
 
       const responseBody = { ok: true, message: reply, reply, conversationId: cid };
