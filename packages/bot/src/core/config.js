@@ -12,6 +12,9 @@ export const config = {
   MAX_OUTPUT_TOKENS: env.MAX_OUTPUT_TOKENS ?? "800",
   DATABASE_URL: env.DATABASE_URL,
   OPENAI_API_KEY: env.OPENAI_API_KEY,
+  OPENAI_MODEL: env.OPENAI_MODEL,
+  OPENAI_SUMMARY_MODEL: env.OPENAI_SUMMARY_MODEL,
+  OPENAI_VERSION: env.OPENAI_VERSION,
   VALKI_PROMPT_ID: env.VALKI_PROMPT_ID,
   DISCORD_TOKEN: env.DISCORD_TOKEN,
   CHANNEL_IDS: env.CHANNEL_IDS ?? "",
@@ -41,6 +44,13 @@ export const MAX_INPUT =
   Number.isFinite(Number(config.MAX_INPUT_CHARS)) ? Number(config.MAX_INPUT_CHARS) : 800;
 export const MAX_OUTPUT =
   Number.isFinite(Number(config.MAX_OUTPUT_TOKENS)) ? Number(config.MAX_OUTPUT_TOKENS) : 800;
+
+export const DEFAULT_OPENAI_MODEL = "gpt-5.2-chat-latest";
+
+export const OPENAI_CHAT_MODEL = (config.OPENAI_MODEL || "").trim() || DEFAULT_OPENAI_MODEL;
+export const OPENAI_SUMMARY_MODEL =
+  (config.OPENAI_SUMMARY_MODEL || "").trim() || DEFAULT_OPENAI_MODEL;
+export const OPENAI_VERSION = (config.OPENAI_VERSION || "").trim();
 
 function requireEnvVars(names) {
   const missing = names.filter((name) => !config[name]);

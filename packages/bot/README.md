@@ -138,6 +138,9 @@ readme: |
 
   DATABASE_URL="postgres://..."
   OPENAI_API_KEY="..."
+  OPENAI_MODEL="gpt-5.2-chat-latest"
+  OPENAI_SUMMARY_MODEL="gpt-5.2-chat-latest"
+  OPENAI_VERSION="" # optional
   VALKI_PROMPT_ID="..."
   AUTH_TOKEN_SECRET="..."
   DISCORD_CLIENT_ID="..."

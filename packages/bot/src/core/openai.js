@@ -1,6 +1,14 @@
 import OpenAI from "openai";
-import { config, ensureSharedEnv } from "./config.js";
+import { OPENAI_VERSION, config, ensureSharedEnv } from "./config.js";
 
 ensureSharedEnv();
 
-export const openai = new OpenAI({ apiKey: config.OPENAI_API_KEY });
+const clientOptions = {
+  apiKey: config.OPENAI_API_KEY
+};
+
+if (OPENAI_VERSION) {
+  clientOptions.defaultQuery = { "api-version": OPENAI_VERSION };
+}
+
+export const openai = new OpenAI(clientOptions);
