@@ -1,4 +1,4 @@
-import { MAX_INPUT, MAX_OUTPUT } from "./config.js";
+import { MAX_INPUT, MAX_OUTPUT, OPENAI_CHAT_MODEL, OPENAI_SUMMARY_MODEL } from "./config.js";
 import { ensureTablesExistOrThrow, getConversation, saveMessage, setConversationSummary } from "./db.js";
 import { sanitizeImages } from "./images.js";
 import { isValidHttpUrl } from "./imageProcessing.js";
@@ -54,8 +54,8 @@ A falcon above the noise.
 // -----------------------
 // ENV
 // -----------------------
-const CHAT_MODEL = cleanText(process.env.OPENAI_MODEL) || "gpt-5.2-chat-latest";
-const SUMMARY_MODEL = cleanText(process.env.OPENAI_SUMMARY_MODEL) || "gpt-5.2-chat-latest";
+const CHAT_MODEL = OPENAI_CHAT_MODEL;
+const SUMMARY_MODEL = OPENAI_SUMMARY_MODEL;
 const SUMMARY_MIN_MESSAGES = Number(process.env.VALKI_SUMMARY_MIN_MESSAGES || 12);
 const ENABLE_WEB_SEARCH = cleanText(process.env.VALKI_ENABLE_WEB_SEARCH) === "1";
 
