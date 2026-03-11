@@ -1089,7 +1089,6 @@ class ViChatWidget {
     on(el['valki-iqai-btn'], 'click', () => {
       const nextView = this.view === 'iqai' ? 'chat' : 'iqai';
       this.setView(nextView);
-      if (nextView === 'iqai') void this.iqaiExplorerController?.activate();
     });
 
     const overlayEl = el['valki-overlay'];
@@ -1301,6 +1300,12 @@ class ViChatWidget {
       drawerContracts: el['valki-iqai-drawer-contracts'],
       drawerStats: el['valki-iqai-drawer-stats']
     });
+
+    const iqaiButton = el['valki-iqai-btn'];
+    if (iqaiButton && this.config.showIqaiExplorer !== true) {
+      iqaiButton.hidden = true;
+      iqaiButton.disabled = true;
+    }
   }
 
   resolveInitialAgentState() {
@@ -1380,6 +1385,9 @@ class ViChatWidget {
     const iqaiRoot = this.elements?.['valki-iqai'];
     if (iqaiRoot) iqaiRoot.hidden = effectiveView !== 'iqai';
     if (iqaiButton) iqaiButton.dataset.active = view === 'iqai' ? 'true' : 'false';
+    if (effectiveView === 'iqai') {
+      void this.iqaiExplorerController?.activate();
+    }
     if (backBtn) {
       if (desktop) {
         backBtn.style.display = 'none';
