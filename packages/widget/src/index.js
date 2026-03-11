@@ -23,6 +23,7 @@ import { createMessageController } from './core/ui/messages.js';
 import { createComposerController } from './core/ui/composer.js';
 import { createOverlayController, setVisible } from './core/ui/overlay.js';
 import { createWidgetHost } from './core/ui/widgetHost.js';
+import { createIqaiExplorerController } from './core/ui/iqaiExplorer.js';
 import { createAuthController } from './core/auth.js';
 import { fetchMe, importGuestMessages, uploadImages } from './core/api.js';
 import { createWsClient } from './core/wsClient.js';
@@ -83,7 +84,30 @@ const REQUIRED_IDS = [
   'valki-title',
   'valki-session-label',
   'valki-loginout-btn',
+  'valki-iqai-btn',
   'valki-deleteall-btn',
+  'valki-iqai',
+  'valki-iqai-q',
+  'valki-iqai-status',
+  'valki-iqai-order',
+  'valki-iqai-reload',
+  'valki-iqai-status-line',
+  'valki-iqai-hero-sub',
+  'valki-iqai-agents-grid',
+  'valki-iqai-metrics-view',
+  'valki-iqai-reload-metrics',
+  'valki-iqai-metrics-hint',
+  'valki-iqai-reload-prices',
+  'valki-iqai-reload-tx',
+  'valki-iqai-tx-limit',
+  'valki-iqai-drawer-overlay',
+  'valki-iqai-drawer-close',
+  'valki-iqai-drawer-title',
+  'valki-iqai-drawer-sub',
+  'valki-iqai-drawer-bio',
+  'valki-iqai-drawer-links',
+  'valki-iqai-drawer-contracts',
+  'valki-iqai-drawer-stats',
   'valki-messages',
   'valki-messages-inner',
   'valki-scroll-bottom',
@@ -245,6 +269,7 @@ class ViChatWidget {
     this.overlayController = null;
     this.agentHubController = null;
     this.guestMeter = null;
+    this.iqaiExplorerController = null;
     this.authController = null;
     this.widgetHost = null;
     this._layoutRaf = 0;
@@ -1061,6 +1086,11 @@ class ViChatWidget {
       this.overlayController.closeOverlay();
     });
     on(el['valki-agent-back'], 'click', () => this.showAgentHub());
+    on(el['valki-iqai-btn'], 'click', () => {
+      const nextView = this.view === 'iqai' ? 'chat' : 'iqai';
+      this.setView(nextView);
+      if (nextView === 'iqai') void this.iqaiExplorerController?.activate();
+    });
 
     const overlayEl = el['valki-overlay'];
     const modalEl = overlayEl?.querySelector('.valki-modal');
@@ -1243,9 +1273,42 @@ class ViChatWidget {
     this.teardownUi = () => {
       cleanupFns.splice(0).forEach((cleanup) => cleanup());
     };
+
+    this.iqaiExplorerController = createIqaiExplorerController({
+      root: el['valki-iqai'],
+      search: el['valki-iqai-q'],
+      status: el['valki-iqai-status'],
+      order: el['valki-iqai-order'],
+      reload: el['valki-iqai-reload'],
+      statusLine: el['valki-iqai-status-line'],
+      heroSub: el['valki-iqai-hero-sub'],
+      grid: el['valki-iqai-agents-grid'],
+      metricsView: el['valki-iqai-metrics-view'],
+      reloadMetrics: el['valki-iqai-reload-metrics'],
+      metricsHint: el['valki-iqai-metrics-hint'],
+      metricsTableBody: el['valki-root'].querySelector('#valki-iqai-metrics-table tbody'),
+      reloadPrices: el['valki-iqai-reload-prices'],
+      pricesTableBody: el['valki-root'].querySelector('#valki-iqai-prices-table tbody'),
+      txLimit: el['valki-iqai-tx-limit'],
+      reloadTx: el['valki-iqai-reload-tx'],
+      txTableBody: el['valki-root'].querySelector('#valki-iqai-tx-table tbody'),
+      drawerOverlay: el['valki-iqai-drawer-overlay'],
+      drawerClose: el['valki-iqai-drawer-close'],
+      drawerTitle: el['valki-iqai-drawer-title'],
+      drawerSub: el['valki-iqai-drawer-sub'],
+      drawerBio: el['valki-iqai-drawer-bio'],
+      drawerLinks: el['valki-iqai-drawer-links'],
+      drawerContracts: el['valki-iqai-drawer-contracts'],
+      drawerStats: el['valki-iqai-drawer-stats']
+    });
   }
 
   resolveInitialAgentState() {
+    if (this.config.defaultView === 'iqai' || this.config.showIqaiExplorer === true) {
+      this.view = 'iqai';
+      return;
+    }
+
     const startAgent = findAgentById(this.agents, this.config.startAgentId);
     if (startAgent) {
       this.currentAgentId = startAgent.id;
@@ -1313,6 +1376,10 @@ class ViChatWidget {
       this.elements['valki-overlay'].dataset.transition = desktop ? 'none' : 'slide';
     }
     const backBtn = this.elements?.['valki-agent-back'];
+    const iqaiButton = this.elements?.['valki-iqai-btn'];
+    const iqaiRoot = this.elements?.['valki-iqai'];
+    if (iqaiRoot) iqaiRoot.hidden = effectiveView !== 'iqai';
+    if (iqaiButton) iqaiButton.dataset.active = view === 'iqai' ? 'true' : 'false';
     if (backBtn) {
       if (desktop) {
         backBtn.style.display = 'none';
@@ -1320,7 +1387,7 @@ class ViChatWidget {
         backBtn.style.display = this.agents.length > 1 && view === 'chat' ? 'inline-flex' : 'none';
       }
     }
-    if (effectiveView === 'chat') {
+    if (effectiveView === 'chat' || effectiveView === 'iqai') {
       this.scheduleLayoutNudge('view-change');
     }
   }

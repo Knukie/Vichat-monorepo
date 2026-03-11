@@ -62,6 +62,7 @@
           </div>
 
           <div class="valki-header-actions">
+            <button class="valki-pill" id="valki-iqai-btn" type="button" title="Open IQAI explorer">IQAI</button>
             <button class="valki-pill primary" id="valki-loginout-btn" type="button" title="Login">Login</button>
             <button class="valki-pill" id="valki-deleteall-btn" type="button" title="Delete all messages">Delete</button>
             <button id="valki-close" class="valki-close-btn" type="button" aria-label="Sluiten">✕</button>
@@ -69,6 +70,109 @@
 
         </div>
       </div>
+
+        <section class="valki-iqai" id="valki-iqai" aria-live="polite" hidden>
+          <div class="valki-iqai-hero">
+            <div class="valki-iqai-onair">
+              <span class="valki-iqai-dot" aria-hidden="true"></span>
+              <span class="valki-iqai-live">Live</span>
+              <span class="valki-iqai-sub" id="valki-iqai-hero-sub">Agent scan…</span>
+            </div>
+            <div class="valki-iqai-controls">
+              <input id="valki-iqai-q" placeholder="Zoek op naam of ticker…" />
+              <select id="valki-iqai-status" aria-label="Status">
+                <option value="alive" selected>alive</option>
+                <option value="">alles</option>
+              </select>
+              <select id="valki-iqai-order" aria-label="Sortering">
+                <option value="asc" selected>asc</option>
+                <option value="desc">desc</option>
+              </select>
+              <button class="valki-iqai-btn" id="valki-iqai-reload" type="button">Refresh</button>
+            </div>
+          </div>
+
+          <div class="valki-iqai-status" id="valki-iqai-status-line">
+            <span class="valki-iqai-pill">Agents: …</span>
+            <span class="valki-iqai-pill">Metrics: …</span>
+            <span class="valki-iqai-pill">Prices: …</span>
+            <span class="valki-iqai-pill">Trades: …</span>
+          </div>
+
+          <section class="valki-iqai-grid" id="valki-iqai-agents-grid"></section>
+
+          <section class="valki-iqai-section">
+            <div class="valki-iqai-section-top">
+              <h2>Top traded agents</h2>
+              <div class="valki-iqai-controls">
+                <select id="valki-iqai-metrics-view">
+                  <option value="mostTraded7d" selected>mostTraded7d</option>
+                  <option value="mostTraded24h">mostTraded24h</option>
+                  <option value="overall">overall</option>
+                </select>
+                <button class="valki-iqai-btn" id="valki-iqai-reload-metrics" type="button">Reload metrics</button>
+              </div>
+            </div>
+            <div class="valki-iqai-meta" id="valki-iqai-metrics-hint">Loading…</div>
+            <div class="valki-iqai-table-wrap">
+              <table id="valki-iqai-metrics-table">
+                <thead><tr><th>#</th><th>Agent</th><th>Ticker</th><th class="right">Trades</th><th class="right">Active</th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="valki-iqai-section">
+            <div class="valki-iqai-section-top">
+              <h2>Prices</h2>
+              <div class="valki-iqai-controls">
+                <button class="valki-iqai-btn" id="valki-iqai-reload-prices" type="button">Reload prices</button>
+              </div>
+            </div>
+            <div class="valki-iqai-table-wrap">
+              <table id="valki-iqai-prices-table">
+                <thead><tr><th>Ticker</th><th>Name</th><th class="right">USD</th><th class="right">IQ</th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="valki-iqai-section">
+            <div class="valki-iqai-section-top">
+              <h2>Recent transactions</h2>
+              <div class="valki-iqai-controls">
+                <select id="valki-iqai-tx-limit">
+                  <option value="10" selected>10</option>
+                  <option value="25">25</option>
+                  <option value="50">50</option>
+                </select>
+                <button class="valki-iqai-btn" id="valki-iqai-reload-tx" type="button">Reload trades</button>
+              </div>
+            </div>
+            <div class="valki-iqai-table-wrap">
+              <table id="valki-iqai-tx-table">
+                <thead><tr><th>Time</th><th>Agent</th><th class="right">Type</th><th class="right">Amount</th><th class="right">USD</th><th>Tx</th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </section>
+
+          <div class="valki-iqai-drawer-overlay" id="valki-iqai-drawer-overlay">
+            <div class="valki-iqai-drawer">
+              <div class="valki-iqai-drawer-top">
+                <div>
+                  <h3 id="valki-iqai-drawer-title">Agent</h3>
+                  <div class="muted" id="valki-iqai-drawer-sub"></div>
+                </div>
+                <button class="valki-iqai-btn" id="valki-iqai-drawer-close" type="button">Sluiten</button>
+              </div>
+              <div class="valki-iqai-drawer-grid">
+                <div class="valki-iqai-box"><h4>Bio</h4><div id="valki-iqai-drawer-bio"></div><div class="divider"></div><h4>Socials</h4><div id="valki-iqai-drawer-links"></div></div>
+                <div class="valki-iqai-box"><h4>Contracts</h4><div class="mono" id="valki-iqai-drawer-contracts"></div><div class="divider"></div><h4>Stats</h4><div class="mono" id="valki-iqai-drawer-stats"></div></div>
+              </div>
+            </div>
+          </div>
+        </section>
 
         <!-- Messages -->
         <div id="valki-messages" class="valki-messages" role="log" aria-live="polite">

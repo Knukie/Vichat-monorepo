@@ -14,6 +14,8 @@ export const DEFAULT_CONSTANTS = {
   guestMeterKey: 'valki_guest_meter_v1',
   clientIdKey: 'valki_client_id_v20',
   mode: 'default',
+  showIqaiExplorer: false,
+  defaultView: 'chat',
   agents: [],
   startAgentId: '',
   copy: {

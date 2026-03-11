@@ -35,6 +35,8 @@ An optional stylesheet is available at `/dist/vichat-widget.css` if you want to 
 - `theme`: `"vichat"` (default) or `"valki"`.
 - `baseUrl`: API/auth origin (defaults to `https://auth.valki.wiki`).
 - `target`: Optional element or selector to append the widget root into.
+- `showIqaiExplorer`: Set `true` to enable the IQAI Explorer view inside the existing widget shell.
+- `defaultView`: Use `'iqai'` to open the widget directly on IQAI Explorer (`'chat'` remains default).
 - `avatarUrl` and other overrides map onto the legacy constants; request/response schema is unchanged:
   - `POST /api/valki` with `{ message, clientId, images:[{name,type,dataUrl}] }` → `{ reply }`.
 
