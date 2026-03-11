@@ -15,6 +15,9 @@ const sharedCssPath = path.join(srcDir, 'themes', 'shared.css');
 const sharedCssModulePath = path.join(srcDir, 'themes', 'shared.js');
 const widgetHostCssPath = path.join(srcDir, 'themes', 'widget-host.css');
 const widgetHostCssModulePath = path.join(srcDir, 'themes', 'widget-host.js');
+const iqaiExplorerEntryFile = path.join(srcDir, 'standalone', 'iqaiExplorer.js');
+const iqaiExplorerCssPath = path.join(srcDir, 'standalone', 'iqaiExplorer.css');
+const iqaiExplorerCssModulePath = path.join(srcDir, 'standalone', 'iqaiExplorerStyles.js');
 const templateHtmlPath = path.join(srcDir, 'core', 'ui', 'template.html');
 const templateModulePath = path.join(srcDir, 'core', 'ui', 'template.js');
 
@@ -33,6 +36,7 @@ await writeFile(
 
 const cssSource = await readFile(sharedCssPath, 'utf8').catch(() => '');
 const widgetHostCssSource = await readFile(widgetHostCssPath, 'utf8').catch(() => '');
+const iqaiExplorerCssSource = await readFile(iqaiExplorerCssPath, 'utf8').catch(() => '');
 await writeFile(
   sharedCssModulePath,
   `// Generated from ${path.relative(rootDir, sharedCssPath)}\nexport const sharedCss = \`${escapeBackticks(cssSource)}\`;\n`
@@ -40,6 +44,10 @@ await writeFile(
 await writeFile(
   widgetHostCssModulePath,
   `// Generated from ${path.relative(rootDir, widgetHostCssPath)}\nexport const widgetHostCss = \`${escapeBackticks(widgetHostCssSource)}\`;\n`
+);
+await writeFile(
+  iqaiExplorerCssModulePath,
+  `// Generated from ${path.relative(rootDir, iqaiExplorerCssPath)}\nexport const iqaiExplorerCss = \`${escapeBackticks(iqaiExplorerCssSource)}\`;\n`
 );
 
 const jsResult = await esbuild.build({
@@ -58,6 +66,24 @@ if (!jsOutput) {
   throw new Error('JS bundle not generated');
 }
 await writeFile(path.join(distDir, 'vichat-widget.min.js'), jsOutput.text);
+
+
+const iqaiExplorerJsResult = await esbuild.build({
+  entryPoints: [iqaiExplorerEntryFile],
+  bundle: true,
+  format: 'iife',
+  target: ['es2018'],
+  minify: isProd,
+  sourcemap,
+  platform: 'browser',
+  write: false
+});
+
+const iqaiExplorerJsOutput = iqaiExplorerJsResult.outputFiles?.find((f) => f.path.endsWith('.js'));
+if (!iqaiExplorerJsOutput) {
+  throw new Error('IQAI Explorer JS bundle not generated');
+}
+await writeFile(path.join(distDir, 'iqai-explorer.js'), iqaiExplorerJsOutput.text);
 
 const mergedCssSource = [widgetHostCssSource, cssSource].filter(Boolean).join('\n');
 const cssResult = await esbuild.transform(mergedCssSource, { loader: 'css', minify: isProd });
