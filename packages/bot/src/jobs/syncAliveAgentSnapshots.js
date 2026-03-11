@@ -7,6 +7,7 @@ const DEFAULT_INTERVAL_MS = 60 * 60 * 1000;
 
 let timer = null;
 let running = false;
+let inFlightRun = null;
 
 function getIntervalMs() {
   const parsed = Number(process.env.AGENT_SNAPSHOT_INTERVAL_MS);
@@ -14,16 +15,21 @@ function getIntervalMs() {
 }
 
 async function runOnce() {
-  if (running) return;
+  if (running) return inFlightRun;
   running = true;
-  try {
-    const result = await syncAliveAgentPriceSnapshots();
-    console.info("[snapshots] sync complete", result);
-  } catch (error) {
-    console.error("[snapshots] sync run failed", error);
-  } finally {
-    running = false;
-  }
+  inFlightRun = (async () => {
+    try {
+      const result = await syncAliveAgentPriceSnapshots();
+      console.info("[snapshots] sync complete", result);
+    } catch (error) {
+      console.error("[snapshots] sync run failed", error);
+    } finally {
+      running = false;
+      inFlightRun = null;
+    }
+  })();
+
+  return inFlightRun;
 }
 
 export async function startAliveAgentSnapshotScheduler() {
@@ -37,5 +43,6 @@ export async function stopAliveAgentSnapshotScheduler() {
     clearInterval(timer);
     timer = null;
   }
+  if (inFlightRun) await inFlightRun;
   await disconnectAgentSnapshotDb();
 }

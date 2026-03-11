@@ -19,6 +19,12 @@ function normalizeBaseUrl(url) {
   return cleanText(url).replace(/\/+$/, "");
 }
 
+function toDateOrNull(value) {
+  if (!value) return null;
+  const parsed = new Date(String(value));
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
 function getRangeStart(range) {
   const now = Date.now();
   const normalized = cleanText(range).toUpperCase();
@@ -37,13 +43,20 @@ iqaiRouter.get("/agents/:ticker/chart", async (req, res) => {
     if (!ticker) return res.status(400).json({ error: "ticker is required" });
 
     const range = cleanText(req.query?.range).toUpperCase() || "1M";
-    const from = getRangeStart(range);
-    const to = new Date();
+    const from = toDateOrNull(req.query?.from) || getRangeStart(range);
+    const to = toDateOrNull(req.query?.to) || new Date();
+    if (from && to && from > to) {
+      return res.status(400).json({ error: "from must be before to" });
+    }
+
+    const parsedLimit = Number(req.query?.limit);
+    const limit = Number.isFinite(parsedLimit) ? parsedLimit : 1000;
+
     const points = await getAgentChartPoints({
       ticker,
       from,
       to,
-      limit: Number(req.query?.limit) || 1000
+      limit
     });
 
     return res.json({
