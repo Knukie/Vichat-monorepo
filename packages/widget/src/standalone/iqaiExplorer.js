@@ -64,12 +64,14 @@ function unmountTarget(target, instance) {
 
 function mount(options = {}) {
   const instance = {};
+  const resolvedTarget = resolveTarget(options.target);
+  if (!resolvedTarget) throw new Error('IQAIExplorer.mount: target not found');
+
   let target = null;
   let pendingMount = null;
 
   const startMount = () => {
-    target = resolveTarget(options.target);
-    if (!target) throw new Error('IQAIExplorer.mount: target not found');
+    target = resolvedTarget;
 
     injectStyles();
     unmountTarget(target);
@@ -84,7 +86,7 @@ function mount(options = {}) {
     mounts.set(target, { controller, instance });
   };
 
-  if (document.readyState === 'loading' && typeof options.target === 'string' && !resolveTarget(options.target)) {
+  if (document.readyState === 'loading' && typeof options.target === 'string') {
     pendingMount = () => {
       pendingMount = null;
       startMount();
