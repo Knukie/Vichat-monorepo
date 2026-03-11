@@ -22,9 +22,8 @@ function normalizeBaseUrl(url) {
 function toDateOrNull(value) {
   if (value == null || value === "") return null;
 
-  const parseEpochByDigits = (epoch) => {
+  const parseEpochByDigits = (epoch, digitCount = String(Math.abs(epoch)).length) => {
     if (!Number.isSafeInteger(epoch)) return null;
-    const digitCount = String(Math.abs(epoch)).length;
     if (digitCount === 13 || digitCount === 12) return new Date(epoch);
     if (digitCount === 10) return new Date(epoch * 1000);
     return null;
@@ -39,7 +38,7 @@ function toDateOrNull(value) {
     if (/^[-+]?\d+$/.test(text)) {
       const signlessDigits = text.replace(/^[-+]/, "");
       if ([10, 12, 13].includes(signlessDigits.length)) {
-        parsed = parseEpochByDigits(Number(text));
+        parsed = parseEpochByDigits(Number(text), signlessDigits.length);
       } else {
         return null;
       }
