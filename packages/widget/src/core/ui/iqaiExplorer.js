@@ -48,17 +48,19 @@ async function fetchJSON(url) {
   return payload ?? text;
 }
 
-function endpoint(path, params) {
+function endpoint(baseUrl, path, params) {
   const qs = params.toString();
-  return `${IQAI_BASE_URL}${path}${qs ? `?${qs}` : ''}`;
+  return `${baseUrl}${path}${qs ? `?${qs}` : ''}`;
 }
 
-export function createIqaiExplorerController(elements) {
+export function createIqaiExplorerController(elements, options = {}) {
+  const baseUrl = String(options.baseUrl || IQAI_BASE_URL).replace(/\/$/, '');
   let allAgents = [];
   let byId = new Map();
   let byTicker = new Map();
   let byTokenContract = new Map();
   let initialized = false;
+  let searchTimer = null;
 
   const setStatus = (type, value, ok = true) => {
     const index = { agents: 0, metrics: 1, prices: 2, trades: 3 }[type];
@@ -150,7 +152,7 @@ export function createIqaiExplorerController(elements) {
     params.set('sort', 'latest');
     params.set('order', elements.order.value || 'asc');
     if (elements.status.value) params.set('status', elements.status.value);
-    const data = await fetchJSON(endpoint('/api/iqai/agents', params));
+    const data = await fetchJSON(endpoint(baseUrl, '/api/iqai/agents', params));
     allAgents = Array.isArray(data.agents) ? data.agents : [];
     byId = new Map(allAgents.map((agent) => [agent.id, agent]));
     byTicker = new Map(allAgents.map((agent) => [String(agent.ticker || '').toUpperCase(), agent]));
@@ -170,7 +172,7 @@ export function createIqaiExplorerController(elements) {
   const loadMetrics = async () => {
     setStatus('metrics', 'Metrics: laden…');
     try {
-      const data = await fetchJSON(endpoint('/api/iqai/api/metrics', new URLSearchParams({ view: elements.metricsView.value || 'mostTraded7d' })));
+      const data = await fetchJSON(endpoint(baseUrl, '/api/iqai/api/metrics', new URLSearchParams({ view: elements.metricsView.value || 'mostTraded7d' })));
       const items = Array.isArray(data.tradeCount) ? data.tradeCount : Array.isArray(data.items) ? data.items : Array.isArray(data.data) ? data.data : [];
       renderMetricsTable(items);
       elements.metricsHint.textContent = `Loaded view=${elements.metricsView.value}`;
@@ -184,7 +186,7 @@ export function createIqaiExplorerController(elements) {
   const loadPrices = async () => {
     setStatus('prices', 'Prices: laden…');
     try {
-      const data = await fetchJSON(endpoint('/api/iqai/api/prices', new URLSearchParams()));
+      const data = await fetchJSON(endpoint(baseUrl, '/api/iqai/api/prices', new URLSearchParams()));
       let rows = Array.isArray(data) ? data : Array.isArray(data.prices) ? data.prices : Array.isArray(data.items) ? data.items : [];
       if (!rows.length && allAgents.length) {
         rows = allAgents.map((agent) => ({ ticker: agent.ticker, name: agent.name, currentPriceInUSD: agent.currentPriceInUSD, currentPriceInIq: agent.currentPriceInIq }));
@@ -200,7 +202,7 @@ export function createIqaiExplorerController(elements) {
   const loadTx = async () => {
     setStatus('trades', 'Trades: laden…');
     try {
-      const data = await fetchJSON(endpoint('/api/iqai/api/transactions', new URLSearchParams({ limit: elements.txLimit.value || '10' })));
+      const data = await fetchJSON(endpoint(baseUrl, '/api/iqai/api/transactions', new URLSearchParams({ limit: elements.txLimit.value || '10' })));
       const rows = Array.isArray(data) ? data : Array.isArray(data.transactions) ? data.transactions : Array.isArray(data.items) ? data.items : Array.isArray(data.data) ? data.data : [];
       elements.txTableBody.innerHTML = rows.map((row) => {
         const ts = row.timestamp || row.createdAt || row.time || row.date || '';
@@ -235,8 +237,8 @@ export function createIqaiExplorerController(elements) {
     initialized = true;
     elements.reload.addEventListener('click', loadAll);
     elements.search.addEventListener('input', () => {
-      clearTimeout(window.__iqSearchTimer);
-      window.__iqSearchTimer = window.setTimeout(renderAgents, 120);
+      clearTimeout(searchTimer);
+      searchTimer = window.setTimeout(renderAgents, 120);
     });
     elements.status.addEventListener('change', loadAgents);
     elements.order.addEventListener('change', loadAgents);
