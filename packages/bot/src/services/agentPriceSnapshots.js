@@ -69,7 +69,9 @@ async function fetchAliveAgents() {
   const payload = await iqaiFetch("/api/agents", params);
   const agents = pickAgentList(payload);
   const alive = agents.filter(isAlive);
-  return alive;
+  if (alive.length > 0) return alive;
+  // Upstream already applies status=alive; fall back when local flags are missing.
+  return agents;
 }
 
 async function fetchPricesByTicker() {
