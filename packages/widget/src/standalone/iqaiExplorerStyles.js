@@ -48,6 +48,15 @@ export const iqaiExplorerCss = `.iqai-explorer-root{
 .iqai-explorer-root .valki-iqai th{color:var(--muted);}
 .iqai-explorer-root .valki-iqai .right{text-align:right;}
 .iqai-explorer-root .valki-iqai .err{color:#ffb3b3;}
+
+.iqai-explorer-root .valki-iqai-price-row{cursor:pointer;transition:background .15s ease;}
+.iqai-explorer-root .valki-iqai-price-row:hover{background:rgba(255,255,255,.04);}
+.iqai-explorer-root .valki-iqai-price-row.is-active{background:rgba(243,88,0,.16);}
+.iqai-explorer-root .valki-iqai-chart-panel{margin-top:10px;padding:12px;border:1px solid rgba(255,255,255,.09);border-radius:12px;background:rgba(3,8,18,.55);}
+.iqai-explorer-root .valki-iqai-chart-top{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:8px;}
+.iqai-explorer-root .valki-iqai-chart-state{font-size:12px;padding:10px;border:1px dashed rgba(255,255,255,.15);border-radius:10px;}
+.iqai-explorer-root .valki-iqai-chart-canvas{width:100%;height:240px;display:block;}
+@media (max-width:640px){.iqai-explorer-root .valki-iqai-chart-canvas{height:200px;}}
 .iqai-explorer-root .valki-iqai a{color:#fff;text-decoration:none;border-bottom:1px solid rgba(255,255,255,.2);}
 .iqai-explorer-root .valki-iqai-drawer-overlay{position:fixed;inset:0;display:none;align-items:flex-end;justify-content:center;padding:16px;background:rgba(0,0,0,.6);z-index:1002;}
 .iqai-explorer-root .valki-iqai-drawer{width:min(900px,100%);max-height:84vh;overflow:auto;border-radius:16px;background:rgba(22,22,22,.96);border:1px solid rgba(255,255,255,.12);padding:14px;}

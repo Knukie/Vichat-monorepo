@@ -1,6 +1,9 @@
 import { formatUsd } from '../../utils/formatUsd.js';
+import { toCanvasChartModel } from '../../utils/agentChartAdapter.js';
+import { renderCanvasLineChart } from '../../utils/canvasLineChart.js';
 
 const IQAI_BASE_URL = 'https://auth.valki.wiki';
+const PRICE_CHART_RANGE = '1M';
 
 function esc(value) {
   return String(value ?? '').replace(/[&<>"']/g, (char) => ({
@@ -63,6 +66,8 @@ export function createIqaiExplorerController(elements, options = {}) {
   let byTokenContract = new Map();
   let initialized = false;
   let searchTimer = null;
+  let selectedTicker = '';
+  let chartRequestSeq = 0;
 
   const setStatus = (type, value, ok = true) => {
     const index = { agents: 0, metrics: 1, prices: 2, trades: 3 }[type];
@@ -120,6 +125,79 @@ export function createIqaiExplorerController(elements, options = {}) {
       .join('') || '<span class="muted">Geen stats</span>';
 
     elements.drawerOverlay.style.display = 'flex';
+  };
+
+  const setChartPanel = ({ visible, state = '', message = '', ticker = '' }) => {
+    elements.priceChartPanel.hidden = !visible;
+    elements.priceChartCanvas.hidden = state !== 'chart';
+    elements.priceChartState.hidden = state === 'chart';
+    if (state !== 'chart') {
+      elements.priceChartState.className = state === 'error' ? 'valki-iqai-chart-state err' : 'valki-iqai-chart-state muted';
+      elements.priceChartState.textContent = message;
+    }
+    elements.priceChartTitle.textContent = ticker ? `${ticker} chart (${PRICE_CHART_RANGE})` : 'Agent chart';
+  };
+
+  const syncSelectedPriceRow = () => {
+    elements.pricesTableBody.querySelectorAll('tr[data-ticker]').forEach((row) => {
+      const rowTicker = String(row.getAttribute('data-ticker') || '').toUpperCase();
+      row.classList.toggle('is-active', Boolean(selectedTicker) && rowTicker === selectedTicker);
+    });
+  };
+
+  const loadPriceChart = async (ticker) => {
+    const requestSeq = ++chartRequestSeq;
+    setChartPanel({ visible: true, state: 'loading', message: 'Chart laden...', ticker });
+
+    try {
+      const data = await fetchJSON(endpoint(baseUrl, `/api/iqai/agents/${encodeURIComponent(ticker)}/chart`, new URLSearchParams({ range: PRICE_CHART_RANGE })));
+      if (requestSeq !== chartRequestSeq) return;
+
+      const model = toCanvasChartModel(data);
+      if (!model.series.length) {
+        setChartPanel({ visible: true, state: 'empty', message: 'Geen chart data beschikbaar', ticker });
+        return;
+      }
+
+      setChartPanel({ visible: true, state: 'chart', ticker: model.ticker || ticker });
+      renderCanvasLineChart(elements.priceChartCanvas, model.series);
+    } catch (error) {
+      if (requestSeq !== chartRequestSeq) return;
+      setChartPanel({ visible: true, state: 'error', message: `Chart ophalen mislukt: ${error.message}`, ticker });
+    }
+  };
+
+  const renderPricesTable = (rows) => {
+    if (!rows.length) {
+      elements.pricesTableBody.innerHTML = '<tr><td colspan="4" class="muted">Geen data</td></tr>';
+      selectedTicker = '';
+      setChartPanel({ visible: false });
+      return;
+    }
+
+    elements.pricesTableBody.innerHTML = rows.map((row) => {
+      const ticker = String(row.ticker || row.symbol || '').toUpperCase();
+      return `<tr data-ticker="${esc(ticker)}" class="valki-iqai-price-row"><td><strong>${esc(ticker || '-')}</strong></td><td>${esc(row.name || byTicker.get(ticker)?.name || '-')}</td><td class="right">${esc(formatUsd(row.currentPriceInUSD ?? row.priceUsd ?? row.usd ?? row.priceUSD))}</td><td class="right">${esc(formatNumber(row.currentPriceInIq ?? row.priceIq ?? row.iq, 10))}</td></tr>`;
+    }).join('');
+
+    syncSelectedPriceRow();
+  };
+
+  const togglePriceChart = (ticker) => {
+    const nextTicker = String(ticker || '').toUpperCase();
+    if (!nextTicker) return;
+
+    if (selectedTicker === nextTicker) {
+      selectedTicker = '';
+      chartRequestSeq += 1;
+      setChartPanel({ visible: false });
+      syncSelectedPriceRow();
+      return;
+    }
+
+    selectedTicker = nextTicker;
+    syncSelectedPriceRow();
+    void loadPriceChart(nextTicker);
   };
 
   const renderAgents = () => {
@@ -193,11 +271,15 @@ export function createIqaiExplorerController(elements, options = {}) {
       if (!rows.length && allAgents.length) {
         rows = allAgents.map((agent) => ({ ticker: agent.ticker, name: agent.name, currentPriceInUSD: agent.currentPriceInUSD, currentPriceInIq: agent.currentPriceInIq }));
       }
-      elements.pricesTableBody.innerHTML = rows.map((row) => `<tr><td><strong>${esc(row.ticker || row.symbol || '-')}</strong></td><td>${esc(row.name || '-')}</td><td class="right">${esc(formatUsd(row.currentPriceInUSD ?? row.priceUsd ?? row.usd ?? row.priceUSD))}</td><td class="right">${esc(formatNumber(row.currentPriceInIq ?? row.priceIq ?? row.iq, 10))}</td></tr>`).join('') || '<tr><td colspan="4" class="muted">Geen data</td></tr>';
+      renderPricesTable(rows);
+      if (selectedTicker && rows.some((row) => String(row.ticker || row.symbol || '').toUpperCase() === selectedTicker)) {
+        void loadPriceChart(selectedTicker);
+      }
       setStatus('prices', 'Prices: ok');
     } catch (error) {
       setStatus('prices', 'Prices: error', false);
       elements.pricesTableBody.innerHTML = `<tr><td colspan="4" class="err">${esc(error.message)}</td></tr>`;
+      setChartPanel({ visible: true, state: 'error', message: `Chart ophalen mislukt: ${error.message}`, ticker: selectedTicker });
     }
   };
 
@@ -247,6 +329,17 @@ export function createIqaiExplorerController(elements, options = {}) {
     elements.reloadMetrics.addEventListener('click', loadMetrics);
     elements.metricsView.addEventListener('change', loadMetrics);
     elements.reloadPrices.addEventListener('click', loadPrices);
+    elements.pricesTableBody.addEventListener('click', (event) => {
+      const row = event.target instanceof Element ? event.target.closest('tr[data-ticker]') : null;
+      if (!row) return;
+      togglePriceChart(row.getAttribute('data-ticker'));
+    });
+    elements.priceChartClose.addEventListener('click', () => {
+      selectedTicker = '';
+      chartRequestSeq += 1;
+      setChartPanel({ visible: false });
+      syncSelectedPriceRow();
+    });
     elements.reloadTx.addEventListener('click', loadTx);
     elements.txLimit.addEventListener('change', loadTx);
     elements.drawerClose.addEventListener('click', closeDrawer);
