@@ -22,21 +22,33 @@ function normalizeBaseUrl(url) {
 function toDateOrNull(value) {
   if (value == null || value === "") return null;
 
-  const parseEpoch = (epoch) => {
-    const epochMs = Math.abs(epoch) < 1e12 ? epoch * 1000 : epoch;
-    return new Date(epochMs);
+  const parseEpochByDigits = (epoch) => {
+    if (!Number.isSafeInteger(epoch)) return null;
+    const digitCount = String(Math.abs(epoch)).length;
+    if (digitCount === 13 || digitCount === 12) return new Date(epoch);
+    if (digitCount === 10) return new Date(epoch * 1000);
+    return null;
   };
 
   let parsed;
   if (typeof value === "number" && Number.isFinite(value)) {
-    parsed = parseEpoch(value);
+    parsed = parseEpochByDigits(value);
   } else {
     const text = String(value).trim();
     if (!text) return null;
-    const numeric = Number(text);
-    parsed = Number.isFinite(numeric) ? parseEpoch(numeric) : new Date(text);
+    if (/^[-+]?\d+$/.test(text)) {
+      const signlessDigits = text.replace(/^[-+]/, "");
+      if ([10, 12, 13].includes(signlessDigits.length)) {
+        parsed = parseEpochByDigits(Number(text));
+      } else {
+        return null;
+      }
+    } else {
+      parsed = new Date(text);
+    }
   }
 
+  if (!parsed) return null;
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
