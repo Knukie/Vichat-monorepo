@@ -59,11 +59,19 @@ iqaiRouter.get("/agents/:ticker/chart", async (req, res) => {
       limit
     });
 
+    const candles = points.map((point) => ({
+      time: point.time,
+      close: point.value,
+      value: point.value
+    }));
+
     return res.json({
       ticker,
       range,
       updatedAt: Date.now(),
-      points
+      points,
+      candles,
+      series: candles.map((candle) => candle.close)
     });
   } catch (error) {
     const message = error?.message || String(error);

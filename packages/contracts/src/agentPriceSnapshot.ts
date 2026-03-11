@@ -25,4 +25,10 @@ export type AgentChartResponse = {
   range: string;
   updatedAt: number;
   points: AgentChartPoint[];
+  candles?: Array<{
+    time: number;
+    close: number;
+    value: number;
+  }>;
+  series?: number[];
 };
