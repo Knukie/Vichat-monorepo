@@ -21,10 +21,18 @@ function toTicker(value) {
 
 function pickAgentList(payload) {
   if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.data?.agents)) return payload.data.agents;
   if (Array.isArray(payload?.agents)) return payload.agents;
   if (Array.isArray(payload?.items)) return payload.items;
   if (Array.isArray(payload?.data)) return payload.data;
   return [];
+}
+
+function pickStatsRow(payload) {
+  if (!payload || typeof payload !== "object") return null;
+  if (payload.data && typeof payload.data === "object") return payload.data;
+  if (payload.stats && typeof payload.stats === "object") return payload.stats;
+  return payload;
 }
 
 function isAlive(agent) {
@@ -61,9 +69,7 @@ async function fetchAliveAgents() {
   const payload = await iqaiFetch("/api/agents", params);
   const agents = pickAgentList(payload);
   const alive = agents.filter(isAlive);
-
-  if (alive.length) return alive;
-  return agents;
+  return alive;
 }
 
 async function fetchPricesByTicker() {
@@ -87,7 +93,8 @@ async function fetchAgentStatsByTicker(ticker) {
   if (!ticker) return null;
   try {
     const params = new URLSearchParams({ ticker });
-    return await iqaiFetch("/api/agents/stats", params);
+    const payload = await iqaiFetch("/api/agents/stats", params);
+    return pickStatsRow(payload);
   } catch (error) {
     console.warn(`[snapshots] stats fetch failed for ${ticker}:`, error?.message || error);
     return null;
@@ -109,19 +116,28 @@ function normalizeSnapshotRecord({ agent, ticker, priceRow, statsRow, source, re
 
   const priceIq = toFiniteNumber(priceRow?.currentPriceInIq ?? priceRow?.priceIq ?? agent?.currentPriceInIq);
   const marketCap = toFiniteNumber(
-    statsRow?.marketCap ?? priceRow?.marketCap ?? agent?.marketCap
+    statsRow?.marketCap ??
+      statsRow?.market_cap ??
+      priceRow?.marketCap ??
+      priceRow?.market_cap ??
+      agent?.marketCap
   );
   const liquidityUsd = toFiniteNumber(
     statsRow?.liquidityUsd ??
+      statsRow?.liquidity_usd ??
       statsRow?.liquidity ??
       priceRow?.liquidityUsd ??
+      priceRow?.liquidity_usd ??
       priceRow?.liquidity
   );
   const volume24hUsd = toFiniteNumber(
     statsRow?.volume24hUsd ??
+      statsRow?.volume_24h_usd ??
       statsRow?.volume24h ??
       statsRow?.volume24hInUSD ??
+      statsRow?.volume24h_in_usd ??
       priceRow?.volume24hUsd ??
+      priceRow?.volume_24h_usd ??
       priceRow?.volume24h
   );
 
@@ -225,13 +241,14 @@ export async function getAgentChartPoints({ ticker, from, to, limit = 500 }) {
       : {})
   };
 
+  const cappedLimit = Math.min(Math.max(Number(limit) || 500, 1), 5000);
   const snapshots = await prisma.agentPriceSnapshot.findMany({
     where,
-    orderBy: { recordedAt: "asc" },
-    take: Math.min(Math.max(Number(limit) || 500, 1), 5000)
+    orderBy: { recordedAt: "desc" },
+    take: cappedLimit
   });
 
-  return snapshots.map((row) => ({
+  return snapshots.reverse().map((row) => ({
     time: row.recordedAt.getTime(),
     value: Number(row.priceUsd),
     priceIq: row.priceIq == null ? null : Number(row.priceIq),
