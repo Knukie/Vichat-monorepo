@@ -1021,6 +1021,103 @@ html.valki-chat-open #valki-root .valki-bubble{
   display:none;
 }
 
+#valki-root #valki-overlay[data-view="iqai"] .valki-messages,
+#valki-root #valki-overlay[data-view="iqai"] .valki-chat-form,
+#valki-root #valki-overlay[data-view="iqai"] .valki-scroll-bottom,
+#valki-root #valki-overlay[data-view="iqai"] .valki-sources-overlay{
+  display:none !important;
+}
+
+#valki-root #valki-overlay[data-view="iqai"] .valki-sidebar{
+  display:none;
+}
+
+#valki-root .valki-iqai{
+  flex:1;
+  overflow:auto;
+  padding:16px;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+
+#valki-root .valki-iqai-hero,
+#valki-root .valki-iqai-controls,
+#valki-root .valki-iqai-onair,
+#valki-root .valki-iqai-status,
+#valki-root .valki-iqai-section-top,
+#valki-root .valki-iqai-actions,
+#valki-root .valki-iqai-tags,
+#valki-root .valki-iqai-drawer-top{
+  display:flex;
+  gap:8px;
+  align-items:center;
+  flex-wrap:wrap;
+}
+
+#valki-root .valki-iqai-controls input,
+#valki-root .valki-iqai-controls select,
+#valki-root .valki-iqai-btn{
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:10px;
+  background:rgba(255,255,255,.03);
+  color:var(--text);
+  padding:8px 10px;
+  font-size:12px;
+}
+
+#valki-root #valki-iqai-btn[data-active="true"]{ border-color: rgba(241,90,36,.6); }
+#valki-root .valki-iqai-dot{ width:9px; height:9px; border-radius:999px; background:#F35800; box-shadow:0 0 0 0 rgba(243,88,0,.55); animation:iqPulse 2s infinite; }
+@keyframes iqPulse{ 0%{ box-shadow:0 0 0 0 rgba(243,88,0,.55);}70%{ box-shadow:0 0 0 10px rgba(243,88,0,0);}100%{ box-shadow:0 0 0 0 rgba(243,88,0,0);} }
+
+#valki-root .valki-iqai-live{ font-size:11px; text-transform:uppercase; letter-spacing:.14em; }
+#valki-root .valki-iqai-sub,
+#valki-root .valki-iqai-meta,
+#valki-root .valki-iqai-pill,
+#valki-root .muted{ color:var(--muted); font-size:12px; }
+#valki-root .valki-iqai-pill{ border:1px solid rgba(255,255,255,.08); border-radius:999px; padding:6px 10px; }
+#valki-root .valki-iqai-grid{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+#valki-root .valki-iqai-card,
+#valki-root .valki-iqai-section,
+#valki-root .valki-iqai-box{
+  background:rgba(255,255,255,.03);
+  border:1px solid rgba(255,255,255,.09);
+  border-radius:14px;
+}
+#valki-root .valki-iqai-card{ padding:12px; }
+#valki-root .valki-iqai-head{ display:flex; gap:10px; align-items:flex-start; }
+#valki-root .valki-iqai-avatar{ width:44px; height:44px; border-radius:12px; overflow:hidden; background:rgba(255,255,255,.06); }
+#valki-root .valki-iqai-avatar img{ width:100%; height:100%; object-fit:cover; display:block; }
+#valki-root .valki-iqai-title{ margin:0; font-size:14px; color:var(--text); }
+#valki-root .valki-iqai-ticker{ font-size:12px; color:var(--muted); }
+#valki-root .valki-iqai-tag{ font-size:10px; border:1px solid rgba(255,255,255,.08); border-radius:999px; padding:2px 8px; color:var(--muted-2); }
+#valki-root .valki-iqai-bio{ margin-top:8px; color:rgba(255,255,255,.72); font-size:12px; line-height:1.45; min-height:36px; }
+#valki-root .valki-iqai-stats{ margin-top:8px; display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:11px; color:var(--muted); }
+#valki-root .valki-iqai-price{ margin-top:8px; font-size:13px; font-weight:700; }
+#valki-root .valki-iqai-section{ padding:12px; }
+#valki-root .valki-iqai-section h2{ margin:0; font-size:14px; }
+#valki-root .valki-iqai-table-wrap{ overflow:auto; }
+#valki-root .valki-iqai table{ width:100%; border-collapse:collapse; border:1px solid rgba(255,255,255,.08); border-radius:12px; overflow:hidden; }
+#valki-root .valki-iqai th,
+#valki-root .valki-iqai td{ padding:8px; font-size:12px; border-bottom:1px solid rgba(255,255,255,.06); text-align:left; }
+#valki-root .valki-iqai th{ color:var(--muted); }
+#valki-root .valki-iqai .right{ text-align:right; }
+#valki-root .valki-iqai .err{ color:#ffb3b3; }
+#valki-root .valki-iqai a{ color:#fff; text-decoration:none; border-bottom:1px solid rgba(255,255,255,.2); }
+
+#valki-root .valki-iqai-drawer-overlay{ position:fixed; inset:0; display:none; align-items:flex-end; justify-content:center; padding:16px; background:rgba(0,0,0,.6); z-index:1002; }
+#valki-root .valki-iqai-drawer{ width:min(900px,100%); max-height:84vh; overflow:auto; border-radius:16px; background:rgba(22,22,22,.96); border:1px solid rgba(255,255,255,.12); padding:14px; }
+#valki-root .valki-iqai-drawer-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px; }
+#valki-root .valki-iqai-box{ padding:10px; }
+#valki-root .valki-iqai-box h4{ margin:0 0 8px; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted-2); }
+#valki-root .divider{ height:1px; background:rgba(255,255,255,.08); margin:10px 0; }
+#valki-root .mono{ font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace; font-size:11px; line-height:1.5; color:rgba(255,255,255,.76); word-break:break-word; }
+
+@media (max-width: 900px){
+  #valki-root .valki-iqai-grid{ grid-template-columns:1fr; }
+  #valki-root .valki-iqai-drawer-grid{ grid-template-columns:1fr; }
+}
+
 #valki-root #valki-overlay[data-layout="mobile"] .valki-chat-shell{
   position: relative;
   overflow: hidden;
