@@ -63,24 +63,44 @@ function unmountTarget(target, instance) {
 }
 
 function mount(options = {}) {
-  const target = resolveTarget(options.target);
-  if (!target) throw new Error('IQAIExplorer.mount: target not found');
-  injectStyles();
-  unmountTarget(target);
-  target.classList.add('iqai-explorer-root');
-  target.innerHTML = iqaiExplorerTemplate;
   const instance = {};
+  let target = null;
+  let pendingMount = null;
 
-  const controller = createIqaiExplorerController(mapElements(target), {
-    baseUrl: options.baseUrl
-  });
+  const startMount = () => {
+    target = resolveTarget(options.target);
+    if (!target) throw new Error('IQAIExplorer.mount: target not found');
 
-  void controller.activate();
-  mounts.set(target, { controller, instance });
+    injectStyles();
+    unmountTarget(target);
+    target.classList.add('iqai-explorer-root');
+    target.innerHTML = iqaiExplorerTemplate;
+
+    const controller = createIqaiExplorerController(mapElements(target), {
+      baseUrl: options.baseUrl
+    });
+
+    void controller.activate();
+    mounts.set(target, { controller, instance });
+  };
+
+  if (document.readyState === 'loading' && typeof options.target === 'string' && !resolveTarget(options.target)) {
+    pendingMount = () => {
+      pendingMount = null;
+      startMount();
+    };
+    document.addEventListener('DOMContentLoaded', pendingMount, { once: true });
+  } else {
+    startMount();
+  }
 
   return {
     unmount() {
-      unmountTarget(target, instance);
+      if (pendingMount) {
+        document.removeEventListener('DOMContentLoaded', pendingMount);
+        pendingMount = null;
+      }
+      if (target) unmountTarget(target, instance);
     }
   };
 }
