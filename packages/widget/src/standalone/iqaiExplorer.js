@@ -50,11 +50,15 @@ function mapElements(root) {
   };
 }
 
-function unmountTarget(target) {
+function unmountTarget(target, instance) {
   const mounted = mounts.get(target);
+  if (!mounted) return;
+  if (instance && mounted.instance !== instance) return;
+
   if (mounted) {
     target.innerHTML = '';
     mounts.delete(target);
+    target.classList.remove('iqai-explorer-root');
   }
 }
 
@@ -65,18 +69,18 @@ function mount(options = {}) {
   unmountTarget(target);
   target.classList.add('iqai-explorer-root');
   target.innerHTML = iqaiExplorerTemplate;
+  const instance = {};
 
   const controller = createIqaiExplorerController(mapElements(target), {
     baseUrl: options.baseUrl
   });
 
   void controller.activate();
-  mounts.set(target, { controller });
+  mounts.set(target, { controller, instance });
 
   return {
     unmount() {
-      unmountTarget(target);
-      target.classList.remove('iqai-explorer-root');
+      unmountTarget(target, instance);
     }
   };
 }
