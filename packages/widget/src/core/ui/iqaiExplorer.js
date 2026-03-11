@@ -68,6 +68,12 @@ export function createIqaiExplorerController(elements, options = {}) {
   let searchTimer = null;
   let selectedTicker = '';
   let chartRequestSeq = 0;
+  const hasChartUi = Boolean(
+    elements.priceChartPanel
+    && elements.priceChartCanvas
+    && elements.priceChartState
+    && elements.priceChartTitle
+  );
 
   const setStatus = (type, value, ok = true) => {
     const index = { agents: 0, metrics: 1, prices: 2, trades: 3 }[type];
@@ -128,6 +134,7 @@ export function createIqaiExplorerController(elements, options = {}) {
   };
 
   const setChartPanel = ({ visible, state = '', message = '', ticker = '' }) => {
+    if (!hasChartUi) return;
     elements.priceChartPanel.hidden = !visible;
     elements.priceChartCanvas.hidden = state !== 'chart';
     elements.priceChartState.hidden = state === 'chart';
@@ -146,6 +153,7 @@ export function createIqaiExplorerController(elements, options = {}) {
   };
 
   const loadPriceChart = async (ticker) => {
+    if (!hasChartUi) return;
     const requestSeq = ++chartRequestSeq;
     setChartPanel({ visible: true, state: 'loading', message: 'Chart laden...', ticker });
 
@@ -184,6 +192,7 @@ export function createIqaiExplorerController(elements, options = {}) {
   };
 
   const togglePriceChart = (ticker) => {
+    if (!hasChartUi) return;
     const nextTicker = String(ticker || '').toUpperCase();
     if (!nextTicker) return;
 
@@ -272,8 +281,16 @@ export function createIqaiExplorerController(elements, options = {}) {
         rows = allAgents.map((agent) => ({ ticker: agent.ticker, name: agent.name, currentPriceInUSD: agent.currentPriceInUSD, currentPriceInIq: agent.currentPriceInIq }));
       }
       renderPricesTable(rows);
-      if (selectedTicker && rows.some((row) => String(row.ticker || row.symbol || '').toUpperCase() === selectedTicker)) {
-        void loadPriceChart(selectedTicker);
+      if (selectedTicker) {
+        const tickerStillExists = rows.some((row) => String(row.ticker || row.symbol || '').toUpperCase() === selectedTicker);
+        if (tickerStillExists) {
+          void loadPriceChart(selectedTicker);
+        } else {
+          selectedTicker = '';
+          chartRequestSeq += 1;
+          setChartPanel({ visible: false });
+          syncSelectedPriceRow();
+        }
       }
       setStatus('prices', 'Prices: ok');
     } catch (error) {
@@ -334,12 +351,14 @@ export function createIqaiExplorerController(elements, options = {}) {
       if (!row) return;
       togglePriceChart(row.getAttribute('data-ticker'));
     });
-    elements.priceChartClose.addEventListener('click', () => {
-      selectedTicker = '';
-      chartRequestSeq += 1;
-      setChartPanel({ visible: false });
-      syncSelectedPriceRow();
-    });
+    if (elements.priceChartClose) {
+      elements.priceChartClose.addEventListener('click', () => {
+        selectedTicker = '';
+        chartRequestSeq += 1;
+        setChartPanel({ visible: false });
+        syncSelectedPriceRow();
+      });
+    }
     elements.reloadTx.addEventListener('click', loadTx);
     elements.txLimit.addEventListener('change', loadTx);
     elements.drawerClose.addEventListener('click', closeDrawer);
