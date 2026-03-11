@@ -20,8 +20,23 @@ function normalizeBaseUrl(url) {
 }
 
 function toDateOrNull(value) {
-  if (!value) return null;
-  const parsed = new Date(String(value));
+  if (value == null || value === "") return null;
+
+  const parseEpoch = (epoch) => {
+    const epochMs = Math.abs(epoch) < 1e12 ? epoch * 1000 : epoch;
+    return new Date(epochMs);
+  };
+
+  let parsed;
+  if (typeof value === "number" && Number.isFinite(value)) {
+    parsed = parseEpoch(value);
+  } else {
+    const text = String(value).trim();
+    if (!text) return null;
+    const numeric = Number(text);
+    parsed = Number.isFinite(numeric) ? parseEpoch(numeric) : new Date(text);
+  }
+
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
