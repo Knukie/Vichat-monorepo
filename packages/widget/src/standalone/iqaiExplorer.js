@@ -109,5 +109,3 @@ function mount(options = {}) {
 
 const IQAIExplorer = { mount };
 window.IQAIExplorer = IQAIExplorer;
-
-export { IQAIExplorer };
