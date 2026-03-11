@@ -63,6 +63,14 @@ export const iqaiExplorerTemplate = `
         <tbody></tbody>
       </table>
     </div>
+    <div class="valki-iqai-chart-panel" data-iqai-el="price-chart-panel" hidden>
+      <div class="valki-iqai-chart-top">
+        <strong data-iqai-el="price-chart-title">Agent chart</strong>
+        <button class="valki-iqai-btn" data-iqai-el="price-chart-close" type="button">Sluiten</button>
+      </div>
+      <div class="valki-iqai-chart-state muted" data-iqai-el="price-chart-state">Chart laden...</div>
+      <canvas data-iqai-el="price-chart-canvas" class="valki-iqai-chart-canvas" aria-label="Agent prijs chart"></canvas>
+    </div>
   </section>
 
   <section class="valki-iqai-section">
