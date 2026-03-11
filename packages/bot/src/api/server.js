@@ -32,6 +32,10 @@ import { chatwootRouter } from "./chatwoot.js";
 import { iqaiRouter } from "./iqai.js";
 import { valkiRoutes } from "../routes/valki.js";
 import { startValkiSnapshotScheduler, stopValkiSnapshotScheduler } from "../services/valkiSnapshot.js";
+import {
+  startAliveAgentSnapshotScheduler,
+  stopAliveAgentSnapshotScheduler
+} from "../jobs/syncAliveAgentSnapshots.js";
 
 ensureApiEnv();
 
@@ -732,6 +736,9 @@ attachWebSocketServer(server, { path: process.env.WS_PATH || "/ws" });
 startValkiSnapshotScheduler().catch((err) => {
   console.error("[VALKI] Snapshot scheduler failed to start", err);
 });
+startAliveAgentSnapshotScheduler().catch((err) => {
+  console.error("[snapshots] Alive agent snapshot scheduler failed to start", err);
+});
 server.listen(port, () => {
   console.log(`🌐 HTTP API running on port ${port} (${config.NODE_ENV})`);
 });
@@ -745,6 +752,7 @@ async function shutdown(signal) {
     await new Promise((resolve) => server?.close?.(resolve));
     console.log("HTTP server closed.");
     stopValkiSnapshotScheduler();
+    await stopAliveAgentSnapshotScheduler();
     await prisma.$disconnect().then(
       () => console.log("Prisma disconnected."),
       (err) => console.warn("Prisma disconnect failed:", err?.message || err)

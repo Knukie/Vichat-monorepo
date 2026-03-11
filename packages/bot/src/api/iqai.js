@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { cleanText } from "../core/utils.js";
+import { getAgentChartPoints } from "../services/agentPriceSnapshots.js";
 
 const iqaiRouter = Router();
 const allowedProxyPaths = new Set([
@@ -17,6 +18,46 @@ const allowedProxyPaths = new Set([
 function normalizeBaseUrl(url) {
   return cleanText(url).replace(/\/+$/, "");
 }
+
+function getRangeStart(range) {
+  const now = Date.now();
+  const normalized = cleanText(range).toUpperCase();
+  if (normalized === "5D") return new Date(now - 5 * 24 * 60 * 60 * 1000);
+  if (normalized === "1M") return new Date(now - 30 * 24 * 60 * 60 * 1000);
+  if (normalized === "3M") return new Date(now - 90 * 24 * 60 * 60 * 1000);
+  if (normalized === "6M") return new Date(now - 180 * 24 * 60 * 60 * 1000);
+  if (normalized === "1Y") return new Date(now - 365 * 24 * 60 * 60 * 1000);
+  if (normalized === "5Y") return new Date(now - 5 * 365 * 24 * 60 * 60 * 1000);
+  return null;
+}
+
+iqaiRouter.get("/agents/:ticker/chart", async (req, res) => {
+  try {
+    const ticker = cleanText(req.params?.ticker).toUpperCase();
+    if (!ticker) return res.status(400).json({ error: "ticker is required" });
+
+    const range = cleanText(req.query?.range).toUpperCase() || "1M";
+    const from = getRangeStart(range);
+    const to = new Date();
+    const points = await getAgentChartPoints({
+      ticker,
+      from,
+      to,
+      limit: Number(req.query?.limit) || 1000
+    });
+
+    return res.json({
+      ticker,
+      range,
+      updatedAt: Date.now(),
+      points
+    });
+  } catch (error) {
+    const message = error?.message || String(error);
+    console.error("[iqai] chart endpoint failed", message);
+    return res.status(500).json({ error: "Could not load chart", details: message });
+  }
+});
 
 iqaiRouter.get("/agents", async (req, res) => {
   try {
