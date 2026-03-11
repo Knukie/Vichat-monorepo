@@ -1,3 +1,5 @@
+import { formatUsd } from '../../utils/formatUsd.js';
+
 const IQAI_BASE_URL = 'https://auth.valki.wiki';
 
 function esc(value) {
@@ -104,7 +106,7 @@ export function createIqaiExplorerController(elements, options = {}) {
     const stats = {
       holdersCount: agent.holdersCount,
       inferenceCount: agent.inferenceCount,
-      currentPriceInUSD: agent.currentPriceInUSD,
+      currentPriceInUSD: formatUsd(agent.currentPriceInUSD),
       currentPriceInIq: agent.currentPriceInIq,
       volumeAllTime: agent.volumeAllTime,
       createdAt: agent.createdAt,
@@ -129,7 +131,7 @@ export function createIqaiExplorerController(elements, options = {}) {
 
     elements.grid.innerHTML = list.map((agent) => {
       const avatar = ipfsUrl(agent.avatar);
-      const price = agent.currentPriceInUSD != null ? `$${formatNumber(agent.currentPriceInUSD, 10)}` : '-';
+      const price = formatUsd(agent.currentPriceInUSD);
       const kicker = `${agent.category || 'Agent'} • ${agent.isVerified ? 'Verified' : 'Unverified'} • ${agent.isActive ? 'Active' : 'Inactive'}`;
       return `<article class="valki-iqai-card"><div class="valki-iqai-kicker">${esc(kicker.toUpperCase())}</div><div class="valki-iqai-head"><div class="valki-iqai-avatar">${avatar ? `<img src="${esc(avatar)}" alt="${esc(agent.name)}">` : ''}</div><div style="min-width:0;flex:1"><h3 class="valki-iqai-title">${esc(agent.name)}</h3><div class="valki-iqai-ticker">${esc(agent.ticker || '-')}</div><div class="valki-iqai-tags"><span class="valki-iqai-tag">${esc(agent.framework ?? '-')}</span><span class="valki-iqai-tag">Chain ${esc(agent.chainId ?? '-')}</span></div></div></div><div class="valki-iqai-bio">${esc(shortWords(agent.bio, 9))}</div><div class="valki-iqai-stats"><div>Holders: <strong>${esc(agent.holdersCount ?? '-')}</strong></div><div>Inference: <strong>${esc(agent.inferenceCount ?? '-')}</strong></div><div>Status: <strong>${agent.isActive ? 'Live' : 'Offline'}</strong></div><div>Verified: <strong>${agent.isVerified ? 'Yes' : 'No'}</strong></div></div><div class="valki-iqai-price">${price}</div><div class="valki-iqai-actions"><button class="valki-iqai-btn" data-open="${esc(agent.id)}" type="button">Open signal</button></div></article>`;
     }).join('');
@@ -191,7 +193,7 @@ export function createIqaiExplorerController(elements, options = {}) {
       if (!rows.length && allAgents.length) {
         rows = allAgents.map((agent) => ({ ticker: agent.ticker, name: agent.name, currentPriceInUSD: agent.currentPriceInUSD, currentPriceInIq: agent.currentPriceInIq }));
       }
-      elements.pricesTableBody.innerHTML = rows.map((row) => `<tr><td><strong>${esc(row.ticker || row.symbol || '-')}</strong></td><td>${esc(row.name || '-')}</td><td class="right">${esc(formatNumber(row.currentPriceInUSD ?? row.priceUsd ?? row.usd ?? row.priceUSD, 10))}</td><td class="right">${esc(formatNumber(row.currentPriceInIq ?? row.priceIq ?? row.iq, 10))}</td></tr>`).join('') || '<tr><td colspan="4" class="muted">Geen data</td></tr>';
+      elements.pricesTableBody.innerHTML = rows.map((row) => `<tr><td><strong>${esc(row.ticker || row.symbol || '-')}</strong></td><td>${esc(row.name || '-')}</td><td class="right">${esc(formatUsd(row.currentPriceInUSD ?? row.priceUsd ?? row.usd ?? row.priceUSD))}</td><td class="right">${esc(formatNumber(row.currentPriceInIq ?? row.priceIq ?? row.iq, 10))}</td></tr>`).join('') || '<tr><td colspan="4" class="muted">Geen data</td></tr>';
       setStatus('prices', 'Prices: ok');
     } catch (error) {
       setStatus('prices', 'Prices: error', false);
@@ -213,7 +215,7 @@ export function createIqaiExplorerController(elements, options = {}) {
         const name = byId.get(agentId)?.name || byTokenContract.get(token)?.name || row.agentName || '-';
         const txHash = row.txHash || row.transactionHash || row.hash || '';
         const txLink = txHash ? `<a href="${esc(txHash)}" target="_blank" rel="noopener noreferrer">link</a>` : '-';
-        return `<tr><td>${time}</td><td>${esc(name)} <span class="muted">(${esc(ticker)})</span></td><td class="right">${esc(row.type || row.side || row.action || row.event || '-')}</td><td class="right">${esc(formatNumber(row.amount || row.size || row.qty || row.tokens || '-', 6))}</td><td class="right">${esc(formatNumber(row.usdValue || row.valueUsd || row.usd || row.valueUSD || '-', 6))}</td><td>${txLink}</td></tr>`;
+        return `<tr><td>${time}</td><td>${esc(name)} <span class="muted">(${esc(ticker)})</span></td><td class="right">${esc(row.type || row.side || row.action || row.event || '-')}</td><td class="right">${esc(formatNumber(row.amount || row.size || row.qty || row.tokens || '-', 6))}</td><td class="right">${esc(formatUsd(row.usdValue || row.valueUsd || row.usd || row.valueUSD))}</td><td>${txLink}</td></tr>`;
       }).join('') || '<tr><td colspan="6" class="muted">Geen data</td></tr>';
       setStatus('trades', 'Trades: ok');
     } catch (error) {
