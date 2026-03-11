@@ -105,3 +105,22 @@ model Upload {
   @@index([createdAt])
   @@map("uploads")
 }
+
+model AgentPriceSnapshot {
+  id           String   @id @default(uuid()) @db.Uuid
+  ticker       String
+  agentId      String?  @map("agent_id")
+  priceUsd     Decimal  @map("price_usd") @db.Decimal(30, 12)
+  priceIq      Decimal? @map("price_iq") @db.Decimal(30, 12)
+  marketCap    Decimal? @map("market_cap") @db.Decimal(30, 4)
+  liquidityUsd Decimal? @map("liquidity_usd") @db.Decimal(30, 4)
+  volume24hUsd Decimal? @map("volume_24h_usd") @db.Decimal(30, 4)
+  source       String?  @default("iqai")
+  recordedAt   DateTime @map("recorded_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@unique([ticker, recordedAt])
+  @@index([ticker, recordedAt])
+  @@index([recordedAt])
+  @@map("agent_price_snapshots")
+}
