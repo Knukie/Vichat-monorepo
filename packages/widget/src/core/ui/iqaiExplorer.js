@@ -61,6 +61,59 @@ function formatNumber(value, max = 8) {
   return num.toFixed(Math.min(max, 8));
 }
 
+function formatPercent(value) {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return '';
+  const abs = Math.abs(num);
+  const precision = abs >= 10 ? 2 : 3;
+  return `${num > 0 ? '+' : ''}${num.toFixed(precision)}%`;
+}
+
+function derivePerformancePercent(agent) {
+  if (!agent || typeof agent !== 'object') return null;
+
+  const directCandidates = [
+    agent.performancePct,
+    agent.performancePercent,
+    agent.priceChangePercent,
+    agent.priceChangePct,
+    agent.changePercent,
+    agent.changePct,
+    agent.change24hPercent,
+    agent.change24hPct,
+    agent.percentChange24h,
+    agent.percentageChange24h,
+    agent.deltaPercent,
+    agent.deltaPct,
+    agent.pnlPercent,
+    agent.roiPercent,
+    agent.metrics?.changePercent,
+    agent.metrics?.change24hPercent,
+    agent.metrics?.priceChangePercent
+  ];
+
+  for (const candidate of directCandidates) {
+    const parsed = Number(candidate);
+    if (Number.isFinite(parsed) && parsed !== 0) return parsed;
+  }
+
+  const current = Number(agent.currentPriceInUSD ?? agent.priceUsd ?? agent.priceUSD ?? agent.usd);
+  const previous = Number(
+    agent.previousPriceInUSD
+    ?? agent.previousPriceUsd
+    ?? agent.prevPriceInUSD
+    ?? agent.prevPriceUsd
+    ?? agent.openPriceInUSD
+    ?? agent.price24hAgo
+  );
+
+  if (Number.isFinite(current) && Number.isFinite(previous) && previous > 0 && current !== previous) {
+    return ((current - previous) / previous) * 100;
+  }
+
+  return null;
+}
+
 function shortWords(value, maxWords = 9) {
   const cleaned = String(value ?? '').replace(/\s+/g, ' ').trim();
   if (!cleaned) return '';
@@ -308,9 +361,14 @@ export function createIqaiExplorerController(elements, options = {}) {
       const avatar = resolveAgentAvatar(agent);
       if (avatar && debugAvatarUrls.length < 2) debugAvatarUrls.push({ id: agent.id, avatar });
       const price = formatUsd(agent.currentPriceInUSD);
+      const ticker = String(agent.ticker || '').toUpperCase();
+      const pairLabel = ticker ? `${ticker} / USD` : '- / USD';
+      const performancePercent = derivePerformancePercent(agent);
+      const hasPerformanceBadge = Number.isFinite(performancePercent) && performancePercent !== 0;
+      const performanceClass = performancePercent > 0 ? 'is-positive' : 'is-negative';
       const avatarFallbackText = String(agent.name || agent.ticker || '?').trim().charAt(0).toUpperCase() || '?';
       const avatarMarkup = `<div class="valki-iqai-avatar${avatar ? '' : ' is-fallback'}"><span class="valki-iqai-avatar-fallback" aria-hidden="true">${esc(avatarFallbackText)}</span>${avatar ? `<img src="${esc(avatar)}" alt="${esc(`${agent.name || 'Agent'} avatar`)}" loading="lazy" decoding="async">` : ''}</div>`;
-      return `<article class="valki-iqai-card"><div class="valki-iqai-head">${avatarMarkup}<div style="min-width:0;flex:1"><h3 class="valki-iqai-title">${esc(agent.name)}</h3><div class="valki-iqai-ticker">${esc(agent.ticker || '-')}</div><div class="valki-iqai-tags"><span class="valki-iqai-tag">${esc(agent.framework ?? '-')}</span><span class="valki-iqai-tag">Chain ${esc(agent.chainId ?? '-')}</span></div></div></div><div class="valki-iqai-bio">${esc(shortWords(agent.bio, 9))}</div><div class="valki-iqai-stats"><div>Holders: <strong>${esc(agent.holdersCount ?? '-')}</strong></div><div>Inference: <strong>${esc(agent.inferenceCount ?? '-')}</strong></div><div>Status: <strong>${agent.isActive ? 'Live' : 'Offline'}</strong></div><div>Verified: <strong>${agent.isVerified ? 'Yes' : 'No'}</strong></div></div><div class="valki-iqai-foot"><div class="valki-iqai-price">${price}</div><div class="valki-iqai-sparkline" data-ticker="${esc(String(agent.ticker || '').toUpperCase())}" role="img" aria-label="${esc(`${agent.ticker || 'Agent'} price trend`)}"></div></div><div class="valki-iqai-actions"><button class="valki-iqai-btn" data-open="${esc(agent.id)}" type="button">Open signal</button></div></article>`;
+      return `<article class="valki-iqai-card"><div class="valki-iqai-head">${avatarMarkup}<div style="min-width:0;flex:1"><h3 class="valki-iqai-title">${esc(agent.name)}</h3><div class="valki-iqai-ticker">${esc(agent.ticker || '-')}</div><div class="valki-iqai-tags"><span class="valki-iqai-tag">${esc(agent.framework ?? '-')}</span><span class="valki-iqai-tag">Chain ${esc(agent.chainId ?? '-')}</span></div></div></div><div class="valki-iqai-bio">${esc(shortWords(agent.bio, 9))}</div><div class="valki-iqai-stats"><div>Holders: <strong>${esc(agent.holdersCount ?? '-')}</strong></div><div>Inference: <strong>${esc(agent.inferenceCount ?? '-')}</strong></div><div>Status: <strong>${agent.isActive ? 'Live' : 'Offline'}</strong></div><div>Verified: <strong>${agent.isVerified ? 'Yes' : 'No'}</strong></div></div><div class="valki-iqai-foot"><div class="valki-iqai-price-wrap"><div class="valki-iqai-pair">${esc(pairLabel)}</div><div class="valki-iqai-price-row"><div class="valki-iqai-price">${price}</div>${hasPerformanceBadge ? `<span class="valki-iqai-performance ${performanceClass}">${esc(formatPercent(performancePercent))}</span>` : ''}</div></div><div class="valki-iqai-chart-region"><button class="valki-iqai-btn valki-iqai-open-signal" data-open="${esc(agent.id)}" type="button">Open signal</button><div class="valki-iqai-sparkline" data-ticker="${esc(ticker)}" role="img" aria-label="${esc(`${agent.ticker || 'Agent'} price trend`)}"></div></div></div></article>`;
     }).join('');
 
     if (debugAvatarUrls.length) {
@@ -321,12 +379,10 @@ export function createIqaiExplorerController(elements, options = {}) {
       const container = img.closest('.valki-iqai-avatar');
       if (!container) return;
       const markLoaded = () => {
-        img.style.display = '';
         container.classList.remove('is-fallback');
         container.classList.add('is-loaded');
       };
       const markFallback = () => {
-        img.style.display = 'none';
         img.setAttribute('alt', '');
         container.classList.remove('is-loaded');
         container.classList.add('is-fallback');
@@ -337,9 +393,7 @@ export function createIqaiExplorerController(elements, options = {}) {
       img.addEventListener('error', markFallback, { once: true });
 
       if (img.complete) {
-        if (typeof img.decode === 'function') {
-          void img.decode().then(markLoaded).catch(markFallback);
-        } else if (img.naturalWidth > 0 || img.naturalHeight > 0) {
+        if (img.naturalWidth > 0 || img.naturalHeight > 0) {
           markLoaded();
         } else {
           markFallback();
