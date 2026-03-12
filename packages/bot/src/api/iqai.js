@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { cleanText } from "../core/utils.js";
-import { getAgentChartPoints } from "../services/agentPriceSnapshots.js";
+import { getAgentHistorySnapshot } from "../services/agentPriceSnapshots.js";
 
 const iqaiRouter = Router();
 const allowedProxyPaths = new Set([
@@ -63,10 +63,25 @@ function getRangeStart(range) {
   return null;
 }
 
+const SUPPORTED_TRACKED_TICKERS = new Set([
+  "BTCWITCH",
+  "SOPHIA",
+  "GORA",
+  "DKDEFI",
+  "VAULT",
+  "IQYIELD",
+  "NOIR",
+  "ASTRALFXIQ",
+  "VALKI"
+]);
+
 iqaiRouter.get("/agents/:ticker/chart", async (req, res) => {
   try {
     const ticker = cleanText(req.params?.ticker).toUpperCase();
     if (!ticker) return res.status(400).json({ error: "ticker is required" });
+    if (!SUPPORTED_TRACKED_TICKERS.has(ticker)) {
+      return res.status(404).json({ error: "ticker is not tracked" });
+    }
 
     const range = cleanText(req.query?.range).toUpperCase() || "1M";
     const from = toDateOrNull(req.query?.from) || getRangeStart(range);
@@ -78,27 +93,15 @@ iqaiRouter.get("/agents/:ticker/chart", async (req, res) => {
     const parsedLimit = Number(req.query?.limit);
     const limit = Number.isFinite(parsedLimit) ? parsedLimit : 1000;
 
-    const points = await getAgentChartPoints({
+    const snapshot = await getAgentHistorySnapshot({
       ticker,
       from,
       to,
-      limit
+      limit,
+      range
     });
 
-    const candles = points.map((point) => ({
-      time: point.time,
-      close: point.value,
-      value: point.value
-    }));
-
-    return res.json({
-      ticker,
-      range,
-      updatedAt: Date.now(),
-      points,
-      candles,
-      series: candles.map((candle) => candle.close)
-    });
+    return res.json(snapshot);
   } catch (error) {
     const message = error?.message || String(error);
     console.error("[iqai] chart endpoint failed", message);
