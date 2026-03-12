@@ -4,6 +4,17 @@ import { cleanText } from "../core/utils.js";
 const prisma = new PrismaClient();
 const DEFAULT_BASE_URL = "https://app.iqai.com";
 const DEFAULT_SOURCE = "iqai";
+const DEFAULT_TRACKED_TICKERS = [
+  "BTCWITCH",
+  "SOPHIA",
+  "GORA",
+  "DKDEFI",
+  "VAULT",
+  "IQYIELD",
+  "NOIR",
+  "ASTRALFXIQ",
+  "VALKI"
+];
 
 function normalizeBaseUrl(url) {
   return cleanText(url).replace(/\/+$/, "");
@@ -21,7 +32,10 @@ function toTicker(value) {
 
 function getTrackedTickersFromEnv() {
   const raw = cleanText(process.env.TRACKED_AGENT_TICKERS);
-  if (!raw) return [];
+
+  if (!raw) {
+    return [...DEFAULT_TRACKED_TICKERS];
+  }
 
   return Array.from(
     new Set(
@@ -301,11 +315,57 @@ export async function getAgentChartPoints({ ticker, from, to, limit = 500 }) {
   return snapshots.reverse().map((row) => ({
     time: row.recordedAt.getTime(),
     value: Number(row.priceUsd),
+    source: cleanText(row.source) || DEFAULT_SOURCE,
     priceIq: row.priceIq == null ? null : Number(row.priceIq),
     marketCap: row.marketCap == null ? null : Number(row.marketCap),
     liquidityUsd: row.liquidityUsd == null ? null : Number(row.liquidityUsd),
     volume24hUsd: row.volume24hUsd == null ? null : Number(row.volume24hUsd)
   }));
+}
+
+function toCandle(point) {
+  return {
+    time: point.time,
+    open: point.value,
+    high: point.value,
+    low: point.value,
+    close: point.value
+  };
+}
+
+function computeChange24h(points) {
+  if (!Array.isArray(points) || points.length < 2) return 0;
+
+  const latest = points[points.length - 1];
+  const targetTime = latest.time - 24 * 60 * 60 * 1000;
+
+  let baseline = points[0];
+  for (const point of points) {
+    if (point.time <= targetTime) baseline = point;
+    else break;
+  }
+
+  if (!baseline?.value || baseline.value <= 0) return 0;
+  return ((latest.value - baseline.value) / baseline.value) * 100;
+}
+
+export async function getAgentHistorySnapshot({ ticker, from, to, limit = 1000, range = null }) {
+  const points = await getAgentChartPoints({ ticker, from, to, limit });
+  const candles = points.map(toCandle);
+  const latest = points[points.length - 1] || null;
+
+  return {
+    ticker: toTicker(ticker),
+    price: latest?.value ?? 0,
+    marketCap: latest?.marketCap ?? 0,
+    change24h: computeChange24h(points),
+    series: candles.map((candle) => candle.close),
+    candles,
+    updatedAt: latest?.time ?? Date.now(),
+    range,
+    source: latest?.source || DEFAULT_SOURCE,
+    points
+  };
 }
 
 export async function disconnectAgentSnapshotDb() {
