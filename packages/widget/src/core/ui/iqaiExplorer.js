@@ -94,7 +94,7 @@ function derivePerformancePercent(agent) {
 
   for (const candidate of directCandidates) {
     const parsed = Number(candidate);
-    if (Number.isFinite(parsed) && parsed !== 0) return parsed;
+    if (Number.isFinite(parsed)) return parsed;
   }
 
   const current = Number(agent.currentPriceInUSD ?? agent.priceUsd ?? agent.priceUSD ?? agent.usd);
@@ -107,7 +107,7 @@ function derivePerformancePercent(agent) {
     ?? agent.price24hAgo
   );
 
-  if (Number.isFinite(current) && Number.isFinite(previous) && previous > 0 && current !== previous) {
+  if (Number.isFinite(current) && Number.isFinite(previous) && previous > 0) {
     return ((current - previous) / previous) * 100;
   }
 
@@ -364,11 +364,11 @@ export function createIqaiExplorerController(elements, options = {}) {
       const ticker = String(agent.ticker || '').toUpperCase();
       const pairLabel = ticker ? `${ticker} / USD` : '- / USD';
       const performancePercent = derivePerformancePercent(agent);
-      const hasPerformanceBadge = Number.isFinite(performancePercent) && performancePercent !== 0;
-      const performanceClass = performancePercent > 0 ? 'is-positive' : 'is-negative';
+      const hasPerformanceBadge = Number.isFinite(performancePercent);
+      const performanceClass = performancePercent > 0 ? 'is-positive' : performancePercent < 0 ? 'is-negative' : 'is-neutral';
       const avatarFallbackText = String(agent.name || agent.ticker || '?').trim().charAt(0).toUpperCase() || '?';
       const avatarMarkup = `<div class="valki-iqai-avatar${avatar ? '' : ' is-fallback'}"><span class="valki-iqai-avatar-fallback" aria-hidden="true">${esc(avatarFallbackText)}</span>${avatar ? `<img src="${esc(avatar)}" alt="${esc(`${agent.name || 'Agent'} avatar`)}" decoding="async" referrerpolicy="no-referrer">` : ''}</div>`;
-      return `<article class="valki-iqai-card"><div class="valki-iqai-card-top"><button class="valki-iqai-btn valki-iqai-open-signal" data-open="${esc(agent.id)}" type="button">Open signal</button></div><div class="valki-iqai-head">${avatarMarkup}<div style="min-width:0;flex:1"><h3 class="valki-iqai-title">${esc(agent.name)}</h3><div class="valki-iqai-ticker">${esc(agent.ticker || '-')}</div><div class="valki-iqai-tags"><span class="valki-iqai-tag">${esc(agent.framework ?? '-')}</span><span class="valki-iqai-tag">Chain ${esc(agent.chainId ?? '-')}</span></div></div></div><div class="valki-iqai-bio">${esc(shortWords(agent.bio, 9))}</div><div class="valki-iqai-stats"><div>Holders: <strong>${esc(agent.holdersCount ?? '-')}</strong></div><div>Inference: <strong>${esc(agent.inferenceCount ?? '-')}</strong></div><div>Status: <strong>${agent.isActive ? 'Live' : 'Offline'}</strong></div><div>Verified: <strong>${agent.isVerified ? 'Yes' : 'No'}</strong></div></div><div class="valki-iqai-foot"><div class="valki-iqai-price-wrap"><div class="valki-iqai-pair">${esc(pairLabel)}</div><div class="valki-iqai-card-price-row"><div class="valki-iqai-price">${price}</div>${hasPerformanceBadge ? `<span class="valki-iqai-performance ${performanceClass}">${esc(formatPercent(performancePercent))}</span>` : ''}</div></div><div class="valki-iqai-chart-region"><div class="valki-iqai-sparkline" data-ticker="${esc(ticker)}" role="img" aria-label="${esc(`${agent.ticker || 'Agent'} price trend`)}"></div></div></div></article>`;
+      return `<article class="valki-iqai-card"><div class="valki-iqai-head">${avatarMarkup}<div style="min-width:0;flex:1"><h3 class="valki-iqai-title">${esc(agent.name)}</h3><div class="valki-iqai-ticker">${esc(agent.ticker || '-')}</div><div class="valki-iqai-tags"><span class="valki-iqai-tag">${esc(agent.framework ?? '-')}</span><span class="valki-iqai-tag">Chain ${esc(agent.chainId ?? '-')}</span></div></div></div><div class="valki-iqai-bio">${esc(shortWords(agent.bio, 9))}</div><div class="valki-iqai-stats"><div>Holders: <strong>${esc(agent.holdersCount ?? '-')}</strong></div><div>Inference: <strong>${esc(agent.inferenceCount ?? '-')}</strong></div><div>Status: <strong>${agent.isActive ? 'Live' : 'Offline'}</strong></div><div>Verified: <strong>${agent.isVerified ? 'Yes' : 'No'}</strong></div></div><div class="valki-iqai-foot"><div class="valki-iqai-chart-region"><button class="valki-iqai-btn valki-iqai-open-signal" data-open="${esc(agent.id)}" type="button">Open signal</button><div class="valki-iqai-chart-block"><div class="valki-iqai-sparkline" data-ticker="${esc(ticker)}" role="img" aria-label="${esc(`${agent.ticker || 'Agent'} price trend`)}"></div><div class="valki-iqai-price-wrap"><div class="valki-iqai-pair">${esc(pairLabel)}</div><div class="valki-iqai-card-price-row"><div class="valki-iqai-price">${price}</div>${hasPerformanceBadge ? `<span class="valki-iqai-performance ${performanceClass}">${esc(formatPercent(performancePercent))}</span>` : ''}</div><div class="valki-iqai-range">${PRICE_CHART_RANGE}</div></div></div></div></div></article>`;
     }).join('');
 
     if (debugAvatarUrls.length) {
