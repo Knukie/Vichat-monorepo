@@ -66,7 +66,7 @@ async function fetchAliveAgents() {
   params.set("status", "alive");
   params.set("limit", "250");
 
-  const payload = await iqaiFetch("/api/iqai/api/agents", params);
+  const payload = await iqaiFetch("/api/agents", params);
   const agents = pickAgentList(payload);
   const alive = agents.filter(isAlive);
   if (alive.length > 0) return alive;
@@ -75,7 +75,7 @@ async function fetchAliveAgents() {
 }
 
 async function fetchPricesByTicker() {
-  const payload = await iqaiFetch("/api/iqai/api/prices", new URLSearchParams());
+  const payload = await iqaiFetch("/api/prices", new URLSearchParams());
   const prices = Array.isArray(payload)
     ? payload
     : Array.isArray(payload?.prices)
@@ -95,7 +95,7 @@ async function fetchAgentStatsByTicker(ticker) {
   if (!ticker) return null;
   try {
     const params = new URLSearchParams({ ticker });
-    const payload = await iqaiFetch("/api/iqai/api/agents/stats", params);
+    const payload = await iqaiFetch("/api/agents/stats", params);
     return pickStatsRow(payload);
   } catch (error) {
     console.warn(`[snapshots] stats fetch failed for ${ticker}:`, error?.message || error);

@@ -153,8 +153,9 @@ readme: |
   PORT=8080
   WS_PATH=/ws
   CORS_ORIGINS="https://valki.wiki,https://www.valki.wiki,https://auth.valki.wiki"
-  IQAI_API_BASE="https://auth.valki.wiki"
+  IQAI_API_BASE="https://app.iqai.com"
   IQAI_BEARER="" # optional if upstream is public
+  PUBLIC_SELF_BASE_URL="https://auth.valki.wiki"
   AGENT_SNAPSHOT_INTERVAL_MS=3600000
   AGENT_SNAPSHOT_SOURCE="iqai"
 
