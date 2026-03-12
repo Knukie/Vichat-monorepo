@@ -98,7 +98,12 @@ function buildSparklineSvg(series = []) {
   const width = 120;
   const height = 34;
   const pad = 2;
-  const values = series.map((point) => Number(point.value ?? point.price ?? point.close ?? point.y)).filter((value) => Number.isFinite(value));
+  const values = series
+    .map((point) => {
+      if (typeof point === 'number') return Number(point);
+      return Number(point?.value ?? point?.price ?? point?.close ?? point?.y);
+    })
+    .filter((value) => Number.isFinite(value));
   if (values.length < 2) return '';
 
   const min = Math.min(...values);
@@ -315,21 +320,31 @@ export function createIqaiExplorerController(elements, options = {}) {
     elements.grid.querySelectorAll('.valki-iqai-avatar img').forEach((img) => {
       const container = img.closest('.valki-iqai-avatar');
       if (!container) return;
-      container.classList.remove('is-fallback');
-      if (img.complete && img.naturalWidth > 0) {
-        container.classList.add('is-loaded');
-      }
-      img.addEventListener('load', () => {
+      const markLoaded = () => {
         img.style.display = '';
         container.classList.remove('is-fallback');
         container.classList.add('is-loaded');
-      }, { once: true });
-      img.addEventListener('error', () => {
+      };
+      const markFallback = () => {
         img.style.display = 'none';
         img.setAttribute('alt', '');
         container.classList.remove('is-loaded');
         container.classList.add('is-fallback');
-      }, { once: true });
+      };
+
+      container.classList.remove('is-fallback');
+      img.addEventListener('load', markLoaded, { once: true });
+      img.addEventListener('error', markFallback, { once: true });
+
+      if (img.complete) {
+        if (typeof img.decode === 'function') {
+          void img.decode().then(markLoaded).catch(markFallback);
+        } else if (img.naturalWidth > 0 || img.naturalHeight > 0) {
+          markLoaded();
+        } else {
+          markFallback();
+        }
+      }
     });
 
     const loadCardSparkline = async (ticker) => {
