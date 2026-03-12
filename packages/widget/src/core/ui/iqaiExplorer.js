@@ -17,8 +17,39 @@ function esc(value) {
 
 function ipfsUrl(value) {
   if (!value) return '';
-  if (/^https?:\/\//i.test(value)) return value;
-  return `https://ipfs.io/ipfs/${value}`;
+  const raw = String(value).trim();
+  if (!raw) return '';
+
+  if (/^ipfs:\/\//i.test(raw)) {
+    const path = raw.replace(/^ipfs:\/\//i, '').replace(/^ipfs\//i, '');
+    return `https://ipfs.io/ipfs/${path}`;
+  }
+
+  if (/^\/\/(?!\/)/.test(raw)) return `https:${raw}`;
+  if (/^https?:\/\//i.test(raw)) return raw;
+
+  const locationOrigin = typeof window !== 'undefined' && window.location ? window.location.origin : '';
+  const isIpfsGatewayPath = typeof window !== 'undefined'
+    && window.location
+    && /^\/(ipfs|ipns)\//i.test(window.location.pathname || '');
+
+  if (/^\/(ipfs|ipns)\//i.test(raw)) {
+    return `${locationOrigin || 'https://ipfs.io'}${raw}`;
+  }
+
+  if (/^[a-z0-9]{46,}(?:\/.*)?$/i.test(raw) || /^bafy[a-z0-9]+(?:\/.*)?$/i.test(raw)) {
+    return `https://ipfs.io/ipfs/${raw}`;
+  }
+
+  const preferredBase = isIpfsGatewayPath
+    ? locationOrigin
+    : (typeof document !== 'undefined' ? document.baseURI : locationOrigin);
+
+  try {
+    return new URL(raw, preferredBase || locationOrigin || IQAI_BASE_URL).toString();
+  } catch {
+    return '';
+  }
 }
 
 function formatNumber(value, max = 8) {
@@ -216,12 +247,34 @@ export function createIqaiExplorerController(elements, options = {}) {
       return String(agent.name || '').toLowerCase().includes(query) || String(agent.ticker || '').toLowerCase().includes(query);
     });
 
+    const debugAvatarUrls = [];
     elements.grid.innerHTML = list.map((agent) => {
-      const avatar = ipfsUrl(agent.avatar);
+      const avatar = ipfsUrl(agent.avatar || agent.avatarUrl || agent.image);
+      if (avatar && debugAvatarUrls.length < 2) debugAvatarUrls.push({ id: agent.id, avatar });
       const price = formatUsd(agent.currentPriceInUSD);
       const kicker = `${agent.category || 'Agent'} • ${agent.isVerified ? 'Verified' : 'Unverified'} • ${agent.isActive ? 'Active' : 'Inactive'}`;
-      return `<article class="valki-iqai-card"><div class="valki-iqai-kicker">${esc(kicker.toUpperCase())}</div><div class="valki-iqai-head"><div class="valki-iqai-avatar">${avatar ? `<img src="${esc(avatar)}" alt="${esc(agent.name)}">` : ''}</div><div style="min-width:0;flex:1"><h3 class="valki-iqai-title">${esc(agent.name)}</h3><div class="valki-iqai-ticker">${esc(agent.ticker || '-')}</div><div class="valki-iqai-tags"><span class="valki-iqai-tag">${esc(agent.framework ?? '-')}</span><span class="valki-iqai-tag">Chain ${esc(agent.chainId ?? '-')}</span></div></div></div><div class="valki-iqai-bio">${esc(shortWords(agent.bio, 9))}</div><div class="valki-iqai-stats"><div>Holders: <strong>${esc(agent.holdersCount ?? '-')}</strong></div><div>Inference: <strong>${esc(agent.inferenceCount ?? '-')}</strong></div><div>Status: <strong>${agent.isActive ? 'Live' : 'Offline'}</strong></div><div>Verified: <strong>${agent.isVerified ? 'Yes' : 'No'}</strong></div></div><div class="valki-iqai-price">${price}</div><div class="valki-iqai-actions"><button class="valki-iqai-btn" data-open="${esc(agent.id)}" type="button">Open signal</button></div></article>`;
+      const avatarFallbackText = String(agent.name || agent.ticker || '?').trim().charAt(0).toUpperCase() || '?';
+      const avatarMarkup = `<div class="valki-iqai-avatar${avatar ? '' : ' is-fallback'}"><span class="valki-iqai-avatar-fallback" aria-hidden="true">${esc(avatarFallbackText)}</span>${avatar ? `<img src="${esc(avatar)}" alt="${esc(`${agent.name || 'Agent'} avatar`)}" loading="lazy" decoding="async">` : ''}</div>`;
+      return `<article class="valki-iqai-card"><div class="valki-iqai-kicker">${esc(kicker.toUpperCase())}</div><div class="valki-iqai-head">${avatarMarkup}<div style="min-width:0;flex:1"><h3 class="valki-iqai-title">${esc(agent.name)}</h3><div class="valki-iqai-ticker">${esc(agent.ticker || '-')}</div><div class="valki-iqai-tags"><span class="valki-iqai-tag">${esc(agent.framework ?? '-')}</span><span class="valki-iqai-tag">Chain ${esc(agent.chainId ?? '-')}</span></div></div></div><div class="valki-iqai-bio">${esc(shortWords(agent.bio, 9))}</div><div class="valki-iqai-stats"><div>Holders: <strong>${esc(agent.holdersCount ?? '-')}</strong></div><div>Inference: <strong>${esc(agent.inferenceCount ?? '-')}</strong></div><div>Status: <strong>${agent.isActive ? 'Live' : 'Offline'}</strong></div><div>Verified: <strong>${agent.isVerified ? 'Yes' : 'No'}</strong></div></div><div class="valki-iqai-price">${price}</div><div class="valki-iqai-actions"><button class="valki-iqai-btn" data-open="${esc(agent.id)}" type="button">Open signal</button></div></article>`;
     }).join('');
+
+    if (debugAvatarUrls.length) {
+      console.debug('[IQAI Explorer] avatar URL samples', debugAvatarUrls);
+    }
+
+    elements.grid.querySelectorAll('.valki-iqai-avatar img').forEach((img) => {
+      const container = img.closest('.valki-iqai-avatar');
+      if (!container) return;
+      img.addEventListener('load', () => {
+        container.classList.add('is-loaded');
+      }, { once: true });
+      img.addEventListener('error', () => {
+        img.style.display = 'none';
+        img.setAttribute('alt', '');
+        container.classList.remove('is-loaded');
+        container.classList.add('is-fallback');
+      }, { once: true });
+    });
 
     elements.grid.querySelectorAll('[data-open]').forEach((button) => {
       button.addEventListener('click', () => {
