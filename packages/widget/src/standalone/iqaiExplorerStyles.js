@@ -93,7 +93,10 @@ export const iqaiExplorerCss = `.iqai-explorer-root{
 }
 .iqai-explorer-root .valki-iqai-card{padding:13px;display:flex;flex-direction:column;gap:9px;}
 .iqai-explorer-root .valki-iqai-card:hover{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.15);}
-.iqai-explorer-root .valki-iqai-card-top{display:flex;justify-content:flex-end;align-items:flex-start;min-height:30px;}
+.iqai-explorer-root .valki-iqai-body{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,260px);gap:14px;align-items:stretch;}
+.iqai-explorer-root .valki-iqai-left{min-width:0;display:flex;flex-direction:column;gap:9px;}
+.iqai-explorer-root .valki-iqai-right{min-width:0;display:flex;flex-direction:column;gap:8px;align-items:flex-end;}
+.iqai-explorer-root .valki-iqai-card-top{display:flex;justify-content:flex-end;align-items:flex-start;min-height:30px;width:100%;padding-top:2px;}
 .iqai-explorer-root .valki-iqai-head{display:flex;gap:10px;align-items:center;}
 .iqai-explorer-root .valki-iqai-avatar{width:44px;height:44px;border-radius:12px;overflow:hidden;background:rgba(255,255,255,.08);border:1px solid var(--border-soft);position:relative;display:grid;place-items:center;flex:0 0 44px;}
 .iqai-explorer-root .valki-iqai-avatar img{width:100%;height:100%;object-fit:cover;object-position:center;display:block;position:absolute;inset:0;z-index:2;}
@@ -104,8 +107,8 @@ export const iqaiExplorerCss = `.iqai-explorer-root{
 .iqai-explorer-root .valki-iqai-tag{font-size:10px;border:1px solid var(--border-soft);border-radius:999px;padding:2px 8px;color:var(--muted-2);}
 .iqai-explorer-root .valki-iqai-bio{color:rgba(255,255,255,.72);font-size:12px;line-height:1.45;min-height:36px;}
 .iqai-explorer-root .valki-iqai-stats{display:grid;grid-template-columns:1fr 1fr;gap:7px;font-size:11px;color:var(--muted);}
-.iqai-explorer-root .valki-iqai-foot{display:flex;justify-content:flex-end;}
-.iqai-explorer-root .valki-iqai-chart-block{display:grid;grid-template-columns:120px minmax(0,1fr);align-items:center;gap:10px;min-width:0;}
+.iqai-explorer-root .valki-iqai-chart-region{display:flex;flex-direction:column;align-items:flex-end;gap:8px;min-width:100%;}
+.iqai-explorer-root .valki-iqai-chart-block{display:grid;grid-template-columns:minmax(0,1fr) 120px;align-items:center;gap:10px;min-width:0;width:100%;}
 .iqai-explorer-root .valki-iqai-price-wrap{min-width:0;display:flex;flex-direction:column;align-items:flex-end;gap:4px;text-align:right;}
 .iqai-explorer-root .valki-iqai-pair{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);}
 .iqai-explorer-root .valki-iqai-card-price-row{display:flex;align-items:center;gap:8px;min-height:22px;}
@@ -114,8 +117,7 @@ export const iqaiExplorerCss = `.iqai-explorer-root{
 .iqai-explorer-root .valki-iqai-performance.is-positive{color:#bbf7d0;background:rgba(34,197,94,.16);border-color:rgba(34,197,94,.34);}
 .iqai-explorer-root .valki-iqai-performance.is-negative{color:#fecaca;background:rgba(239,68,68,.16);border-color:rgba(239,68,68,.32);}
 .iqai-explorer-root .valki-iqai-performance.is-neutral{color:#e5e7eb;background:rgba(156,163,175,.14);border-color:rgba(156,163,175,.3);}
-.iqai-explorer-root .valki-iqai-chart-region{display:flex;flex-direction:column;align-items:flex-end;gap:8px;min-width:min(100%,260px);padding-top:4px;}
-.iqai-explorer-root .valki-iqai-open-signal{padding:5px 10px;font-size:11px;line-height:1.1;align-self:flex-end;flex-shrink:0;margin-top:2px;}
+.iqai-explorer-root .valki-iqai-open-signal{padding:5px 10px;font-size:11px;line-height:1.1;align-self:flex-end;flex-shrink:0;}
 .iqai-explorer-root .valki-iqai-sparkline{width:120px;min-width:120px;height:34px;min-height:34px;opacity:.85;display:block;overflow:hidden;}
 .iqai-explorer-root .valki-iqai-range{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);border:1px solid var(--border-soft);border-radius:999px;padding:2px 7px;line-height:1.1;}
 .iqai-explorer-root .valki-iqai-sparkline svg{width:100%;height:100%;display:block;}
@@ -157,6 +159,8 @@ export const iqaiExplorerCss = `.iqai-explorer-root{
   .iqai-explorer-root .valki-iqai{padding:12px;}
   .iqai-explorer-root .valki-iqai-hero{flex-direction:column;align-items:stretch;}
   .iqai-explorer-root .valki-iqai-controls input{min-width:0;flex:1 1 100%;}
+  .iqai-explorer-root .valki-iqai-body{grid-template-columns:minmax(0,1fr);gap:10px;}
+  .iqai-explorer-root .valki-iqai-right{align-items:stretch;}
   .iqai-explorer-root .valki-iqai-chart-region{width:100%;align-items:stretch;}
   .iqai-explorer-root .valki-iqai-open-signal{align-self:flex-end;}
   .iqai-explorer-root .valki-iqai-chart-block{grid-template-columns:minmax(0,1fr);gap:8px;}
