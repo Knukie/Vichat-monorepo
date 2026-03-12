@@ -367,8 +367,8 @@ export function createIqaiExplorerController(elements, options = {}) {
       const hasPerformanceBadge = Number.isFinite(performancePercent) && performancePercent !== 0;
       const performanceClass = performancePercent > 0 ? 'is-positive' : 'is-negative';
       const avatarFallbackText = String(agent.name || agent.ticker || '?').trim().charAt(0).toUpperCase() || '?';
-      const avatarMarkup = `<div class="valki-iqai-avatar${avatar ? '' : ' is-fallback'}"><span class="valki-iqai-avatar-fallback" aria-hidden="true">${esc(avatarFallbackText)}</span>${avatar ? `<img src="${esc(avatar)}" alt="${esc(`${agent.name || 'Agent'} avatar`)}" loading="lazy" decoding="async">` : ''}</div>`;
-      return `<article class="valki-iqai-card"><div class="valki-iqai-head">${avatarMarkup}<div style="min-width:0;flex:1"><h3 class="valki-iqai-title">${esc(agent.name)}</h3><div class="valki-iqai-ticker">${esc(agent.ticker || '-')}</div><div class="valki-iqai-tags"><span class="valki-iqai-tag">${esc(agent.framework ?? '-')}</span><span class="valki-iqai-tag">Chain ${esc(agent.chainId ?? '-')}</span></div></div></div><div class="valki-iqai-bio">${esc(shortWords(agent.bio, 9))}</div><div class="valki-iqai-stats"><div>Holders: <strong>${esc(agent.holdersCount ?? '-')}</strong></div><div>Inference: <strong>${esc(agent.inferenceCount ?? '-')}</strong></div><div>Status: <strong>${agent.isActive ? 'Live' : 'Offline'}</strong></div><div>Verified: <strong>${agent.isVerified ? 'Yes' : 'No'}</strong></div></div><div class="valki-iqai-foot"><div class="valki-iqai-price-wrap"><div class="valki-iqai-pair">${esc(pairLabel)}</div><div class="valki-iqai-card-price-row"><div class="valki-iqai-price">${price}</div>${hasPerformanceBadge ? `<span class="valki-iqai-performance ${performanceClass}">${esc(formatPercent(performancePercent))}</span>` : ''}</div></div><div class="valki-iqai-chart-region"><button class="valki-iqai-btn valki-iqai-open-signal" data-open="${esc(agent.id)}" type="button">Open signal</button><div class="valki-iqai-sparkline" data-ticker="${esc(ticker)}" role="img" aria-label="${esc(`${agent.ticker || 'Agent'} price trend`)}"></div></div></div></article>`;
+      const avatarMarkup = `<div class="valki-iqai-avatar${avatar ? '' : ' is-fallback'}"><span class="valki-iqai-avatar-fallback" aria-hidden="true">${esc(avatarFallbackText)}</span>${avatar ? `<img src="${esc(avatar)}" alt="${esc(`${agent.name || 'Agent'} avatar`)}" decoding="async" referrerpolicy="no-referrer" crossorigin="anonymous">` : ''}</div>`;
+      return `<article class="valki-iqai-card"><div class="valki-iqai-card-top"><button class="valki-iqai-btn valki-iqai-open-signal" data-open="${esc(agent.id)}" type="button">Open signal</button></div><div class="valki-iqai-head">${avatarMarkup}<div style="min-width:0;flex:1"><h3 class="valki-iqai-title">${esc(agent.name)}</h3><div class="valki-iqai-ticker">${esc(agent.ticker || '-')}</div><div class="valki-iqai-tags"><span class="valki-iqai-tag">${esc(agent.framework ?? '-')}</span><span class="valki-iqai-tag">Chain ${esc(agent.chainId ?? '-')}</span></div></div></div><div class="valki-iqai-bio">${esc(shortWords(agent.bio, 9))}</div><div class="valki-iqai-stats"><div>Holders: <strong>${esc(agent.holdersCount ?? '-')}</strong></div><div>Inference: <strong>${esc(agent.inferenceCount ?? '-')}</strong></div><div>Status: <strong>${agent.isActive ? 'Live' : 'Offline'}</strong></div><div>Verified: <strong>${agent.isVerified ? 'Yes' : 'No'}</strong></div></div><div class="valki-iqai-foot"><div class="valki-iqai-price-wrap"><div class="valki-iqai-pair">${esc(pairLabel)}</div><div class="valki-iqai-card-price-row"><div class="valki-iqai-price">${price}</div>${hasPerformanceBadge ? `<span class="valki-iqai-performance ${performanceClass}">${esc(formatPercent(performancePercent))}</span>` : ''}</div></div><div class="valki-iqai-chart-region"><div class="valki-iqai-sparkline" data-ticker="${esc(ticker)}" role="img" aria-label="${esc(`${agent.ticker || 'Agent'} price trend`)}"></div></div></div></article>`;
     }).join('');
 
     if (debugAvatarUrls.length) {
@@ -380,15 +380,12 @@ export function createIqaiExplorerController(elements, options = {}) {
       if (!container) return;
       const markLoaded = () => {
         container.classList.remove('is-fallback');
-        container.classList.add('is-loaded');
       };
       const markFallback = () => {
         img.setAttribute('alt', '');
-        container.classList.remove('is-loaded');
         container.classList.add('is-fallback');
       };
 
-      container.classList.remove('is-fallback');
       img.addEventListener('load', markLoaded, { once: true });
       img.addEventListener('error', markFallback, { once: true });
 
