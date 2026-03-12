@@ -563,20 +563,24 @@ export function createIqaiExplorerController(elements, options = {}) {
     if (initialized) return;
     initialized = true;
     if (elements.reload) elements.reload.addEventListener('click', loadAll);
-    elements.search.addEventListener('input', () => {
-      clearTimeout(searchTimer);
-      searchTimer = window.setTimeout(renderAgents, 120);
-    });
+    if (elements.search) {
+      elements.search.addEventListener('input', () => {
+        clearTimeout(searchTimer);
+        searchTimer = window.setTimeout(renderAgents, 120);
+      });
+    }
     if (elements.status) elements.status.addEventListener('change', loadAgents);
     if (elements.order) elements.order.addEventListener('change', loadAgents);
-    elements.reloadMetrics.addEventListener('click', loadMetrics);
-    elements.metricsView.addEventListener('change', loadMetrics);
-    elements.reloadPrices.addEventListener('click', loadPrices);
-    elements.pricesTableBody.addEventListener('click', (event) => {
-      const row = event.target instanceof Element ? event.target.closest('tr[data-ticker]') : null;
-      if (!row) return;
-      togglePriceChart(row.getAttribute('data-ticker'));
-    });
+    if (elements.reloadMetrics) elements.reloadMetrics.addEventListener('click', loadMetrics);
+    if (elements.metricsView) elements.metricsView.addEventListener('change', loadMetrics);
+    if (elements.reloadPrices) elements.reloadPrices.addEventListener('click', loadPrices);
+    if (elements.pricesTableBody) {
+      elements.pricesTableBody.addEventListener('click', (event) => {
+        const row = event.target instanceof Element ? event.target.closest('tr[data-ticker]') : null;
+        if (!row) return;
+        togglePriceChart(row.getAttribute('data-ticker'));
+      });
+    }
     if (elements.priceChartClose) {
       elements.priceChartClose.addEventListener('click', () => {
         selectedTicker = '';
@@ -585,12 +589,14 @@ export function createIqaiExplorerController(elements, options = {}) {
         syncSelectedPriceRow();
       });
     }
-    elements.reloadTx.addEventListener('click', loadTx);
-    elements.txLimit.addEventListener('change', loadTx);
-    elements.drawerClose.addEventListener('click', closeDrawer);
-    elements.drawerOverlay.addEventListener('click', (event) => {
-      if (event.target === elements.drawerOverlay) closeDrawer();
-    });
+    if (elements.reloadTx) elements.reloadTx.addEventListener('click', loadTx);
+    if (elements.txLimit) elements.txLimit.addEventListener('change', loadTx);
+    if (elements.drawerClose) elements.drawerClose.addEventListener('click', closeDrawer);
+    if (elements.drawerOverlay) {
+      elements.drawerOverlay.addEventListener('click', (event) => {
+        if (event.target === elements.drawerOverlay) closeDrawer();
+      });
+    }
   };
 
   return {
