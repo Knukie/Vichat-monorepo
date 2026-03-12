@@ -58,7 +58,7 @@ export const iqaiExplorerTemplate = `
       </div>
     </div>
     <div class="valki-iqai-table-wrap">
-      <table data-iqai-el="prices-table">
+      <table id="valki-iqai-prices-table" data-iqai-el="prices-table">
         <thead><tr><th>Ticker</th><th>Name</th><th class="right">USD</th><th class="right">IQ</th></tr></thead>
         <tbody></tbody>
       </table>
