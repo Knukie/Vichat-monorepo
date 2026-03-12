@@ -1,10 +1,15 @@
 import { PrismaClient } from "@prisma/client";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 import { cleanText } from "../core/utils.js";
 
 const prisma = new PrismaClient();
 const isSnapshotDebugStatsEnabled = process.env.AGENT_SNAPSHOT_DEBUG_STATS === "1";
 const DEFAULT_BASE_URL = "https://app.iqai.com";
 const DEFAULT_SOURCE = "iqai";
+const VALKI_TICKER = "VALKI";
+const LEGACY_VALKI_SOURCE = "valki-legacy";
 const DEFAULT_TRACKED_TICKERS = [
   "BTCWITCH",
   "SOPHIA",
@@ -16,6 +21,12 @@ const DEFAULT_TRACKED_TICKERS = [
   "ASTRALFXIQ",
   "VALKI"
 ];
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const VALKI_SNAPSHOT_FILE_PATH = path.resolve(__dirname, "../../data/valki-snapshot.json");
+const VALKI_TIMEFRAMES_FILE_PATH = path.resolve(__dirname, "../../data/valki-timeframes.json");
+const VALKI_TIMEFRAMES_LIVE_FILE_PATH = path.resolve(__dirname, "../../data/valki-timeframes.live.json");
 
 function normalizeBaseUrl(url) {
   return cleanText(url).replace(/\/+$/, "");
@@ -36,6 +47,66 @@ function toFiniteNumber(value) {
 function toTicker(value) {
   const ticker = cleanText(value).toUpperCase();
   return ticker || null;
+}
+
+function safeReadJson(filePath) {
+  try {
+    const raw = fs.readFileSync(filePath, "utf8");
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+function normalizeLegacyCandle(candle) {
+  if (!candle || typeof candle !== "object") return null;
+
+  const timeSec = Number(candle.time);
+  const close = toFiniteNumber(candle.close);
+  if (!Number.isFinite(timeSec) || !Number.isFinite(close) || close <= 0) {
+    return null;
+  }
+
+  return {
+    recordedAt: new Date(timeSec * 1000),
+    priceUsd: close
+  };
+}
+
+function getLegacyValkiSnapshotRecords({ from, to }) {
+  const legacyMarketCap = toFiniteNumber(safeReadJson(VALKI_SNAPSHOT_FILE_PATH)?.marketCap);
+  const timeframeCandidates = [
+    safeReadJson(VALKI_TIMEFRAMES_FILE_PATH),
+    safeReadJson(VALKI_TIMEFRAMES_LIVE_FILE_PATH)
+  ].filter((value) => value && typeof value === "object");
+
+  if (!timeframeCandidates.length) return [];
+
+  const byTimestamp = new Map();
+
+  for (const payload of timeframeCandidates) {
+    for (const candles of Object.values(payload)) {
+      if (!Array.isArray(candles)) continue;
+      for (const candle of candles) {
+        const normalized = normalizeLegacyCandle(candle);
+        if (!normalized) continue;
+
+        const time = normalized.recordedAt.getTime();
+        if (from && normalized.recordedAt < from) continue;
+        if (to && normalized.recordedAt > to) continue;
+
+        byTimestamp.set(time, {
+          ticker: VALKI_TICKER,
+          priceUsd: normalized.priceUsd,
+          marketCap: legacyMarketCap,
+          recordedAt: normalized.recordedAt,
+          source: LEGACY_VALKI_SOURCE
+        });
+      }
+    }
+  }
+
+  return Array.from(byTimestamp.values()).sort((a, b) => a.recordedAt - b.recordedAt);
 }
 
 function getTrackedTickersFromEnv() {
@@ -356,7 +427,7 @@ export async function getAgentChartPoints({ ticker, from, to, limit = 500 }) {
     take: cappedLimit
   });
 
-  return snapshots.reverse().map((row) => ({
+  const dbPoints = snapshots.reverse().map((row) => ({
     time: row.recordedAt.getTime(),
     value: Number(row.priceUsd),
     source: cleanText(row.source) || DEFAULT_SOURCE,
@@ -365,6 +436,32 @@ export async function getAgentChartPoints({ ticker, from, to, limit = 500 }) {
     liquidityUsd: row.liquidityUsd == null ? null : Number(row.liquidityUsd),
     volume24hUsd: row.volume24hUsd == null ? null : Number(row.volume24hUsd)
   }));
+
+  if (normalizedTicker !== VALKI_TICKER) {
+    return dbPoints;
+  }
+
+  const mergedByTimestamp = new Map(
+    getLegacyValkiSnapshotRecords({ from, to }).map((row) => [
+      row.recordedAt.getTime(),
+      {
+        time: row.recordedAt.getTime(),
+        value: Number(row.priceUsd),
+        source: row.source,
+        priceIq: null,
+        marketCap: row.marketCap,
+        liquidityUsd: null,
+        volume24hUsd: null
+      }
+    ])
+  );
+
+  for (const point of dbPoints) {
+    mergedByTimestamp.set(point.time, point);
+  }
+
+  const merged = Array.from(mergedByTimestamp.values()).sort((a, b) => a.time - b.time);
+  return merged.length > cappedLimit ? merged.slice(-cappedLimit) : merged;
 }
 
 function toCandle(point) {
