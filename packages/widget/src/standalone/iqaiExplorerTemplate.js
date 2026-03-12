@@ -8,23 +8,7 @@ export const iqaiExplorerTemplate = `
     </div>
     <div class="valki-iqai-controls">
       <input data-iqai-el="q" placeholder="Zoek op naam of ticker…" />
-      <select data-iqai-el="status" aria-label="Status">
-        <option value="alive" selected>alive</option>
-        <option value="">alles</option>
-      </select>
-      <select data-iqai-el="order" aria-label="Sortering">
-        <option value="asc" selected>asc</option>
-        <option value="desc">desc</option>
-      </select>
-      <button class="valki-iqai-btn" data-iqai-el="reload" type="button">Refresh</button>
     </div>
-  </div>
-
-  <div class="valki-iqai-status" data-iqai-el="status-line">
-    <span class="valki-iqai-pill">Agents: …</span>
-    <span class="valki-iqai-pill">Metrics: …</span>
-    <span class="valki-iqai-pill">Prices: …</span>
-    <span class="valki-iqai-pill">Trades: …</span>
   </div>
 
   <section class="valki-iqai-grid" data-iqai-el="agents-grid"></section>
