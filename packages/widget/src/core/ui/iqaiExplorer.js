@@ -217,6 +217,7 @@ export function createIqaiExplorerController(elements, options = {}) {
   );
 
   const setStatus = (type, value, ok = true) => {
+    if (!elements.statusLine) return;
     const index = { agents: 0, metrics: 1, prices: 2, trades: 3 }[type];
     const pills = elements.statusLine.querySelectorAll('.valki-iqai-pill');
     const pill = pills[index];
@@ -462,8 +463,10 @@ export function createIqaiExplorerController(elements, options = {}) {
     setStatus('agents', 'Agents: laden…');
     const params = new URLSearchParams();
     params.set('sort', 'latest');
-    params.set('order', elements.order.value || 'asc');
-    if (elements.status.value) params.set('status', elements.status.value);
+    const orderValue = elements.order?.value || 'asc';
+    params.set('order', orderValue);
+    const statusValue = elements.status?.value || 'alive';
+    if (statusValue) params.set('status', statusValue);
     const data = await fetchJSON(endpoint(baseUrl, '/api/iqai/agents', params));
     allAgents = Array.isArray(data.agents) ? data.agents : [];
     byId = new Map(allAgents.map((agent) => [agent.id, agent]));
@@ -559,13 +562,13 @@ export function createIqaiExplorerController(elements, options = {}) {
   const setup = () => {
     if (initialized) return;
     initialized = true;
-    elements.reload.addEventListener('click', loadAll);
+    if (elements.reload) elements.reload.addEventListener('click', loadAll);
     elements.search.addEventListener('input', () => {
       clearTimeout(searchTimer);
       searchTimer = window.setTimeout(renderAgents, 120);
     });
-    elements.status.addEventListener('change', loadAgents);
-    elements.order.addEventListener('change', loadAgents);
+    if (elements.status) elements.status.addEventListener('change', loadAgents);
+    if (elements.order) elements.order.addEventListener('change', loadAgents);
     elements.reloadMetrics.addEventListener('click', loadMetrics);
     elements.metricsView.addEventListener('change', loadMetrics);
     elements.reloadPrices.addEventListener('click', loadPrices);
