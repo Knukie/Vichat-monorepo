@@ -1086,8 +1086,11 @@ html.valki-chat-open #valki-root .valki-bubble{
 }
 #valki-root .valki-iqai-card{ padding:12px; }
 #valki-root .valki-iqai-head{ display:flex; gap:10px; align-items:flex-start; }
-#valki-root .valki-iqai-avatar{ width:44px; height:44px; border-radius:12px; overflow:hidden; background:rgba(255,255,255,.06); }
-#valki-root .valki-iqai-avatar img{ width:100%; height:100%; object-fit:cover; display:block; }
+#valki-root .valki-iqai-avatar{ width:44px; height:44px; border-radius:12px; overflow:hidden; background:rgba(255,255,255,.08); border:1px solid var(--border-soft); position:relative; display:grid; place-items:center; flex:0 0 44px; }
+#valki-root .valki-iqai-avatar img{ width:100%; height:100%; object-fit:cover; display:none; position:relative; z-index:1; }
+#valki-root .valki-iqai-avatar.is-loaded img{ display:block; }
+#valki-root .valki-iqai-avatar-fallback{ font-size:14px; font-weight:700; color:rgba(255,255,255,.9); line-height:1; position:relative; z-index:0; }
+#valki-root .valki-iqai-avatar.is-loaded .valki-iqai-avatar-fallback{ display:none; }
 #valki-root .valki-iqai-title{ margin:0; font-size:14px; color:var(--text); }
 #valki-root .valki-iqai-ticker{ font-size:12px; color:var(--muted); }
 #valki-root .valki-iqai-tag{ font-size:10px; border:1px solid rgba(255,255,255,.08); border-radius:999px; padding:2px 8px; color:var(--muted-2); }
