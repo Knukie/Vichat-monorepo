@@ -46,22 +46,57 @@ function isTruthyEnv(value) {
 const prisma = new PrismaClient();
 const READY_TIMEOUT_MS = Number(process.env.READY_TIMEOUT_MS) || 2000;
 const app = express();
-const allowedOrigins = corsOrigins;
+const normalizeOrigin = (value) => String(value || "").trim().replace(/\/+$/, "");
+const allowedOrigins = corsOrigins.map(normalizeOrigin).filter(Boolean);
+const allowedOriginsSet = new Set(allowedOrigins);
+
+console.info("[CORS] Startup allowed origins:", allowedOrigins);
+console.info("[CORS] Raw CORS_ORIGINS env:", config.CORS_ORIGINS);
+
 const corsOptions = {
-  origin: (origin, callback) => {
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
-    return callback(new Error("CORS not allowed"));
-  },
   methods: ["GET", "POST", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "Accept"]
+  allowedHeaders: ["Content-Type", "Authorization", "Accept"],
+  optionsSuccessStatus: 204
+};
+
+const corsOptionsDelegate = (req, callback) => {
+  const requestOrigin = req.headers.origin;
+  const normalizedOrigin = normalizeOrigin(requestOrigin);
+
+  console.info("[CORS] Incoming request", {
+    method: req.method,
+    path: req.path,
+    origin: requestOrigin || "(none)",
+    normalizedOrigin,
+    allowedOrigins
+  });
+
+  if (!requestOrigin) {
+    console.info("[CORS] Allowing request without Origin header (server-to-server/health check)", {
+      method: req.method,
+      path: req.path
+    });
+    return callback(null, { ...corsOptions, origin: true });
+  }
+
+  if (allowedOriginsSet.has(normalizedOrigin)) {
+    return callback(null, { ...corsOptions, origin: true });
+  }
+
+  console.warn("[CORS] Rejected request", {
+    blockedOrigin: requestOrigin,
+    normalizedBlockedOrigin: normalizedOrigin,
+    method: req.method,
+    path: req.path,
+    allowedOrigins
+  });
+
+  return callback(new Error(`CORS not allowed for origin: ${requestOrigin}`));
 };
 
 app.set("trust proxy", 1);
-app.use(cors(corsOptions));
-app.options("*", cors(corsOptions));
+app.use(cors(corsOptionsDelegate));
+app.options("*", cors(corsOptionsDelegate));
 app.use(express.json({ limit: config.JSON_BODY_LIMIT }));
 app.use("/chatwoot", chatwootRouter);
 app.use("/api/iqai", iqaiRouter);
