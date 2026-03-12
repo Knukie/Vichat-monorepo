@@ -107,7 +107,7 @@ export const iqaiExplorerCss = `.iqai-explorer-root{
 .iqai-explorer-root .valki-iqai-foot{margin-top:9px;display:flex;align-items:stretch;justify-content:space-between;gap:10px;}
 .iqai-explorer-root .valki-iqai-price-wrap{min-width:0;display:flex;flex-direction:column;justify-content:flex-end;gap:4px;}
 .iqai-explorer-root .valki-iqai-pair{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);}
-.iqai-explorer-root .valki-iqai-price-row{display:flex;align-items:center;gap:8px;min-height:22px;}
+.iqai-explorer-root .valki-iqai-card-price-row{display:flex;align-items:center;gap:8px;min-height:22px;}
 .iqai-explorer-root .valki-iqai-price{margin-top:0;font-size:13px;font-weight:700;}
 .iqai-explorer-root .valki-iqai-performance{display:inline-flex;align-items:center;justify-content:center;padding:3px 8px;border-radius:999px;font-size:10px;font-weight:700;line-height:1;border:1px solid transparent;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);}
 .iqai-explorer-root .valki-iqai-performance.is-positive{color:#bbf7d0;background:rgba(34,197,94,.16);border-color:rgba(34,197,94,.34);}
