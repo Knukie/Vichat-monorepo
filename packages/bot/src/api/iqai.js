@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { cleanText } from "../core/utils.js";
 import { getAgentHistorySnapshot } from "../services/agentPriceSnapshots.js";
+import { fetchIqaiPrices, normalizeIqaiPriceType } from "../services/iqaiPrices.js";
 
 const iqaiRouter = Router();
 const allowedProxyPaths = new Set([
@@ -62,6 +63,32 @@ function getRangeStart(range) {
   if (normalized === "5Y") return new Date(now - 5 * 365 * 24 * 60 * 60 * 1000);
   return null;
 }
+
+iqaiRouter.get("/prices", async (req, res) => {
+  const type = normalizeIqaiPriceType(req.query?.type || "all");
+
+  if (!type) {
+    return res.status(400).json({
+      error: "Invalid type. Allowed values: all, frax, eth"
+    });
+  }
+
+  try {
+    const upstream = await fetchIqaiPrices(type);
+
+    res.status(upstream.status);
+
+    if (upstream.bodyJson && typeof upstream.bodyJson === "object") {
+      return res.json(upstream.bodyJson);
+    }
+
+    return res.type("application/json").send(upstream.bodyText);
+  } catch (error) {
+    const message = error?.message || String(error);
+    console.error("[iqai] prices endpoint failed", message);
+    return res.status(500).json({ error: "Could not load IQAI prices", details: message });
+  }
+});
 
 const SUPPORTED_TRACKED_TICKERS = new Set([
   "BTCWITCH",
