@@ -94,8 +94,11 @@ export const iqaiExplorerCss = `.iqai-explorer-root{
 .iqai-explorer-root .valki-iqai-card{padding:13px;}
 .iqai-explorer-root .valki-iqai-card:hover{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.15);}
 .iqai-explorer-root .valki-iqai-head{display:flex;gap:10px;align-items:flex-start;}
-.iqai-explorer-root .valki-iqai-avatar{width:44px;height:44px;border-radius:12px;overflow:hidden;background:rgba(255,255,255,.08);border:1px solid var(--border-soft);}
-.iqai-explorer-root .valki-iqai-avatar img{width:100%;height:100%;object-fit:cover;display:block;}
+.iqai-explorer-root .valki-iqai-avatar{width:44px;height:44px;border-radius:12px;overflow:hidden;background:rgba(255,255,255,.08);border:1px solid var(--border-soft);position:relative;display:grid;place-items:center;flex:0 0 44px;}
+.iqai-explorer-root .valki-iqai-avatar img{width:100%;height:100%;object-fit:cover;display:none;position:relative;z-index:1;}
+.iqai-explorer-root .valki-iqai-avatar.is-loaded img{display:block;}
+.iqai-explorer-root .valki-iqai-avatar-fallback{font-size:14px;font-weight:700;color:rgba(255,255,255,.9);line-height:1;position:relative;z-index:0;}
+.iqai-explorer-root .valki-iqai-avatar.is-loaded .valki-iqai-avatar-fallback{display:none;}
 .iqai-explorer-root .valki-iqai-title{margin:0;font-size:14px;color:var(--text);font-weight:600;}
 .iqai-explorer-root .valki-iqai-ticker{font-size:12px;color:var(--muted);}
 .iqai-explorer-root .valki-iqai-tag{font-size:10px;border:1px solid var(--border-soft);border-radius:999px;padding:2px 8px;color:var(--muted-2);}
