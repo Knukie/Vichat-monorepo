@@ -203,7 +203,7 @@ function fetchSnapshotFromDisk() {
 async function fetchValkiStats() {
   const upstreamUrl = getUpstreamUrl();
   if (!upstreamUrl) {
-    throw new Error("VALKI_STATS_API is not configured");
+    throw new Error("VALKI_STATS_API is not configured; keep ENABLE_VALKI_SNAPSHOT disabled or set VALKI_STATS_API");
   }
 
   const response = await fetch(upstreamUrl);
