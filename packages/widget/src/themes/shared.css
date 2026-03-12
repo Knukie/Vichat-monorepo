@@ -1108,7 +1108,7 @@ html.valki-chat-open #valki-root .valki-bubble{
 #valki-root .valki-iqai-performance.is-positive{ color:#bbf7d0; background:rgba(34,197,94,.16); border-color:rgba(34,197,94,.34); }
 #valki-root .valki-iqai-performance.is-negative{ color:#fecaca; background:rgba(239,68,68,.16); border-color:rgba(239,68,68,.32); }
 #valki-root .valki-iqai-performance.is-neutral{ color:#e5e7eb; background:rgba(156,163,175,.14); border-color:rgba(156,163,175,.3); }
-#valki-root .valki-iqai-card-actions{ display:flex; justify-content:flex-end; width:100%; }
+#valki-root .valki-iqai-card-actions{ display:flex; justify-content:flex-end; width:100%; margin-top:8px; }
 #valki-root .valki-iqai-open-signal{ padding:5px 10px; font-size:11px; line-height:1.1; flex-shrink:0; }
 #valki-root .valki-iqai-sparkline{ width:120px; min-width:120px; height:34px; min-height:34px; opacity:.85; display:block; overflow:hidden; }
 #valki-root .valki-iqai-sparkline svg{ width:100%; height:100%; display:block; }
