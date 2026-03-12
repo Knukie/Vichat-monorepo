@@ -10,6 +10,13 @@ function normalizeBaseUrl(url) {
 }
 
 function toFiniteNumber(value) {
+  if (typeof value === "string") {
+    const normalized = value.trim().replace(/^\$/, "").replace(/,/g, "");
+    if (!normalized) return null;
+    const parsed = Number(normalized);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : null;
 }
@@ -129,6 +136,20 @@ async function fetchAgentStatsByTicker(ticker) {
   try {
     const params = new URLSearchParams({ ticker });
     const payload = await iqaiFetch("/api/agents/stats", params);
+
+    if (process.env.AGENT_SNAPSHOT_DEBUG_STATS === "1") {
+      const debugTickers = new Set(
+        getTrackedTickersFromEnv()
+          .slice(0, 2)
+          .map((value) => toTicker(value))
+          .filter(Boolean)
+      );
+
+      if (debugTickers.has(ticker)) {
+        console.info(`[snapshots] upstream stats payload for ${ticker}:`, payload);
+      }
+    }
+
     return pickStatsRow(payload);
   } catch (error) {
     console.warn(`[snapshots] stats fetch failed for ${ticker}:`, error?.message || error);
@@ -137,16 +158,36 @@ async function fetchAgentStatsByTicker(ticker) {
 }
 
 function normalizeSnapshotRecord({ agent, ticker, priceRow, statsRow, source, recordedAt }) {
+  const priceUsdFieldCandidates = [
+    ["priceRow.currentPriceInUSD", priceRow?.currentPriceInUSD],
+    ["priceRow.priceUsd", priceRow?.priceUsd],
+    ["priceRow.usd", priceRow?.usd],
+    ["priceRow.priceUSD", priceRow?.priceUSD],
+    ["priceRow.currentPrice", priceRow?.currentPrice],
+    ["statsRow.currentPriceInUSD", statsRow?.currentPriceInUSD],
+    ["statsRow.priceUsd", statsRow?.priceUsd],
+    ["statsRow.usd", statsRow?.usd],
+    ["statsRow.priceUSD", statsRow?.priceUSD],
+    ["statsRow.currentPrice", statsRow?.currentPrice],
+    ["statsRow.agent.currentPriceInUSD", statsRow?.agent?.currentPriceInUSD],
+    ["statsRow.agent.priceUsd", statsRow?.agent?.priceUsd],
+    ["statsRow.agent.currentPrice", statsRow?.agent?.currentPrice],
+    ["agent.currentPriceInUSD", agent?.currentPriceInUSD]
+  ];
+
+  let usedPriceUsdField = null;
   const priceUsd = toFiniteNumber(
-    priceRow?.currentPriceInUSD ??
-      priceRow?.priceUsd ??
-      priceRow?.usd ??
-      priceRow?.priceUSD ??
-      agent?.currentPriceInUSD
+    priceUsdFieldCandidates.find(([, value]) => toFiniteNumber(value) != null)?.[1]
   );
+
+  usedPriceUsdField = priceUsdFieldCandidates.find(([, value]) => toFiniteNumber(value) === priceUsd)?.[0] || null;
 
   if (!Number.isFinite(priceUsd) || priceUsd <= 0) {
     return null;
+  }
+
+  if (usedPriceUsdField && process.env.AGENT_SNAPSHOT_DEBUG_STATS === "1") {
+    console.info(`[snapshots] ${ticker} using ${usedPriceUsdField} for priceUsd`);
   }
 
   const priceIq = toFiniteNumber(priceRow?.currentPriceInIq ?? priceRow?.priceIq ?? agent?.currentPriceInIq);
