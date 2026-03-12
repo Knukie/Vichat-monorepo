@@ -49,6 +49,7 @@ const app = express();
 const normalizeOrigin = (value) => String(value || "").trim().replace(/\/+$/, "");
 const allowedOrigins = corsOrigins.map(normalizeOrigin).filter(Boolean);
 const allowedOriginsSet = new Set(allowedOrigins);
+const isCorsDebugEnabled = process.env.CORS_DEBUG === "1";
 
 console.info("[CORS] Startup allowed origins:", allowedOrigins);
 console.info("[CORS] Raw CORS_ORIGINS env:", config.CORS_ORIGINS);
@@ -63,13 +64,15 @@ const corsOptionsDelegate = (req, callback) => {
   const requestOrigin = req.headers.origin;
   const normalizedOrigin = normalizeOrigin(requestOrigin);
 
-  console.info("[CORS] Incoming request", {
-    method: req.method,
-    path: req.path,
-    origin: requestOrigin || "(none)",
-    normalizedOrigin,
-    allowedOrigins
-  });
+  if (isCorsDebugEnabled) {
+    console.info("[CORS] Incoming request", {
+      method: req.method,
+      path: req.path,
+      origin: requestOrigin || "(none)",
+      normalizedOrigin,
+      allowedOrigins
+    });
+  }
 
   if (!requestOrigin) {
     console.info("[CORS] Allowing request without Origin header (server-to-server/health check)", {

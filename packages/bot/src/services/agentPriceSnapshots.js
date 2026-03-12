@@ -2,6 +2,7 @@ import { PrismaClient } from "@prisma/client";
 import { cleanText } from "../core/utils.js";
 
 const prisma = new PrismaClient();
+const isSnapshotDebugStatsEnabled = process.env.AGENT_SNAPSHOT_DEBUG_STATS === "1";
 const DEFAULT_BASE_URL = "https://app.iqai.com";
 const DEFAULT_SOURCE = "iqai";
 const DEFAULT_TRACKED_TICKERS = [
@@ -151,7 +152,7 @@ async function fetchAgentStatsByTicker(ticker) {
     const params = new URLSearchParams({ ticker });
     const payload = await iqaiFetch("/api/agents/stats", params);
 
-    if (process.env.AGENT_SNAPSHOT_DEBUG_STATS === "1") {
+    if (isSnapshotDebugStatsEnabled) {
       const debugTickers = new Set(
         getTrackedTickersFromEnv()
           .slice(0, 2)
@@ -202,7 +203,7 @@ function normalizeSnapshotRecord({ agent, ticker, priceRow, statsRow, source, re
     return null;
   }
 
-  if (usedPriceUsdField && process.env.AGENT_SNAPSHOT_DEBUG_STATS === "1") {
+  if (usedPriceUsdField && isSnapshotDebugStatsEnabled) {
     console.info(`[snapshots] ${ticker} using ${usedPriceUsdField} for priceUsd`);
   }
 
