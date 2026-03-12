@@ -4,6 +4,7 @@ import { renderCanvasLineChart } from '../../utils/canvasLineChart.js';
 
 const IQAI_BASE_URL = 'https://auth.valki.wiki';
 const PRICE_CHART_RANGE = '1M';
+const CARD_SPARKLINE_POINTS = 24;
 
 function esc(value) {
   return String(value ?? '').replace(/[&<>"']/g, (char) => ({
@@ -68,6 +69,54 @@ function shortWords(value, maxWords = 9) {
   return `${words.slice(0, maxWords).join(' ')}…`;
 }
 
+function resolveAgentAvatar(agent) {
+  if (!agent || typeof agent !== 'object') return '';
+  const candidates = [
+    agent.avatar,
+    agent.avatarUrl,
+    agent.image,
+    agent.imageUrl,
+    agent.profileImage,
+    agent.profileImageUrl,
+    agent.logo,
+    agent.logoUrl,
+    agent.metadata?.avatar,
+    agent.metadata?.image,
+    agent.metadata?.imageUrl
+  ];
+
+  for (const candidate of candidates) {
+    const resolved = ipfsUrl(candidate);
+    if (resolved) return resolved;
+  }
+
+  return '';
+}
+
+function buildSparklineSvg(series = []) {
+  if (!Array.isArray(series) || series.length < 2) return '';
+  const width = 120;
+  const height = 34;
+  const pad = 2;
+  const values = series.map((point) => Number(point.value ?? point.price ?? point.close ?? point.y)).filter((value) => Number.isFinite(value));
+  if (values.length < 2) return '';
+
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const range = max - min || 1;
+  const step = values.length > 1 ? (width - pad * 2) / (values.length - 1) : 0;
+  const points = values.map((value, idx) => {
+    const x = pad + step * idx;
+    const y = pad + ((max - value) / range) * (height - pad * 2);
+    return `${x.toFixed(2)},${y.toFixed(2)}`;
+  });
+  const positive = values[values.length - 1] >= values[0];
+  const stroke = positive ? '#22c55e' : '#ef4444';
+  const strokeGlow = positive ? 'rgba(34,197,94,.22)' : 'rgba(239,68,68,.22)';
+
+  return `<svg viewBox="0 0 ${width} ${height}" aria-hidden="true" focusable="false"><polyline points="${points.join(' ')}" fill="none" stroke="${stroke}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><polyline points="${points.join(' ')}" fill="none" stroke="${strokeGlow}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+}
+
 async function fetchJSON(url) {
   const response = await fetch(url, { headers: { Accept: 'application/json' } });
   const text = await response.text();
@@ -99,6 +148,8 @@ export function createIqaiExplorerController(elements, options = {}) {
   let searchTimer = null;
   let selectedTicker = '';
   let chartRequestSeq = 0;
+  const cardSparklineCache = new Map();
+  const cardSparklinePending = new Map();
   const hasChartUi = Boolean(
     elements.priceChartPanel
     && elements.priceChartCanvas
@@ -249,13 +300,12 @@ export function createIqaiExplorerController(elements, options = {}) {
 
     const debugAvatarUrls = [];
     elements.grid.innerHTML = list.map((agent) => {
-      const avatar = ipfsUrl(agent.avatar || agent.avatarUrl || agent.image);
+      const avatar = resolveAgentAvatar(agent);
       if (avatar && debugAvatarUrls.length < 2) debugAvatarUrls.push({ id: agent.id, avatar });
       const price = formatUsd(agent.currentPriceInUSD);
-      const kicker = `${agent.category || 'Agent'} • ${agent.isVerified ? 'Verified' : 'Unverified'} • ${agent.isActive ? 'Active' : 'Inactive'}`;
       const avatarFallbackText = String(agent.name || agent.ticker || '?').trim().charAt(0).toUpperCase() || '?';
       const avatarMarkup = `<div class="valki-iqai-avatar${avatar ? '' : ' is-fallback'}"><span class="valki-iqai-avatar-fallback" aria-hidden="true">${esc(avatarFallbackText)}</span>${avatar ? `<img src="${esc(avatar)}" alt="${esc(`${agent.name || 'Agent'} avatar`)}" loading="lazy" decoding="async">` : ''}</div>`;
-      return `<article class="valki-iqai-card"><div class="valki-iqai-kicker">${esc(kicker.toUpperCase())}</div><div class="valki-iqai-head">${avatarMarkup}<div style="min-width:0;flex:1"><h3 class="valki-iqai-title">${esc(agent.name)}</h3><div class="valki-iqai-ticker">${esc(agent.ticker || '-')}</div><div class="valki-iqai-tags"><span class="valki-iqai-tag">${esc(agent.framework ?? '-')}</span><span class="valki-iqai-tag">Chain ${esc(agent.chainId ?? '-')}</span></div></div></div><div class="valki-iqai-bio">${esc(shortWords(agent.bio, 9))}</div><div class="valki-iqai-stats"><div>Holders: <strong>${esc(agent.holdersCount ?? '-')}</strong></div><div>Inference: <strong>${esc(agent.inferenceCount ?? '-')}</strong></div><div>Status: <strong>${agent.isActive ? 'Live' : 'Offline'}</strong></div><div>Verified: <strong>${agent.isVerified ? 'Yes' : 'No'}</strong></div></div><div class="valki-iqai-price">${price}</div><div class="valki-iqai-actions"><button class="valki-iqai-btn" data-open="${esc(agent.id)}" type="button">Open signal</button></div></article>`;
+      return `<article class="valki-iqai-card"><div class="valki-iqai-head">${avatarMarkup}<div style="min-width:0;flex:1"><h3 class="valki-iqai-title">${esc(agent.name)}</h3><div class="valki-iqai-ticker">${esc(agent.ticker || '-')}</div><div class="valki-iqai-tags"><span class="valki-iqai-tag">${esc(agent.framework ?? '-')}</span><span class="valki-iqai-tag">Chain ${esc(agent.chainId ?? '-')}</span></div></div></div><div class="valki-iqai-bio">${esc(shortWords(agent.bio, 9))}</div><div class="valki-iqai-stats"><div>Holders: <strong>${esc(agent.holdersCount ?? '-')}</strong></div><div>Inference: <strong>${esc(agent.inferenceCount ?? '-')}</strong></div><div>Status: <strong>${agent.isActive ? 'Live' : 'Offline'}</strong></div><div>Verified: <strong>${agent.isVerified ? 'Yes' : 'No'}</strong></div></div><div class="valki-iqai-foot"><div class="valki-iqai-price">${price}</div><div class="valki-iqai-sparkline" data-ticker="${esc(String(agent.ticker || '').toUpperCase())}" role="img" aria-label="${esc(`${agent.ticker || 'Agent'} price trend`)}"></div></div><div class="valki-iqai-actions"><button class="valki-iqai-btn" data-open="${esc(agent.id)}" type="button">Open signal</button></div></article>`;
     }).join('');
 
     if (debugAvatarUrls.length) {
@@ -265,10 +315,13 @@ export function createIqaiExplorerController(elements, options = {}) {
     elements.grid.querySelectorAll('.valki-iqai-avatar img').forEach((img) => {
       const container = img.closest('.valki-iqai-avatar');
       if (!container) return;
+      container.classList.remove('is-fallback');
       if (img.complete && img.naturalWidth > 0) {
         container.classList.add('is-loaded');
       }
       img.addEventListener('load', () => {
+        img.style.display = '';
+        container.classList.remove('is-fallback');
         container.classList.add('is-loaded');
       }, { once: true });
       img.addEventListener('error', () => {
@@ -277,6 +330,53 @@ export function createIqaiExplorerController(elements, options = {}) {
         container.classList.remove('is-loaded');
         container.classList.add('is-fallback');
       }, { once: true });
+    });
+
+    const loadCardSparkline = async (ticker) => {
+      if (!ticker) return [];
+      const normalizedTicker = String(ticker).toUpperCase();
+      if (cardSparklineCache.has(normalizedTicker)) return cardSparklineCache.get(normalizedTicker);
+      if (cardSparklinePending.has(normalizedTicker)) return cardSparklinePending.get(normalizedTicker);
+
+      const pending = fetchJSON(endpoint(baseUrl, `/api/iqai/agents/${encodeURIComponent(normalizedTicker)}/chart`, new URLSearchParams({ range: PRICE_CHART_RANGE })))
+        .then((data) => {
+          const model = toCanvasChartModel(data);
+          const compact = Array.isArray(model.series) ? model.series.slice(-CARD_SPARKLINE_POINTS) : [];
+          cardSparklineCache.set(normalizedTicker, compact);
+          cardSparklinePending.delete(normalizedTicker);
+          return compact;
+        })
+        .catch(() => {
+          cardSparklineCache.set(normalizedTicker, []);
+          cardSparklinePending.delete(normalizedTicker);
+          return [];
+        });
+
+      cardSparklinePending.set(normalizedTicker, pending);
+      return pending;
+    };
+
+    const sparklineNodes = Array.from(elements.grid.querySelectorAll('.valki-iqai-sparkline[data-ticker]'));
+    sparklineNodes.forEach((node) => {
+      const ticker = String(node.getAttribute('data-ticker') || '').toUpperCase();
+      const cached = cardSparklineCache.get(ticker);
+      if (cached && cached.length) {
+        node.innerHTML = buildSparklineSvg(cached);
+        node.classList.add('is-ready');
+      } else {
+        node.textContent = '';
+        node.classList.remove('is-ready');
+      }
+    });
+
+    sparklineNodes.forEach((node) => {
+      const ticker = String(node.getAttribute('data-ticker') || '').toUpperCase();
+      if (!ticker || (cardSparklineCache.has(ticker) && cardSparklineCache.get(ticker)?.length)) return;
+      void loadCardSparkline(ticker).then((series) => {
+        if (!node.isConnected) return;
+        node.innerHTML = buildSparklineSvg(series);
+        node.classList.toggle('is-ready', Boolean(series.length));
+      });
     });
 
     elements.grid.querySelectorAll('[data-open]').forEach((button) => {
