@@ -66,7 +66,7 @@ async function fetchAliveAgents() {
   params.set("status", "alive");
   params.set("limit", "250");
 
-  const payload = await iqaiFetch("/api/iqai/agents", params);
+  const payload = await iqaiFetch("/api/iqai/api/agents", params);
   const agents = pickAgentList(payload);
   const alive = agents.filter(isAlive);
   if (alive.length > 0) return alive;

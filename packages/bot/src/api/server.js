@@ -42,7 +42,7 @@ ensureApiEnv();
 const prisma = new PrismaClient();
 const READY_TIMEOUT_MS = Number(process.env.READY_TIMEOUT_MS) || 2000;
 const app = express();
-const allowedOrigins = ["https://valki.wiki", "https://www.valki.wiki"];
+const allowedOrigins = corsOrigins;
 const corsOptions = {
   origin: (origin, callback) => {
     if (!origin) return callback(null, true);
