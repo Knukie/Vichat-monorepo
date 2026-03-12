@@ -19,6 +19,20 @@ function toTicker(value) {
   return ticker || null;
 }
 
+function getTrackedTickersFromEnv() {
+  const raw = cleanText(process.env.TRACKED_AGENT_TICKERS);
+  if (!raw) return [];
+
+  return Array.from(
+    new Set(
+      raw
+        .split(",")
+        .map((value) => toTicker(value))
+        .filter(Boolean)
+    )
+  );
+}
+
 function pickAgentList(payload) {
   if (Array.isArray(payload)) return payload;
   if (Array.isArray(payload?.data?.agents)) return payload.data.agents;
@@ -164,7 +178,7 @@ function normalizeSnapshotRecord({ agent, ticker, priceRow, statsRow, source, re
 
   return {
     ticker,
-    agentId: cleanText(agent?.id) || null,
+    agentId: cleanText(agent?.id || statsRow?.id || statsRow?.agentId) || null,
     priceUsd,
     priceIq,
     marketCap,
@@ -178,8 +192,23 @@ function normalizeSnapshotRecord({ agent, ticker, priceRow, statsRow, source, re
 export async function syncAliveAgentPriceSnapshots() {
   const recordedAt = new Date();
   const source = cleanText(process.env.AGENT_SNAPSHOT_SOURCE) || DEFAULT_SOURCE;
+  const trackedTickers = getTrackedTickersFromEnv();
 
-  const agents = await fetchAliveAgents();
+  const agents = trackedTickers.length
+    ? trackedTickers.map((ticker) => ({ ticker, status: "tracked" }))
+    : await fetchAliveAgents();
+
+  if (trackedTickers.length) {
+    console.info("[snapshots] using TRACKED_AGENT_TICKERS override", {
+      tickers: trackedTickers,
+      count: trackedTickers.length
+    });
+  } else {
+    console.info("[snapshots] using upstream alive agent list", {
+      count: agents.length
+    });
+  }
+
   const pricesByTicker = await fetchPricesByTicker();
 
   let inserted = 0;
