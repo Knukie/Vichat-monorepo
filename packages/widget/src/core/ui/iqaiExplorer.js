@@ -265,6 +265,9 @@ export function createIqaiExplorerController(elements, options = {}) {
     elements.grid.querySelectorAll('.valki-iqai-avatar img').forEach((img) => {
       const container = img.closest('.valki-iqai-avatar');
       if (!container) return;
+      if (img.complete && img.naturalWidth > 0) {
+        container.classList.add('is-loaded');
+      }
       img.addEventListener('load', () => {
         container.classList.add('is-loaded');
       }, { once: true });
