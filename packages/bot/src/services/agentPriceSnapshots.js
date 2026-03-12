@@ -54,19 +54,38 @@ async function iqaiFetch(pathname, searchParams = new URLSearchParams()) {
   if (bearer) headers.Authorization = `Bearer ${bearer}`;
 
   const response = await fetch(url, { method: "GET", headers });
+  const bodyText = await response.text();
+
   if (!response.ok) {
+    console.error("[snapshots] IQAI upstream request failed", {
+      url: url.toString(),
+      status: response.status,
+      body: bodyText.slice(0, 2000)
+    });
     throw new Error(`IQAI ${pathname} request failed (${response.status})`);
   }
 
-  return response.json();
+  if (!bodyText) return null;
+
+  try {
+    return JSON.parse(bodyText);
+  } catch (error) {
+    console.error("[snapshots] IQAI upstream returned non-JSON body", {
+      url: url.toString(),
+      status: response.status,
+      body: bodyText.slice(0, 2000)
+    });
+    throw new Error(`IQAI ${pathname} returned non-JSON response`);
+  }
 }
+
 
 async function fetchAliveAgents() {
   const params = new URLSearchParams();
   params.set("status", "alive");
   params.set("limit", "250");
 
-  const payload = await iqaiFetch("/api/agents", params);
+  const payload = await iqaiFetch("/api/agents/info", params);
   const agents = pickAgentList(payload);
   const alive = agents.filter(isAlive);
   if (alive.length > 0) return alive;

@@ -143,6 +143,8 @@ readme: |
   OPENAI_VERSION="" # optional
   VALKI_PROMPT_ID="..."
   AUTH_TOKEN_SECRET="..."
+  ENABLE_VALKI_SNAPSHOT=false # set true to enable legacy VALKI snapshot scheduler
+  VALKI_STATS_API="" # required only when ENABLE_VALKI_SNAPSHOT=true
   DISCORD_CLIENT_ID="..."
   DISCORD_CLIENT_SECRET="..."
   DISCORD_REDIRECT_URI="..."

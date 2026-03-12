@@ -39,6 +39,10 @@ import {
 
 ensureApiEnv();
 
+function isTruthyEnv(value) {
+  return ["1", "true", "yes", "on"].includes(String(value || "").trim().toLowerCase());
+}
+
 const prisma = new PrismaClient();
 const READY_TIMEOUT_MS = Number(process.env.READY_TIMEOUT_MS) || 2000;
 const app = express();
@@ -733,9 +737,14 @@ app.post(
 const port = Number(config.PORT) || 3000;
 const server = http.createServer(app);
 attachWebSocketServer(server, { path: process.env.WS_PATH || "/ws" });
-startValkiSnapshotScheduler().catch((err) => {
-  console.error("[VALKI] Snapshot scheduler failed to start", err);
-});
+const valkiSnapshotEnabled = isTruthyEnv(process.env.ENABLE_VALKI_SNAPSHOT);
+if (valkiSnapshotEnabled) {
+  startValkiSnapshotScheduler().catch((err) => {
+    console.error("[VALKI] Snapshot scheduler failed to start", err);
+  });
+} else {
+  console.info("[VALKI] Snapshot scheduler disabled (set ENABLE_VALKI_SNAPSHOT=true to enable)");
+}
 startAliveAgentSnapshotScheduler().catch((err) => {
   console.error("[snapshots] Alive agent snapshot scheduler failed to start", err);
 });
@@ -751,7 +760,9 @@ async function shutdown(signal) {
     console.log(`\n🧯 Shutdown (${signal})...`);
     await new Promise((resolve) => server?.close?.(resolve));
     console.log("HTTP server closed.");
-    stopValkiSnapshotScheduler();
+    if (valkiSnapshotEnabled) {
+      stopValkiSnapshotScheduler();
+    }
     await stopAliveAgentSnapshotScheduler();
     await prisma.$disconnect().then(
       () => console.log("Prisma disconnected."),
