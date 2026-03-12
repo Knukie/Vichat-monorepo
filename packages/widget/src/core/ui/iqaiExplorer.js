@@ -93,6 +93,7 @@ function derivePerformancePercent(agent) {
   ];
 
   for (const candidate of directCandidates) {
+    if (candidate === null || candidate === undefined || candidate === '') continue;
     const parsed = Number(candidate);
     if (Number.isFinite(parsed)) return parsed;
   }
