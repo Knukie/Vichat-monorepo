@@ -164,7 +164,9 @@ async function fetchAgentStatsByTicker(ticker) {
       }
     }
 
-    return pickStatsRow(payload);
+    const stats = pickStatsRow(payload);
+    const statsRow = Array.isArray(stats) ? stats[0] : stats;
+    return statsRow && typeof statsRow === "object" ? statsRow : null;
   } catch (error) {
     console.warn(`[snapshots] stats fetch failed for ${ticker}:`, error?.message || error);
     return null;
