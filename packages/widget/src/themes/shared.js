@@ -1076,7 +1076,7 @@ html.valki-chat-open #valki-root .valki-bubble{
 #valki-root .valki-iqai-pill,
 #valki-root .muted{ color:var(--muted); font-size:12px; }
 #valki-root .valki-iqai-pill{ border:1px solid rgba(255,255,255,.08); border-radius:999px; padding:6px 10px; }
-#valki-root .valki-iqai-grid{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+#valki-root .valki-iqai-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(520px,1fr)); gap:16px; }
 #valki-root .valki-iqai-card,
 #valki-root .valki-iqai-section,
 #valki-root .valki-iqai-box{
@@ -1156,7 +1156,6 @@ html.valki-chat-open #valki-root .valki-bubble{
   #valki-root .valki-iqai-sparkline-wrap{ flex:0 0 110px; width:110px; min-width:110px; max-width:110px; display:flex; justify-content:flex-end; align-items:flex-end; margin-left:auto; margin-top:0; }
   #valki-root .valki-iqai-sparkline{ width:110px; min-width:110px; max-width:110px; height:34px; min-height:34px; display:block; }
   #valki-root .valki-iqai-card-price-row{ justify-content:flex-start; min-height:0; }
-  #valki-root .valki-iqai-grid{ grid-template-columns:1fr; }
   #valki-root .valki-iqai-drawer-grid{ grid-template-columns:1fr; }
 }
 
@@ -1171,6 +1170,8 @@ html.valki-chat-open #valki-root .valki-bubble{
 #valki-root #valki-overlay[data-layout="mobile"] .valki-iqai-sparkline-wrap{ flex:0 0 110px; width:110px; min-width:110px; max-width:110px; display:flex; justify-content:flex-end; align-items:flex-end; margin-left:auto; margin-top:0; }
 #valki-root #valki-overlay[data-layout="mobile"] .valki-iqai-sparkline{ width:110px; min-width:110px; max-width:110px; height:34px; min-height:34px; display:block; }
 #valki-root #valki-overlay[data-layout="mobile"] .valki-iqai-card-price-row{ justify-content:flex-start; min-height:0; }
+#valki-root #valki-overlay[data-layout="mobile"] .valki-iqai-grid{ grid-template-columns:1fr; gap:10px; }
+#valki-root #valki-overlay[data-layout="mobile"] .valki-iqai-drawer-grid{ grid-template-columns:1fr; }
 
 #valki-root #valki-overlay[data-layout="mobile"] .valki-chat-shell{
   position: relative;
