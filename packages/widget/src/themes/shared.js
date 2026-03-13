@@ -1110,6 +1110,8 @@ html.valki-chat-open #valki-root .valki-bubble{
 #valki-root .valki-iqai-performance.is-negative{ color:#fecaca; background:rgba(239,68,68,.16); border-color:rgba(239,68,68,.32); }
 #valki-root .valki-iqai-performance.is-neutral{ color:#e5e7eb; background:rgba(156,163,175,.14); border-color:rgba(156,163,175,.3); }
 #valki-root .valki-iqai-open-signal{ padding:2px 8px; font-size:10px; line-height:1.1; flex-shrink:0; }
+#valki-root .valki-iqai-trade-link{ display:inline-flex; border-bottom:none; text-decoration:none; }
+#valki-root .valki-iqai-open-signal[disabled]{ opacity:.55; cursor:not-allowed; }
 #valki-root .valki-iqai-sparkline{ width:120px; min-width:120px; height:34px; min-height:34px; opacity:.85; display:block; overflow:hidden; align-self:flex-end; }
 #valki-root .valki-iqai-sparkline svg{ width:100%; height:100%; display:block; }
 #valki-root .valki-iqai-section{ padding:12px; }
