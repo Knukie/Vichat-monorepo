@@ -25,7 +25,7 @@ function isTruthy(value) {
   return ["1", "true", "yes", "on"].includes(String(value || "").toLowerCase());
 }
 
-function extractTickerFromFilename(filename, knownTickers = []) {
+function extractTickerFromFilename(filename) {
   const baseName = path.basename(filename, path.extname(filename));
 
   // Preferred parsing: split at IPFS hash marker (bafy/bafk), then take leading [A-Z0-9]+.
@@ -36,15 +36,7 @@ function extractTickerFromFilename(filename, knownTickers = []) {
     return prefixMatch[1].toUpperCase();
   }
 
-  // Fallback: match a known ticker that prefixes the filename.
-  const upperName = baseName.toUpperCase();
-  const knownPrefix = knownTickers
-    .map((ticker) => String(ticker || "").toUpperCase())
-    .filter(Boolean)
-    .sort((a, b) => b.length - a.length)
-    .find((ticker) => upperName.startsWith(ticker));
-
-  return knownPrefix || "";
+  return "";
 }
 
 async function listImageFiles(dirPath) {
@@ -76,17 +68,13 @@ async function main() {
   await client.connect();
 
   try {
-    const { rows: tickerRows } = await client.query('SELECT "ticker" FROM "agents" WHERE "ticker" IS NOT NULL');
-    const knownTickers = tickerRows.map((row) => String(row.ticker || "").toUpperCase()).filter(Boolean);
-
     const files = await listImageFiles(directory);
     let matched = 0;
     let updated = 0;
     let skipped = 0;
-    let notFound = 0;
 
     for (const fileName of files) {
-      const ticker = extractTickerFromFilename(fileName, knownTickers);
+      const ticker = extractTickerFromFilename(fileName);
       if (!ticker) {
         skipped += 1;
         console.log(`[skipped file] ${fileName} (no ticker found)`);
@@ -101,18 +89,12 @@ async function main() {
       const existingResult = await client.query(
         `SELECT "ticker", COALESCE("desktop_image_url", '') AS "desktop_image_url"
            FROM "agents"
-          WHERE UPPER("ticker") = $1
+          WHERE "ticker" = $1
           LIMIT 1`,
         [ticker]
       );
 
-      if (!existingResult.rowCount) {
-        notFound += 1;
-        console.log(`[token not found] ${fileName} -> ${ticker}`);
-        continue;
-      }
-
-      const currentValue = String(existingResult.rows[0].desktop_image_url || "");
+      const currentValue = String(existingResult.rows[0]?.desktop_image_url || "");
       if (currentValue === resolvedImageValue) {
         console.log(`[matched ticker] ${fileName} -> ${ticker}`);
         console.log(`[skipped file] ${fileName} (already up-to-date)`);
@@ -123,9 +105,10 @@ async function main() {
       const result = dryRun
         ? { rowCount: 1, rows: [{ ticker, desktop_image_url: resolvedImageValue }] }
         : await client.query(
-          `UPDATE "agents"
-             SET "desktop_image_url" = $2
-           WHERE UPPER("ticker") = $1
+          `INSERT INTO "agents" ("ticker", "desktop_image_url")
+           VALUES ($1, $2)
+           ON CONFLICT ("ticker")
+           DO UPDATE SET "desktop_image_url" = EXCLUDED."desktop_image_url", "updated_at" = NOW()
            RETURNING "ticker", "desktop_image_url"`,
           [ticker, resolvedImageValue]
         );
@@ -139,7 +122,7 @@ async function main() {
       updated += 1;
     }
 
-    console.log(`\nDone. files=${files.length} matched=${matched} updated=${updated} skipped=${skipped} tokenNotFound=${notFound}`);
+    console.log(`\nDone. files=${files.length} matched=${matched} updated=${updated} skipped=${skipped}`);
   } finally {
     await client.end();
   }

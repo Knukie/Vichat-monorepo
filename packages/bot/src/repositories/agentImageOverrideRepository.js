@@ -1,5 +1,3 @@
-import { Prisma } from "@prisma/client";
-
 function normalizeTickers(tickers = []) {
   return Array.from(new Set(
     tickers
@@ -16,24 +14,28 @@ export async function findDesktopImageOverridesByTickers(prisma, tickers = []) {
   const normalized = normalizeTickers(tickers);
   if (!normalized.length) return new Map();
 
-  const [{ exists: agentsTableExists = false } = {}] = await prisma.$queryRaw(
-    Prisma.sql`SELECT to_regclass('agents') IS NOT NULL AS "exists"`
-  );
+  try {
+    const rows = await prisma.agent.findMany({
+      where: {
+        ticker: { in: normalized },
+        desktopImageUrl: { not: null }
+      },
+      select: {
+        ticker: true,
+        desktopImageUrl: true
+      }
+    });
 
-  if (!agentsTableExists) {
-    console.info("[iqai] agents table unavailable; skipping desktop image overrides");
-    return new Map();
+    return new Map(
+      rows
+        .filter((row) => String(row.desktopImageUrl || "").trim())
+        .map((row) => [String(row.ticker || "").toUpperCase(), String(row.desktopImageUrl || "")])
+    );
+  } catch (error) {
+    if (error?.code === "P2021") {
+      console.info("[iqai] agents table unavailable; skipping desktop image overrides");
+      return new Map();
+    }
+    throw error;
   }
-
-  const rows = await prisma.$queryRaw(
-    Prisma.sql`
-      SELECT UPPER("ticker") AS "ticker", "desktop_image_url" AS "desktopImageUrl"
-      FROM "agents"
-      WHERE UPPER("ticker") IN (${Prisma.join(normalized)})
-        AND "desktop_image_url" IS NOT NULL
-        AND "desktop_image_url" <> ''
-    `
-  );
-
-  return new Map(rows.map((row) => [String(row.ticker || "").toUpperCase(), String(row.desktopImageUrl || "")]));
 }
