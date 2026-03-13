@@ -1,7 +1,7 @@
 {
   "name": "valki-bot",
   "version": "1.1.0",
-  "description": "Valki Talki Bot – Discord, Website API (Express), Crypto Diagnostics",
+  "description": "Valki Talki Bot \u2013 Discord, Website API (Express), Crypto Diagnostics",
   "type": "module",
   "main": "src/api/server.js",
   "engines": {
@@ -19,7 +19,8 @@
     "prisma:generate": "prisma generate",
     "build": "pnpm prisma:generate",
     "db:generate": "prisma generate",
-    "db:migrate": "prisma migrate deploy"
+    "db:migrate": "prisma migrate deploy",
+    "import:desktop-images": "node scripts/importDesktopImageOverrides.js"
   },
   "dependencies": {
     "@prisma/client": "^5.21.1",

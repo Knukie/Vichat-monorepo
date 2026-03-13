@@ -1,9 +1,12 @@
 import { Router } from "express";
+import { PrismaClient } from "@prisma/client";
 import { cleanText } from "../core/utils.js";
 import { getAgentHistorySnapshot } from "../services/agentPriceSnapshots.js";
 import { fetchIqaiPrices, normalizeIqaiPriceType } from "../services/iqaiPrices.js";
+import { mergeDesktopImageOverrides } from "../services/agentImageOverrideService.js";
 
 const iqaiRouter = Router();
+const prisma = new PrismaClient();
 const allowedProxyPaths = new Set([
   "/api/agents",
   "/api/agents/info",
@@ -158,7 +161,14 @@ iqaiRouter.get("/agents", async (req, res) => {
 
     try {
       const json = JSON.parse(bodyText);
-      return res.json(json);
+      try {
+        const enriched = await mergeDesktopImageOverrides(prisma, json);
+        return res.json(enriched);
+      } catch (overrideError) {
+        const message = overrideError?.message || String(overrideError);
+        console.warn("[iqai] could not merge desktop image overrides", message);
+        return res.json(json);
+      }
     } catch {
       return res.type("text/plain").send(bodyText);
     }
