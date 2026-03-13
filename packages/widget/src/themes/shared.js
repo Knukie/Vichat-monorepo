@@ -1144,9 +1144,10 @@ html.valki-chat-open #valki-root .valki-bubble{
   #valki-root .valki-iqai-body{ grid-template-columns:minmax(0,1fr); gap:10px; }
   #valki-root .valki-iqai-right{ align-items:stretch; }
   #valki-root .valki-iqai-chart-region{ width:100%; align-items:stretch; }
-    #valki-root .valki-iqai-chart-block{ align-items:stretch; gap:8px; }
-  #valki-root .valki-iqai-sparkline{ width:100%; min-width:0; }
-  #valki-root .valki-iqai-price-wrap{ align-items:flex-start; text-align:left; }
+  #valki-root .valki-iqai-chart-block{ flex-direction:row; align-items:flex-end; justify-content:space-between; gap:10px; }
+  #valki-root .valki-iqai-sparkline{ order:2; width:120px; min-width:120px; height:32px; min-height:32px; align-self:flex-end; }
+  #valki-root .valki-iqai-price-wrap{ order:1; width:auto; align-items:flex-start; text-align:left; gap:2px; }
+  #valki-root .valki-iqai-card-price-row{ justify-content:flex-start; min-height:0; }
   #valki-root .valki-iqai-grid{ grid-template-columns:1fr; }
   #valki-root .valki-iqai-drawer-grid{ grid-template-columns:1fr; }
 }
