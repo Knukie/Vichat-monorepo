@@ -1028,7 +1028,7 @@ html.valki-chat-open #valki-root .valki-bubble{
 }
 
 #valki-root #valki-overlay[data-view="iqai"] .valki-sidebar{
-  display:none;
+  display:none !important;
 }
 
 #valki-root .valki-iqai{
@@ -1384,6 +1384,10 @@ html.valki-chat-open #valki-root .valki-bubble{
     width: min(1200px, 100%);
   }
 
+  #valki-root #valki-overlay[data-layout="desktop"][data-view="iqai"] .valki-chat-shell{
+    width: min(1200px, 100%);
+  }
+
   #valki-root #valki-overlay[data-layout="desktop"] .valki-sidebar{
     display: flex;
     flex: 0 0 clamp(320px, 28vw, 380px);
@@ -1410,6 +1414,18 @@ html.valki-chat-open #valki-root .valki-bubble{
   #valki-root #valki-overlay[data-layout="desktop"] .valki-modal{
     border-radius: 0 16px 16px 0;
     overflow: hidden;
+  }
+
+  #valki-root #valki-overlay[data-layout="desktop"][data-view="iqai"] .valki-sidebar{
+    display: none !important;
+    flex: 0 0 0;
+    max-width: 0;
+  }
+
+  #valki-root #valki-overlay[data-layout="desktop"][data-view="iqai"] .valki-modal{
+    border-radius: 16px;
+    width: 100%;
+    flex: 1 1 100%;
   }
 
   #valki-root #valki-overlay[data-layout="desktop"] .valki-modal::before,
