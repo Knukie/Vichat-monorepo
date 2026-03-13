@@ -123,9 +123,22 @@ function shortWords(value, maxWords = 9) {
   return `${words.slice(0, maxWords).join(' ')}…`;
 }
 
-function resolveAgentAvatar(agent) {
+function isDesktopViewport() {
+  return !!(typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(min-width: 1024px)').matches);
+}
+
+function resolveAgentAvatar(agent, { isDesktop = false } = {}) {
   if (!agent || typeof agent !== 'object') return '';
-  const candidates = [
+  const desktopOverrideCandidates = [
+    agent.desktop_image_url,
+    agent.desktopImageUrl,
+    agent.image_override_desktop,
+    agent.imageOverrideDesktop,
+    agent.metadata?.desktop_image_url,
+    agent.metadata?.desktopImageUrl
+  ];
+
+  const automaticImageCandidates = [
     agent.avatar,
     agent.avatarUrl,
     agent.image,
@@ -138,6 +151,10 @@ function resolveAgentAvatar(agent) {
     agent.metadata?.image,
     agent.metadata?.imageUrl
   ];
+
+  const candidates = isDesktop
+    ? [...desktopOverrideCandidates, ...automaticImageCandidates]
+    : [...automaticImageCandidates, ...desktopOverrideCandidates];
 
   for (const candidate of candidates) {
     const resolved = ipfsUrl(candidate);
@@ -359,8 +376,9 @@ export function createIqaiExplorerController(elements, options = {}) {
     });
 
     const debugAvatarUrls = [];
+    const desktopViewport = isDesktopViewport();
     elements.grid.innerHTML = list.map((agent) => {
-      const avatar = resolveAgentAvatar(agent);
+      const avatar = resolveAgentAvatar(agent, { isDesktop: desktopViewport });
       if (avatar && debugAvatarUrls.length < 2) debugAvatarUrls.push({ id: agent.id, avatar });
       const price = formatUsd(agent.currentPriceInUSD);
       const ticker = String(agent.ticker || '').toUpperCase();
