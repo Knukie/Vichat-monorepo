@@ -1144,11 +1144,12 @@ html.valki-chat-open #valki-root .valki-bubble{
 
 @media (max-width: 900px){
   #valki-root .valki-iqai-body{ grid-template-columns:minmax(0,1fr); gap:10px; }
-  #valki-root .valki-iqai-right{ align-items:stretch; }
-  #valki-root .valki-iqai-chart-region{ width:100%; align-items:stretch; }
-  #valki-root .valki-iqai-chart-block{ flex-direction:row; align-items:flex-end; justify-content:space-between; gap:10px; }
-  #valki-root .valki-iqai-sparkline{ order:2; width:120px; min-width:120px; height:32px; min-height:32px; align-self:flex-end; }
-  #valki-root .valki-iqai-price-wrap{ order:1; width:auto; align-items:flex-start; text-align:left; gap:2px; }
+  #valki-root .valki-iqai-card{ gap:8px; }
+  #valki-root .valki-iqai-right{ align-items:flex-end; }
+  #valki-root .valki-iqai-chart-region{ width:100%; align-items:flex-end; gap:6px; }
+  #valki-root .valki-iqai-chart-block{ display:flex; flex-direction:row; align-items:flex-end; justify-content:space-between; gap:12px; width:100%; flex-wrap:nowrap; }
+  #valki-root .valki-iqai-price-wrap{ order:1; flex:1 1 auto; min-width:0; display:flex; flex-direction:column; align-items:flex-start; text-align:left; gap:4px; width:auto; }
+  #valki-root .valki-iqai-sparkline{ order:2; flex:0 0 110px; width:110px; min-width:110px; max-width:110px; height:34px; min-height:34px; align-self:flex-end; }
   #valki-root .valki-iqai-card-price-row{ justify-content:flex-start; min-height:0; }
   #valki-root .valki-iqai-grid{ grid-template-columns:1fr; }
   #valki-root .valki-iqai-drawer-grid{ grid-template-columns:1fr; }
