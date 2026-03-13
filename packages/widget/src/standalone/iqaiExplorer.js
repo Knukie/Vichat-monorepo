@@ -29,6 +29,7 @@ function mapElements(root) {
     reload: get('reload'),
     statusLine: get('status-line'),
     heroSub: get('hero-sub'),
+    agentsSection: get('agents-section'),
     grid: get('agents-grid'),
     metricsView: get('metrics-view'),
     reloadMetrics: get('reload-metrics'),
@@ -41,6 +42,7 @@ function mapElements(root) {
     priceChartClose: get('price-chart-close'),
     priceChartState: get('price-chart-state'),
     priceChartCanvas: get('price-chart-canvas'),
+    transactionsSection: get('transactions-section'),
     txLimit: get('tx-limit'),
     reloadTx: get('reload-tx'),
     txTableBody: root.querySelector('[data-iqai-el="tx-table"] tbody'),
@@ -68,8 +70,13 @@ function unmountTarget(target, instance) {
 }
 
 function mount(options = {}) {
+  const config = {
+    showAgents: true,
+    showTransactions: true,
+    ...options
+  };
   const instance = {};
-  const resolvedTarget = resolveTarget(options.target);
+  const resolvedTarget = resolveTarget(config.target);
   if (!resolvedTarget) throw new Error('IQAIExplorer.mount: target not found');
 
   let target = null;
@@ -83,15 +90,21 @@ function mount(options = {}) {
     target.classList.add('iqai-explorer-root');
     target.innerHTML = iqaiExplorerTemplate;
 
-    const controller = createIqaiExplorerController(mapElements(target), {
-      baseUrl: options.baseUrl
+    const elements = mapElements(target);
+    if (elements.agentsSection && !config.showAgents) elements.agentsSection.style.display = 'none';
+    if (elements.transactionsSection && !config.showTransactions) elements.transactionsSection.style.display = 'none';
+
+    const controller = createIqaiExplorerController(elements, {
+      baseUrl: config.baseUrl,
+      showAgents: config.showAgents,
+      showTransactions: config.showTransactions
     });
 
     void controller.activate();
     mounts.set(target, { controller, instance });
   };
 
-  if (document.readyState === 'loading' && typeof options.target === 'string') {
+  if (document.readyState === 'loading' && typeof config.target === 'string') {
     pendingMount = () => {
       pendingMount = null;
       startMount();

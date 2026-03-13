@@ -215,7 +215,12 @@ function endpoint(baseUrl, path, params) {
 }
 
 export function createIqaiExplorerController(elements, options = {}) {
-  const baseUrl = String(options.baseUrl || IQAI_BASE_URL).replace(/\/$/, '');
+  const config = {
+    showAgents: true,
+    showTransactions: true,
+    ...options
+  };
+  const baseUrl = String(config.baseUrl || IQAI_BASE_URL).replace(/\/$/, '');
   let allAgents = [];
   let byId = new Map();
   let byTicker = new Map();
@@ -488,7 +493,9 @@ export function createIqaiExplorerController(elements, options = {}) {
     byId = new Map(allAgents.map((agent) => [agent.id, agent]));
     byTicker = new Map(allAgents.map((agent) => [String(agent.ticker || '').toUpperCase(), agent]));
     byTokenContract = new Map(allAgents.map((agent) => [String(agent.tokenContract || '').toLowerCase(), agent]));
-    renderAgents();
+    if (config.showAgents) {
+      renderAgents();
+    }
   };
 
   const renderMetricsTable = (items) => {
@@ -543,6 +550,7 @@ export function createIqaiExplorerController(elements, options = {}) {
   };
 
   const loadTx = async () => {
+    if (!config.showTransactions) return;
     setStatus('trades', 'Trades: laden…');
     try {
       const data = await fetchJSON(endpoint(baseUrl, '/api/iqai/api/transactions', new URLSearchParams({ limit: elements.txLimit.value || '10' })));
@@ -573,14 +581,18 @@ export function createIqaiExplorerController(elements, options = {}) {
       setStatus('agents', 'Agents: error', false);
       elements.grid.innerHTML = `<div class="valki-iqai-card"><div class="err">${esc(error.message)}</div></div>`;
     }
-    await Promise.all([loadMetrics(), loadPrices(), loadTx()]);
+    await Promise.all([
+      loadMetrics(),
+      loadPrices(),
+      config.showTransactions ? loadTx() : Promise.resolve()
+    ]);
   };
 
   const setup = () => {
     if (initialized) return;
     initialized = true;
     if (elements.reload) elements.reload.addEventListener('click', loadAll);
-    if (elements.search) {
+    if (config.showAgents && elements.search) {
       elements.search.addEventListener('input', () => {
         clearTimeout(searchTimer);
         searchTimer = window.setTimeout(renderAgents, 120);
@@ -606,8 +618,8 @@ export function createIqaiExplorerController(elements, options = {}) {
         syncSelectedPriceRow();
       });
     }
-    if (elements.reloadTx) elements.reloadTx.addEventListener('click', loadTx);
-    if (elements.txLimit) elements.txLimit.addEventListener('change', loadTx);
+    if (config.showTransactions && elements.reloadTx) elements.reloadTx.addEventListener('click', loadTx);
+    if (config.showTransactions && elements.txLimit) elements.txLimit.addEventListener('change', loadTx);
     if (elements.drawerClose) elements.drawerClose.addEventListener('click', closeDrawer);
     if (elements.drawerOverlay) {
       elements.drawerOverlay.addEventListener('click', (event) => {
