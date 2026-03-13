@@ -45,7 +45,7 @@ export const MAX_INPUT =
 export const MAX_OUTPUT =
   Number.isFinite(Number(config.MAX_OUTPUT_TOKENS)) ? Number(config.MAX_OUTPUT_TOKENS) : 800;
 
-export const DEFAULT_OPENAI_MODEL = "gpt-5.2-chat-latest";
+export const DEFAULT_OPENAI_MODEL = "gpt-5.4";
 
 export const OPENAI_CHAT_MODEL = (config.OPENAI_MODEL || "").trim() || DEFAULT_OPENAI_MODEL;
 export const OPENAI_SUMMARY_MODEL =
