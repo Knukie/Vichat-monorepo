@@ -555,8 +555,9 @@ export function createIqaiExplorerController(elements, options = {}) {
         const ticker = row.ticker || byId.get(agentId)?.ticker || byTokenContract.get(token)?.ticker || '-';
         const name = byId.get(agentId)?.name || byTokenContract.get(token)?.name || row.agentName || '-';
         const txHash = row.txHash || row.transactionHash || row.hash || '';
-        const txLink = txHash ? `<a href="${esc(txHash)}" target="_blank" rel="noopener noreferrer">link</a>` : '-';
-        return `<tr><td>${time}</td><td>${esc(name)} <span class="muted">(${esc(ticker)})</span></td><td class="right">${esc(row.type || row.side || row.action || row.event || '-')}</td><td class="right">${esc(formatNumber(row.amount || row.size || row.qty || row.tokens || '-', 6))}</td><td class="right">${esc(formatUsd(row.usdValue || row.valueUsd || row.usd || row.valueUSD))}</td><td>${txLink}</td></tr>`;
+        const txHref = txHash ? `https://fraxscan.com/tx/${txHash}` : '';
+        const txLink = txHash ? `<a href="${esc(txHref)}" target="_blank" rel="noopener noreferrer">link</a>` : '-';
+        return `<tr><td>${txLink}</td><td>${time}</td><td>${esc(name)} <span class="muted">(${esc(ticker)})</span></td><td class="right">${esc(row.type || row.side || row.action || row.event || '-')}</td><td class="right">${esc(formatNumber(row.amount || row.size || row.qty || row.tokens || '-', 6))}</td><td class="right">${esc(formatUsd(row.usdValue || row.valueUsd || row.usd || row.valueUSD))}</td></tr>`;
       }).join('') || '<tr><td colspan="6" class="muted">Geen data</td></tr>';
       setStatus('trades', 'Trades: ok');
     } catch (error) {

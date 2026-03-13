@@ -71,7 +71,7 @@ export const iqaiExplorerTemplate = `
     </div>
     <div class="valki-iqai-table-wrap">
       <table data-iqai-el="tx-table">
-        <thead><tr><th>Time</th><th>Agent</th><th class="right">Type</th><th class="right">Amount</th><th class="right">USD</th><th>Tx</th></tr></thead>
+        <thead><tr><th>Tx</th><th>Time</th><th>Agent</th><th class="right">Type</th><th class="right">Amount</th><th class="right">USD</th></tr></thead>
         <tbody></tbody>
       </table>
     </div>
