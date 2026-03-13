@@ -1,8 +1,23 @@
-import fs from "fs/promises";
-import path from "path";
 import { Client } from "pg";
 
-const SUPPORTED_EXTENSIONS = new Set([".jpg", ".jpeg", ".png", ".webp"]);
+const DESKTOP_IMAGE_OVERRIDES = {
+  BTCWITCH:
+    "https://valki.wiki/onewebmedia/BTCWITCHbafybeicpemr73gfjkh73e3mtp52klpijqadleaulzrs6ypxg46p46cyday.jpg",
+  SOPHIA:
+    "https://valki.wiki/onewebmedia/SOPHIAbafkreicuhh5rc4k3ojqnwfysdopvmlb644lfotnwjccwk3i77x7nz53bge.jpg",
+  GORA:
+    "https://valki.wiki/onewebmedia/GORAbafybeifx34524x5xwzlifpydezice7q4ncm3vpbeuyyq4ec25i35llo6im.jpg",
+  DKDEFI:
+    "https://valki.wiki/onewebmedia/DKDEFIbafybeidrme5so552o73wgnolhsuckz6lua26ype5zubbii5ayxbpurpk7e.jpg",
+  IQVAULT:
+    "https://valki.wiki/onewebmedia/IQVAULTbafybeidpphachqbmlcb3y6uazwlfbgrstydk5g6yuoifixgv6clc62o56u.jpg",
+  IQYIELD:
+    "https://valki.wiki/onewebmedia/IQYIELDbafybeidx6nfvuh5bn46kxeexwkmky37bcmjb7bc3spa2sbnpwtgyjb735i.jpg",
+  NOIR:
+    "https://valki.wiki/onewebmedia/NOIRbafkreidalmmymubixomphnmzjxykrycygvo5z75h6hsjpchfy2yphzld6m.jpg",
+  ASTRALFXIQ:
+    "https://valki.wiki/onewebmedia/ASTRALFXIQbafybeidpzyc7btvmeeyz4d4xbeydm2rdwuj4avdvehc745qkpqehufhfre.jpg",
+};
 
 function parseArgs(argv = process.argv.slice(2)) {
   const args = {};
@@ -25,106 +40,63 @@ function isTruthy(value) {
   return ["1", "true", "yes", "on"].includes(String(value || "").toLowerCase());
 }
 
-function extractTickerFromFilename(filename) {
-  const baseName = path.basename(filename, path.extname(filename));
-
-  // Preferred parsing: split at IPFS hash marker (bafy/bafk), then take leading [A-Z0-9]+.
-  const hashMarkerIdx = baseName.search(/bafy|bafk/i);
-  const beforeHash = hashMarkerIdx >= 0 ? baseName.slice(0, hashMarkerIdx) : baseName;
-  const prefixMatch = beforeHash.match(/^([A-Z0-9]+)/);
-  if (prefixMatch?.[1]) {
-    return prefixMatch[1].toUpperCase();
-  }
-
-  return "";
-}
-
-async function listImageFiles(dirPath) {
-  const entries = await fs.readdir(dirPath, { withFileTypes: true });
-  return entries
-    .filter((entry) => entry.isFile())
-    .map((entry) => entry.name)
-    .filter((fileName) => SUPPORTED_EXTENSIONS.has(path.extname(fileName).toLowerCase()))
-    .sort((a, b) => a.localeCompare(b));
-}
-
 async function main() {
   const args = parseArgs();
-  const dirArg = String(args.dir || "").trim();
-  const baseUrl = String(args.baseUrl || "").trim().replace(/\/$/, "");
   const dryRun = isTruthy(args.dryRun);
-
-  if (!dirArg) {
-    throw new Error("Missing required argument --dir <folder>");
-  }
-
-  const directory = path.resolve(dirArg);
   const databaseUrl = process.env.DATABASE_URL;
   if (!databaseUrl) {
     throw new Error("DATABASE_URL is required");
   }
 
+  const mappings = Object.entries(DESKTOP_IMAGE_OVERRIDES).map(([ticker, desktopImageUrl]) => ({
+    ticker: ticker.toUpperCase(),
+    desktopImageUrl,
+  }));
+
+  console.log("[importDesktopImageOverrides] script start");
+  console.log(`[importDesktopImageOverrides] total mappings=${mappings.length}`);
+
   const client = new Client({ connectionString: databaseUrl });
   await client.connect();
 
+  let upsertedCount = 0;
+  let failedCount = 0;
+
   try {
-    const files = await listImageFiles(directory);
-    let matched = 0;
-    let updated = 0;
-    let skipped = 0;
+    for (const { ticker, desktopImageUrl } of mappings) {
+      console.log(`[importDesktopImageOverrides] processing ticker=${ticker}`);
 
-    for (const fileName of files) {
-      const ticker = extractTickerFromFilename(fileName);
-      if (!ticker) {
-        skipped += 1;
-        console.log(`[skipped file] ${fileName} (no ticker found)`);
-        continue;
-      }
+      try {
+        if (!dryRun) {
+          await client.query(
+            `INSERT INTO "agents" ("ticker", "desktop_image_url")
+             VALUES ($1, $2)
+             ON CONFLICT ("ticker")
+             DO UPDATE SET "desktop_image_url" = EXCLUDED."desktop_image_url", "updated_at" = NOW()`,
+            [ticker, desktopImageUrl]
+          );
+        }
 
-      matched += 1;
-      const resolvedImageValue = baseUrl
-        ? `${baseUrl}/${encodeURIComponent(fileName)}`
-        : path.join(directory, fileName);
-
-      const existingResult = await client.query(
-        `SELECT "ticker", COALESCE("desktop_image_url", '') AS "desktop_image_url"
-           FROM "agents"
-          WHERE "ticker" = $1
-          LIMIT 1`,
-        [ticker]
-      );
-
-      const currentValue = String(existingResult.rows[0]?.desktop_image_url || "");
-      if (currentValue === resolvedImageValue) {
-        console.log(`[matched ticker] ${fileName} -> ${ticker}`);
-        console.log(`[skipped file] ${fileName} (already up-to-date)`);
-        skipped += 1;
-        continue;
-      }
-
-      const result = dryRun
-        ? { rowCount: 1, rows: [{ ticker, desktop_image_url: resolvedImageValue }] }
-        : await client.query(
-          `INSERT INTO "agents" ("ticker", "desktop_image_url")
-           VALUES ($1, $2)
-           ON CONFLICT ("ticker")
-           DO UPDATE SET "desktop_image_url" = EXCLUDED."desktop_image_url", "updated_at" = NOW()
-           RETURNING "ticker", "desktop_image_url"`,
-          [ticker, resolvedImageValue]
+        upsertedCount += 1;
+      } catch (error) {
+        failedCount += 1;
+        console.error(
+          `[importDesktopImageOverrides] failed ticker=${ticker} message=${error?.message || error}`
         );
-
-      console.log(`[matched ticker] ${fileName} -> ${ticker}`);
-      if (dryRun) {
-        console.log(`[updated record] DRY RUN ${ticker} -> ${resolvedImageValue}`);
-      } else {
-        console.log(`[updated record] ${ticker} -> ${result.rows[0].desktop_image_url}`);
       }
-      updated += 1;
     }
-
-    console.log(`\nDone. files=${files.length} matched=${matched} updated=${updated} skipped=${skipped}`);
   } finally {
     await client.end();
+  }
+
+  console.log(`[importDesktopImageOverrides] upserted count=${upsertedCount}`);
+  console.log(`[importDesktopImageOverrides] failed count=${failedCount}`);
+  console.log(
+    `[importDesktopImageOverrides] final summary total=${mappings.length} upserted=${upsertedCount} failed=${failedCount} dryRun=${dryRun}`
+  );
+
+  if (failedCount > 0) {
+    process.exitCode = 1;
   }
 }
 
