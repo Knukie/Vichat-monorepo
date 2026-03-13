@@ -11,9 +11,7 @@ export const iqaiExplorerTemplate = `
     </div>
   </div>
 
-  <section class="valki-iqai-grid" data-iqai-el="agents-section">
-    <div data-iqai-el="agents-grid"></div>
-  </section>
+  <section class="valki-iqai-grid" id="valki-iqai-agents-grid" data-iqai-el="agents-grid"></section>
 
   <section class="valki-iqai-section">
     <div class="valki-iqai-section-top">

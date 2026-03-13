@@ -81,7 +81,7 @@
   padding:6px 11px;
   background:rgba(255,255,255,.025);
 }
-.iqai-explorer-root .valki-iqai-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;}
+.iqai-explorer-root .valki-iqai-grid#valki-iqai-agents-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:12px;row-gap:14px;width:100%;align-items:stretch;}
 .iqai-explorer-root .valki-iqai-card,
 .iqai-explorer-root .valki-iqai-section,
 .iqai-explorer-root .valki-iqai-box{
@@ -90,7 +90,7 @@
   border-radius:var(--radius-lg);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.04);
 }
-.iqai-explorer-root .valki-iqai-card{padding:13px;display:flex;flex-direction:column;gap:9px;}
+.iqai-explorer-root .valki-iqai-card{padding:13px;display:flex;flex-direction:column;gap:9px;width:100%;max-width:none;margin:0;}
 .iqai-explorer-root .valki-iqai-card:hover{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.15);}
 .iqai-explorer-root .valki-iqai-body{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,260px);gap:14px;align-items:stretch;}
 .iqai-explorer-root .valki-iqai-left{min-width:0;display:flex;flex-direction:column;gap:9px;}
@@ -108,6 +108,8 @@
 .iqai-explorer-root .valki-iqai-stats{display:grid;grid-template-columns:1fr 1fr;gap:7px;font-size:11px;color:var(--muted);}
 .iqai-explorer-root .valki-iqai-chart-region{display:flex;flex-direction:column;align-items:flex-end;gap:8px;min-width:100%;}
 .iqai-explorer-root .valki-iqai-chart-block{display:flex;flex-direction:column;align-items:flex-end;gap:8px;min-width:0;width:100%;}
+.iqai-explorer-root .valki-iqai-footer-row{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;width:100%;}
+.iqai-explorer-root .valki-iqai-sparkline-wrap{display:flex;align-items:center;justify-content:flex-end;flex:0 0 auto;min-width:120px;}
 .iqai-explorer-root .valki-iqai-price-wrap{min-width:0;display:flex;flex-direction:column;align-items:flex-end;gap:4px;text-align:right;width:100%;}
 .iqai-explorer-root .valki-iqai-pair{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);}
 .iqai-explorer-root .valki-iqai-card-price-row{display:flex;align-items:center;justify-content:flex-end;gap:8px;min-height:22px;}
@@ -163,8 +165,10 @@
   .iqai-explorer-root .valki-iqai-right{align-items:stretch;}
   .iqai-explorer-root .valki-iqai-chart-region{width:100%;align-items:stretch;}
   .iqai-explorer-root .valki-iqai-chart-block{align-items:stretch;gap:8px;}
-  .iqai-explorer-root .valki-iqai-sparkline{width:100%;min-width:0;}
-  .iqai-explorer-root .valki-iqai-price-wrap{align-items:flex-start;text-align:left;}
-  .iqai-explorer-root .valki-iqai-grid,
+  .iqai-explorer-root .valki-iqai-footer-row{align-items:center;justify-content:space-between;gap:8px;flex-wrap:nowrap;}
+  .iqai-explorer-root .valki-iqai-sparkline-wrap{justify-content:flex-end;min-width:96px;flex:0 0 96px;}
+  .iqai-explorer-root .valki-iqai-sparkline{width:96px;min-width:96px;height:30px;min-height:30px;}
+  .iqai-explorer-root .valki-iqai-price-wrap{align-items:flex-start;text-align:left;flex:1 1 auto;}
+  .iqai-explorer-root .valki-iqai-grid#valki-iqai-agents-grid,
   .iqai-explorer-root .valki-iqai-drawer-grid{grid-template-columns:1fr;}
 }
