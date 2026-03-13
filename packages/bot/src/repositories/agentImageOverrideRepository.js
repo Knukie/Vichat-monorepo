@@ -16,6 +16,15 @@ export async function findDesktopImageOverridesByTickers(prisma, tickers = []) {
   const normalized = normalizeTickers(tickers);
   if (!normalized.length) return new Map();
 
+  const [{ exists: agentsTableExists = false } = {}] = await prisma.$queryRaw(
+    Prisma.sql`SELECT to_regclass('agents') IS NOT NULL AS "exists"`
+  );
+
+  if (!agentsTableExists) {
+    console.info("[iqai] agents table unavailable; skipping desktop image overrides");
+    return new Map();
+  }
+
   const rows = await prisma.$queryRaw(
     Prisma.sql`
       SELECT UPPER("ticker") AS "ticker", "desktop_image_url" AS "desktopImageUrl"
