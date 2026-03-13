@@ -1112,7 +1112,8 @@ html.valki-chat-open #valki-root .valki-bubble{
 #valki-root .valki-iqai-open-signal{ padding:2px 8px; font-size:10px; line-height:1.1; flex-shrink:0; }
 #valki-root .valki-iqai-trade-link{ display:inline-flex; border-bottom:none; text-decoration:none; }
 #valki-root .valki-iqai-open-signal[disabled]{ opacity:.55; cursor:not-allowed; }
-#valki-root .valki-iqai-sparkline{ width:120px; min-width:120px; height:34px; min-height:34px; opacity:.85; display:block; overflow:hidden; align-self:flex-end; }
+#valki-root .valki-iqai-sparkline-wrap{ display:flex; justify-content:flex-end; align-items:flex-end; }
+#valki-root .valki-iqai-sparkline{ width:120px; min-width:120px; height:34px; min-height:34px; opacity:.85; display:block; overflow:hidden; }
 #valki-root .valki-iqai-sparkline svg{ width:100%; height:100%; display:block; }
 #valki-root .valki-iqai-section{ padding:12px; }
 #valki-root .valki-iqai-section h2{ margin:0; font-size:14px; }
@@ -1144,12 +1145,13 @@ html.valki-chat-open #valki-root .valki-bubble{
 
 @media (max-width: 900px){
   #valki-root .valki-iqai-body{ grid-template-columns:minmax(0,1fr); gap:10px; }
-  #valki-root .valki-iqai-card{ gap:8px; }
+  #valki-root .valki-iqai-card{ gap:7px; }
   #valki-root .valki-iqai-right{ align-items:flex-end; }
   #valki-root .valki-iqai-chart-region{ width:100%; align-items:flex-end; gap:6px; }
-  #valki-root .valki-iqai-chart-block{ display:flex; flex-direction:row; align-items:flex-end; justify-content:space-between; gap:12px; width:100%; flex-wrap:nowrap; }
-  #valki-root .valki-iqai-price-wrap{ order:1; flex:1 1 auto; min-width:0; display:flex; flex-direction:column; align-items:flex-start; text-align:left; gap:4px; width:auto; }
-  #valki-root .valki-iqai-sparkline{ order:2; flex:0 0 110px; width:110px; min-width:110px; max-width:110px; height:34px; min-height:34px; align-self:flex-end; }
+  #valki-root .valki-iqai-chart-block{ display:flex; flex-direction:row; align-items:flex-end; justify-content:space-between; width:100%; gap:12px; }
+  #valki-root .valki-iqai-price-wrap{ flex:1 1 auto; min-width:0; display:flex; flex-direction:column; align-items:flex-start; text-align:left; gap:4px; }
+  #valki-root .valki-iqai-sparkline-wrap{ margin-left:auto; flex:0 0 auto; display:flex; justify-content:flex-end; align-items:flex-end; }
+  #valki-root .valki-iqai-sparkline{ width:110px; min-width:110px; max-width:110px; height:34px; min-height:34px; display:block; }
   #valki-root .valki-iqai-card-price-row{ justify-content:flex-start; min-height:0; }
   #valki-root .valki-iqai-grid{ grid-template-columns:1fr; }
   #valki-root .valki-iqai-drawer-grid{ grid-template-columns:1fr; }
