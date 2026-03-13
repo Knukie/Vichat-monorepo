@@ -1099,8 +1099,9 @@ html.valki-chat-open #valki-root .valki-bubble{
 #valki-root .valki-iqai-tag{ font-size:10px; border:1px solid rgba(255,255,255,.08); border-radius:999px; padding:2px 8px; color:var(--muted-2); }
 #valki-root .valki-iqai-bio{ color:rgba(255,255,255,.72); font-size:12px; line-height:1.45; min-height:36px; }
 #valki-root .valki-iqai-stats{ display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:11px; color:var(--muted); }
-#valki-root .valki-iqai-chart-region{ display:flex; flex-direction:column; align-items:flex-end; gap:8px; min-width:100%; }
+#valki-root .valki-iqai-chart-region{ display:flex; flex-direction:column; align-items:flex-end; gap:8px; min-width:100%; width:100%; }
 #valki-root .valki-iqai-chart-block{ display:flex; flex-direction:column; align-items:flex-end; gap:8px; min-width:0; width:100%; }
+#valki-root .valki-iqai-footer-row{ display:flex; flex-direction:column; align-items:flex-end; gap:8px; min-width:0; width:100%; }
 #valki-root .valki-iqai-price-wrap{ min-width:0; display:flex; flex-direction:column; align-items:flex-end; gap:4px; text-align:right; width:100%; }
 #valki-root .valki-iqai-pair{ font-size:10px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted-2); }
 #valki-root .valki-iqai-card-price-row{ display:flex; align-items:center; justify-content:flex-end; gap:8px; min-height:22px; }
@@ -1146,16 +1147,27 @@ html.valki-chat-open #valki-root .valki-bubble{
 @media (max-width: 900px){
   #valki-root .valki-iqai-body{ grid-template-columns:minmax(0,1fr); gap:10px; }
   #valki-root .valki-iqai-card{ gap:7px; }
-  #valki-root .valki-iqai-right{ align-items:flex-end; }
-  #valki-root .valki-iqai-chart-region{ width:100%; align-items:flex-end; gap:6px; }
-  #valki-root .valki-iqai-chart-block{ display:flex; flex-direction:row; align-items:flex-end; justify-content:space-between; width:100%; gap:12px; }
-  #valki-root .valki-iqai-price-wrap{ flex:1 1 auto; min-width:0; display:flex; flex-direction:column; align-items:flex-start; text-align:left; gap:4px; }
-  #valki-root .valki-iqai-sparkline-wrap{ margin-left:auto; flex:0 0 auto; display:flex; justify-content:flex-end; align-items:flex-end; }
+  #valki-root .valki-iqai-right{ align-items:flex-end; width:100%; }
+  #valki-root .valki-iqai-chart-region{ width:100%; align-items:flex-end; gap:0; }
+  #valki-root .valki-iqai-chart-block{ display:block; width:100%; }
+  #valki-root .valki-iqai-footer-row{ display:flex; flex-direction:row; align-items:flex-end; justify-content:space-between; gap:12px; width:100%; flex-wrap:nowrap; }
+  #valki-root .valki-iqai-price-wrap{ flex:1 1 auto; min-width:0; display:flex; flex-direction:column; align-items:flex-start; text-align:left; gap:4px; width:auto; }
+  #valki-root .valki-iqai-sparkline-wrap{ flex:0 0 110px; width:110px; min-width:110px; max-width:110px; display:flex; justify-content:flex-end; align-items:flex-end; margin-left:auto; margin-top:0; }
   #valki-root .valki-iqai-sparkline{ width:110px; min-width:110px; max-width:110px; height:34px; min-height:34px; display:block; }
   #valki-root .valki-iqai-card-price-row{ justify-content:flex-start; min-height:0; }
   #valki-root .valki-iqai-grid{ grid-template-columns:1fr; }
   #valki-root .valki-iqai-drawer-grid{ grid-template-columns:1fr; }
 }
+
+
+#valki-root #valki-overlay[data-layout="mobile"] .valki-iqai-right{ align-items:flex-end; width:100%; }
+#valki-root #valki-overlay[data-layout="mobile"] .valki-iqai-chart-region{ width:100%; align-items:flex-end; gap:0; }
+#valki-root #valki-overlay[data-layout="mobile"] .valki-iqai-chart-block{ display:block; width:100%; }
+#valki-root #valki-overlay[data-layout="mobile"] .valki-iqai-footer-row{ display:flex; flex-direction:row; align-items:flex-end; justify-content:space-between; gap:12px; width:100%; flex-wrap:nowrap; }
+#valki-root #valki-overlay[data-layout="mobile"] .valki-iqai-price-wrap{ flex:1 1 auto; min-width:0; display:flex; flex-direction:column; align-items:flex-start; text-align:left; gap:4px; width:auto; }
+#valki-root #valki-overlay[data-layout="mobile"] .valki-iqai-sparkline-wrap{ flex:0 0 110px; width:110px; min-width:110px; max-width:110px; display:flex; justify-content:flex-end; align-items:flex-end; margin-left:auto; margin-top:0; }
+#valki-root #valki-overlay[data-layout="mobile"] .valki-iqai-sparkline{ width:110px; min-width:110px; max-width:110px; height:34px; min-height:34px; display:block; }
+#valki-root #valki-overlay[data-layout="mobile"] .valki-iqai-card-price-row{ justify-content:flex-start; min-height:0; }
 
 #valki-root #valki-overlay[data-layout="mobile"] .valki-chat-shell{
   position: relative;
