@@ -29,7 +29,6 @@ function mapElements(root) {
     reload: get('reload'),
     statusLine: get('status-line'),
     heroSub: get('hero-sub'),
-    agentsSection: get('agents-section'),
     grid: get('agents-grid'),
     metricsView: get('metrics-view'),
     reloadMetrics: get('reload-metrics'),
@@ -91,7 +90,7 @@ function mount(options = {}) {
     target.innerHTML = iqaiExplorerTemplate;
 
     const elements = mapElements(target);
-    if (elements.agentsSection && !config.showAgents) elements.agentsSection.style.display = 'none';
+    if (elements.grid && !config.showAgents) elements.grid.style.display = 'none';
     if (elements.transactionsSection && !config.showTransactions) elements.transactionsSection.style.display = 'none';
 
     const controller = createIqaiExplorerController(elements, {
@@ -125,5 +124,6 @@ function mount(options = {}) {
   };
 }
 
-const IQAIExplorer = { mount };
+const IQAI_EXPLORER_VERSION = 'iqai-width-fix-20260313-01';
+const IQAIExplorer = { mount, version: IQAI_EXPLORER_VERSION };
 window.IQAIExplorer = IQAIExplorer;
