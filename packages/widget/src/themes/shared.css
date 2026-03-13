@@ -1038,6 +1038,9 @@ html.valki-chat-open #valki-root .valki-bubble{
   display:flex;
   flex-direction:column;
   gap:12px;
+  width:100%;
+  max-width:none;
+  min-width:0;
 }
 
 #valki-root .valki-iqai-hero,
@@ -1079,6 +1082,9 @@ html.valki-chat-open #valki-root .valki-bubble{
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
+  width:100%;
+  max-width:none;
+  min-width:0;
 }
 #valki-root .valki-iqai-card,
 #valki-root .valki-iqai-section,
@@ -1096,7 +1102,17 @@ html.valki-chat-open #valki-root .valki-bubble{
 #valki-root .valki-iqai-price-wrap{
   min-width: 0;
 }
-#valki-root .valki-iqai-card{ padding:12px; display:flex; flex-direction:column; gap:9px; }
+#valki-root .valki-iqai-card{ padding:12px; display:flex; flex-direction:column; gap:9px; width:100%; max-width:none; }
+
+@media (min-width: 1024px){
+  #valki-root #valki-overlay[data-layout="desktop"] .valki-iqai-grid{
+    display:grid;
+    grid-template-columns:repeat(2, minmax(0, 1fr));
+    column-gap:16px;
+    row-gap:18px;
+    width:100%;
+  }
+}
 #valki-root .valki-iqai-body{ display:grid; grid-template-columns:minmax(0,1fr) minmax(220px,260px); gap:14px; align-items:stretch; }
 #valki-root .valki-iqai-left{ min-width:0; display:flex; flex-direction:column; gap:9px; }
 #valki-root .valki-iqai-right{ min-width:0; display:flex; flex-direction:column; gap:8px; align-items:flex-end; }
@@ -1159,7 +1175,7 @@ html.valki-chat-open #valki-root .valki-bubble{
 @media (max-width: 900px){
   #valki-root .valki-iqai-grid{
     grid-template-columns: 1fr;
-    gap: 10px;
+    row-gap: 16px;
   }
 
   #valki-root .valki-iqai-body{
@@ -1167,14 +1183,7 @@ html.valki-chat-open #valki-root .valki-bubble{
     gap: 10px;
   }
 
-  #valki-root .valki-iqai-card{
-    gap: 8px;
-    margin-bottom: 16px;
-  }
-
-  #valki-root .valki-iqai-card:last-child{
-    margin-bottom: 0;
-  }
+  #valki-root .valki-iqai-card{ gap: 8px; }
 
   #valki-root .valki-iqai-right{
     align-items: stretch;
@@ -1243,13 +1252,11 @@ html.valki-chat-open #valki-root .valki-bubble{
 
 
 #valki-root #valki-overlay[data-layout="mobile"] .valki-iqai-right{ align-items:flex-end; width:100%; }
-#valki-root #valki-overlay[data-layout="mobile"] .valki-iqai-card{ margin-bottom:16px; }
-#valki-root #valki-overlay[data-layout="mobile"] .valki-iqai-card:last-child{ margin-bottom:0; }
 #valki-root #valki-overlay[data-layout="mobile"] .valki-iqai-chart-region{ width:100%; align-items:flex-end; gap:8px; }
 #valki-root #valki-overlay[data-layout="mobile"] .valki-iqai-chart-block{ display:flex; flex-direction:column; align-items:stretch; width:100%; gap:0; }
 #valki-root #valki-overlay[data-layout="mobile"] .valki-iqai-grid{
   grid-template-columns: 1fr;
-  gap: 10px;
+  row-gap: 16px;
 }
 
 #valki-root #valki-overlay[data-layout="mobile"] .valki-iqai-footer-row{
